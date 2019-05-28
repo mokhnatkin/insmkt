@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://insmkt:insmkt@localhost:3306/insmkt'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://insmkt:fjEidk89@localhost:3306/insmkt'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
 db = SQLAlchemy(app)
 
