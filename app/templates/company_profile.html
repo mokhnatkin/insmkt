@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h1>Портрет компании</h1>    
+    <p><i>
+        Выберите компанию и период.
+        Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b> 
+        по <b>{{ moment(g.last_report_date).format('LL') }}</b>
+    </i></p>
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+
+    {% if show_balance %}
+        <h1>Компания: {{ company_name }}</h1>
+        <div align="center">
+            <h2>Основные балансовые показатели</h2>
+            <p>на {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>
+                        <th align="right">Всего по non-life рынку, тыс.тг.</th>
+                        <th align="right">Среднее арифметическое по non-life рынку, тыс.тг.</th>
+                        <th align="right">Доля %</th>
+                    </tr>
+                    {% for ind in balance_indicators %}
+                    <tr>
+                        <td>{{ ind.fullname }}</td>
+                        {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
+                            <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>
+                            <td align="right">N.A.</td>
+                            <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>
+                            <td align="right">N.A.</td>
+                        {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
+                            <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
+                            <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
+                            <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
+                            <td align="right">
+                                {% if ind.share > 0 %}
+                                    {{ "{:,.2f}".format(ind.share) }}
+                                {% else %}
+                                    N.A.
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if show_income_statement %}
+        <div align="center">
+            <h2>Основные показатели ОПУ</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>
+                        <th align="right">Всего по non-life рынку, тыс.тг.</th>
+                        <th align="right">Среднее арифметическое по non-life рынку, тыс.тг.</th>
+                        <th align="right">Доля %</th>
+                    </tr>
+                    {% for ind in flow_indicators %}
+                    <tr>
+                        <td>{{ ind.fullname }}</td>
+                        <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
+                        <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
+                        <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
+                        <td align="right">
+                            {% if ind.share > 0 %}
+                                {{ "{:,.2f}".format(ind.share) }}
+                            {% else %}
+                                N.A.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if show_other_financial_indicators %}        
+        <div align="center">
+            <h2>Другие финансовые показатели</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}</th>
+                        <th align="right">Среднее значение по non-life рынку</th>
+                    </tr>
+                    {% for ind in other_financial_indicators %}
+                        <tr>
+                            <td>{{ ind.name }}</td>
+                            <td>{{ ind.value_c }}</td>
+                            <td>{{ ind.value_m }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+    {% endif %}
+
+    {% if show_charts %}
+    <div class="container">
+        <div align="center"><h2>Разбивка премий по продуктам</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <img src="{{ img_path_premiums_by_LoB_pie }}" style="max-width:100%" alt="Premium LoB pie plot">
+        </div>
+    </div>
+    <div class="container">
+        <div align="center"><h2>Коэффициент выплат по продуктам</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <img src="{{ img_path_lr_by_LoB }}" style="max-width:100%" alt="LR LoB plot">
+        </div>
+    </div>
+    <div class="container">
+        <div align="center"><h2>Динамика изменения собственного капитала</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <img src="{{ img_path_equity }}" style="max-width:100%" alt="equity plot">
+        </div>
+    </div>
+    <div class="container">
+        <div align="center"><h2>Динамика изменения страховых резервов</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <img src="{{ img_path_reserves }}" style="max-width:100%" alt="equity plot">
+        </div>
+    </div>    
+    <div class="container">
+        <div align="center"><h2>Динамика норматива фактической маржи платежеспособности</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <img src="{{ img_path_solvency_margin }}" style="max-width:100%" alt="solvency margin plot">
+        </div>
+    </div>
+    <div class="container">
+        <div align="center"><h2>Чистые премии по месяцам</h2>
+            <img src="{{ img_path_net_premium }}" style="max-width:100%" alt="net premium plot">
+        </div>
+    </div>
+    {% endif %}
+    
+{% endblock %}

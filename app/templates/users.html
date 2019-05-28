@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Список пользователей</h1>
+<div>
+    <table class="table table-hover">
+        <tr>
+            <th>Логин</th>
+            <th>Роль</th>
+            <th>e-mail</th>
+            <th>Последний вход</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td><a href="{{ url_for('user',username=user.username) }}">{{ user.username }}</a></td>
+            <td>{{ user.role }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ moment(user.last_seen).format('LLL') }} </td>            
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

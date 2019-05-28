@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+<h1>Список всех наименований: {{ company_name }}</h1>
+<div class="row">
+    <h2>Существующие наименования</h2>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <tr>
+                <th>id записи</th>
+                <th>id компании</th>
+                <th>Название</th>
+            </tr>
+            {% for c in all_names %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.company_id }}</td>
+                    <td>{{ c.name }}</td>                       
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+<h2>Добавить ещё наименование</h2>
+<div class="row">
+    <div class="col-md-4">
+        {{ wtf.quick_form(form) }}
+    </div>
+</div>
+
+{% endblock %}

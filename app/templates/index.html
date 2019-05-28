@@ -1,0 +1,92 @@
+﻿{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h1>Привет, {{current_user.username}} !</h1>
+    <p>В этом приложении можно посмотреть аналитику по non-life страховому рынку. Источник данных - файлы с сайта НБ РК.</p>
+    <p>Приложение опирается четыре файла, загружаемых с сайта: 
+            <a href="https://nationalbank.kz/?docid=1075&switch=russian">Статистика > Показатели финансового сектора > Страховой сектор > Финансовые показатели</a>
+        </p>
+        <ul>
+            <li>Сводные сведения о выполнении пруденциальных нормативов</li>
+            <li>Основные финансовые показатели страховых (перестраховочных) организаций Республики Казахстан</li>
+            <li>Поступление страховых премий по отраслям и классам страхования</li>
+            <li>Страховые выплаты по отраслям и классам страхования</li>
+        </ul>
+    <p>На данный момент в приложение загружены данные за период с 
+        <b>{{ moment(g.min_report_date).format('LL') }}</b> по  
+        <b>{{ moment(g.last_report_date).format('LL') }}</b>
+    </p>
+    <p>На вкладке <a href="{{ url_for('company_profile') }}">Портрет компании</a>
+        можно посмотреть информацию о выбранной компании
+        за выбранный период, а также сравнить основные показатели с рынком.
+    </p>
+    <p>На вкладке <a href="{{ url_for('class_profile') }}">Инфо по классу</a>
+        можно посмотреть информацию о выбранном классе страхования
+        за выбранный период, а также динамику его развития.
+    </p>
+    <p>На вкладке <a href="{{ url_for('peers_review') }}">Обзор конкурентов</a>
+        можно сравнить показатели выбранной компании с основными конкурентами
+        (за выбранный период). Конкурентов нужно будет выбрать из списка.
+    </p>
+    <p>На вкладке <a href="{{ url_for('ranking') }}">Рэнкинг</a>
+        можно посмотреть позицию компаний по основным показателям.
+    </p>
+    <p>Также вы можете оставлять посты, чтобы другие пользователи смогли увидеть
+        ваши интересные находки и заключения. Посты будут видны всем пользователям.
+    </p>
+    {% if show_net_prem %}
+    <div>
+        <h2>Чистые премии на {{ moment(g.last_report_date).format('LL') }}</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>
+                    <th>N</th>
+                    <th>Компания (ТОП-10)</th>
+                    <th align="right">Чистые премии, тыс.тг.</th>
+                </tr>
+                {% for rownum in range(net_premiums_len) %}
+                    <tr>
+                        <td>{{ rownum + 1 }}</td>
+                        <td>{{ net_premiums[rownum].alias }}</td>
+                        <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% if show_motor_TPL %}
+    <div>
+        <h2>Премии ОС ГПО ВТС на {{ moment(g.last_report_date).format('LL') }}</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>
+                    <th>N</th>
+                    <th>Компания (ТОП-10)</th>
+                    <th align="right">Премии ОС ГПО ВТС, тыс.тг.</th>
+                </tr>
+                {% for rownum in range(motor_TPL_premium_len) %}
+                    <tr>
+                        <td>{{ rownum + 1 }}</td>
+                        <td>{{ motor_TPL_premium[rownum].alias }}</td>
+                        <td align="right">{{ "{:,.0f}".format(motor_TPL_premium[rownum].value) }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% if form %}
+        <h2>Написать пост</h2>
+        {{ wtf.quick_form(form) }}
+        <br>
+    {% endif %}
+    <div>
+        <h2>Последние посты</h2>
+        {% for post in posts %}
+            {% include '_post.html' %}
+        {% endfor %}
+        <br><a href="{{ url_for('explore') }}">Все посты</a>
+    </div>
+{% endblock %}

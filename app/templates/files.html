@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Список загруженных файлов</h1>
+<div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <tr>
+                <th>Описание</th>
+                <th>Тип</th>
+                <th>Подтип</th>
+                <th>Отчетная дата</th>
+                <th>Имя файла</th>
+                <th>Дата-время загрузки</th>
+            </tr>
+            {% for f in files %}
+                <tr>
+                    <td>{{ f.name }}</td>
+                    <td>{{ f.file_type }}</td>
+                    <td>{{ f.dict_type or f.data_type }}</td>
+                    <td>{{ moment(f.report_date).format('LL') }}</td>
+                    <td><a href="{{ url_for('downloadFile',fname=f.file_name) }}">{{ f.file_name }}</a></td>
+                    <td>{{ moment(f.timestamp).format('LLL') }} </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}

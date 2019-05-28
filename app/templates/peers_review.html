@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h1>Обзор конкурентов</h1>
+    <p><i>{{ descr }}</i></p>
+    <p>
+        Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b> 
+        по <b>{{ moment(g.last_report_date).format('LL') }}</b>
+    </p>    
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+
+    {% if show_balance %}
+        <h1>Компания: {{ company_name }}</h1>
+        <h3>Выбранные конкуренты: {{ peers_names }}</h3>
+        <div align="center">
+            <h2>Основные балансовые показатели</h2>
+            <p>на {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
+                        <th align="right">Среднее арифметическое по конкурентам, тыс.тг.</th>                        
+                    </tr>
+                    {% for ind in balance_indicators %}
+                    <tr>
+                        <td>{{ ind.fullname }}</td>
+                        {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
+                            <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>                            
+                            <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>                            
+                        {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
+                            <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                            
+                            <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                            
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if show_income_statement %}
+        <div align="center">
+            <h2>Основные показатели ОПУ</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
+                        <th align="right">Среднее арифметическое по конкурентам, тыс.тг.</th>                        
+                    </tr>
+                    {% for ind in flow_indicators %}
+                    <tr>
+                        <td>{{ ind.fullname }}</td>
+                        <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                        
+                        <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                        
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if show_other_financial_indicators %}        
+        <div align="center">
+            <h2>Другие финансовые показатели</h2>
+            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Показатель</th>
+                        <th align="right">Значение по {{ company_name }}</th>
+                        <th align="right">Среднее значение по конкурентам</th>
+                    </tr>
+                    {% for ind in other_financial_indicators %}
+                        <tr>
+                            <td>{{ ind.name }}</td>
+                            <td>{{ ind.value_c }}</td>
+                            <td>{{ ind.value_m }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+    {% endif %}
+
+{% endblock %}

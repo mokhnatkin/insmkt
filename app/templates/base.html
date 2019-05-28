@@ -1,0 +1,79 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% if title %}{{ title }} - InsMkt{% else %}InsMkt{% endif %}
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{{ url_for('index') }}">Домой</a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.is_anonymous %}
+                    <li><a href="{{ url_for('login') }}">Вход</a></li>
+                    {% else %}
+                        {% if current_user.role == 'admin' %}
+                            <li>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Администратору
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <ul class="nav navbar-nav">
+                                            <li><a href="{{ url_for('instruction') }}">Инструкция</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('upload_file',upload_type='dictionary') }}">Загрузить справочники</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('upload_file',upload_type='data') }}">Загрузить данные</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('files') }}">Загруженные файлы</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('dictionary_values') }}">Справочники</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('compute') }}">Перерасчет показателей</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('computes') }}">Выполненные перерасчеты</a></li>                                    
+                                            <li><a class="dropdown-item" href="{{ url_for('users') }}">Список пользователей</a></li>
+                                            <li><a href="{{ url_for('explore') }}">Все посты</a></li>
+                                            <li><a href="{{ url_for('user',username=current_user.username) }}">Профиль</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endif %}
+                    <li><a href="{{ url_for('company_profile') }}">Портрет компании</a></li>
+                    <li><a href="{{ url_for('class_profile') }}">Инфо по классу</a></li>
+                    <li><a href="{{ url_for('peers_review') }}">Обзор конкурентов</a></li>
+                    <li><a href="{{ url_for('ranking') }}">Рэнкинг</a></li>
+                    <li><a href="{{ url_for('logout') }}">Выход</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-info" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {# application content needs to be provided in the app_content block #}
+        {% block app_content %}
+        {% endblock %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {{ moment.include_moment() }}
+    {{ moment.locale(g.locale) }}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Список выполненных процедур перерасчета показателей за месяц</h1>
+<div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <tr>
+                <th>Тип данных</th>
+                <th>Начало</th>
+                <th>Конец</th>            
+                <th>Дата-время выполнения процедуры</th>
+            </tr>
+            {% for c in computes %}
+                <tr>
+                    <td>{{ c.data_type }}</td>
+                    <td>{{ moment(c.beg_date).format('LL') }}</td>
+                    <td>{{ moment(c.end_date).format('LL') }}</td>            
+                    <td>{{ moment(c.timestamp).format('LLL') }} </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}
