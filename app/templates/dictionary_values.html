@@ -54,6 +54,8 @@
                     <th>obligatory</th>
                     <th>voluntary_personal</th>
                     <th>voluntary_property</th>
+                    <th>Несколько названий</th>
+                    <th>Добавить название</th>                    
                 </tr>
                 {% for i in insclasses %}
                     <tr>
@@ -65,6 +67,14 @@
                         <td>{{ i.obligatory }}</td>
                         <td>{{ i.voluntary_personal }}</td>
                         <td>{{ i.voluntary_property }}</td>
+                        <td>
+                            {% if class_has_other_names(i.id) %}
+                                Да
+                            {% else %}
+                                Нет
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ url_for('add_new_class_name',class_id=i.id) }}">Добавить название</a></td>                        
                     </tr>
                 {% endfor %}
             </table>

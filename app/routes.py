@@ -2,11 +2,11 @@
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, DataUploadForm, \
                 ComputePerMonthIndicators, CompanyProfileForm, ClassProfileForm, PeersForm, \
-                RankingForm, DictSelectForm, AddNewCompanyName
+                RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
-            Compute, Company_all_names
+            Compute, Company_all_names, Insclass_all_names
 from werkzeug.urls import url_parse
 from datetime import datetime
 from flask_babel import get_locale
@@ -226,7 +226,7 @@ def add_str_timestamp(filename):#adds string timestamp to filename in order to m
     u_filename = uId+'_'+filename
     return u_filename
 
-def process_file(file_type,file_subtype,file_content,report_date,frst_row):#обработаем загруженный excel файл
+def process_file(file_type,file_subtype,file_content,report_date,frst_row,others_col_1,others_col_2,others_col_3):#обработаем загруженный excel файл
     processed_ok = False
     companies_dict = dict()
     indicators_dict = dict()
@@ -237,13 +237,13 @@ def process_file(file_type,file_subtype,file_content,report_date,frst_row):#об
     indicators = Indicator.query.all()#получим список показателей
     for indicator in indicators:
         indicators_dict[indicator.fullname] = indicator.id #в словаре indicators_dict храним id показателя (ключ - имя)
-    insclasses = Insclass.query.all()#получим список классов
+    insclasses = Insclass_all_names.query.all()#получим список классов
     for insclass in insclasses:
         if insclass.fullname == 'иные классы (виды) страхования':#иные классы (виды) повторяются 3 раза
             tml_fullname = insclass.fullname + '_' + insclass.name#добавим для уникальности
-            insclasses_dict[tml_fullname] = insclass.id
+            insclasses_dict[tml_fullname] = insclass.insclass_id
         else:
-            insclasses_dict[insclass.fullname] = insclass.id#в словаре insclasses_dict храним id класса (ключ - имя)    
+            insclasses_dict[insclass.fullname] = insclass.insclass_id#в словаре insclasses_dict храним id класса (ключ - имя)    
     if file_type == 'Dictionary' and file_subtype == 'CompaniesList':#загружаем справочники - список страховых компаний
         for row in file_content:
             name = row[0].strip()
@@ -269,6 +269,13 @@ def process_file(file_type,file_subtype,file_content,report_date,frst_row):#об
             alias = row[6]
             insclass = Insclass(name=name,fullname=fullname,nonlife=nonlife,obligatory=obligatory,voluntary_personal=voluntary_personal,voluntary_property=voluntary_property,alias=alias)            
             db.session.add(insclass)
+            db.session.commit()
+            #получаем id сохраненного класса
+            c_saved = Insclass.query.filter(Insclass.name == name) \
+                            .filter(Insclass.fullname == fullname).first()
+            c_id = c_saved.id
+            c_all_names = Insclass_all_names(name=name,fullname=fullname,insclass_id=c_id)
+            db.session.add(c_all_names)
     elif file_type == 'Dictionary' and file_subtype == 'IndicatorsList':#справочник - список показателей
         for row in file_content:
             name = row[0].strip()
@@ -291,11 +298,11 @@ def process_file(file_type,file_subtype,file_content,report_date,frst_row):#об
         for cl_fullname in insclasses_list:#пройдемся по строке с названиями показателей
             try:
                 if cl_fullname == 'иные классы (виды) страхования':#особая логика
-                    if colnum == 10:
+                    if colnum == others_col_1-1:
                         cl_fullname = cl_fullname + '_' + 'other_voluntary_personal'
-                    elif colnum == 32:
+                    elif colnum == others_col_2-1:
                         cl_fullname = cl_fullname + '_' + 'other_voluntary_property'
-                    elif colnum == 43:
+                    elif colnum == others_col_3-1:
                         cl_fullname = cl_fullname + '_' + 'other_obligatory'
                 cl_id = insclasses_dict[cl_fullname]
                 cl_dict[str(colnum)] = cl_id
@@ -436,7 +443,7 @@ def upload_file(upload_type):
                     flash('Данный файл уже был загружен. Повторная загрузка не требуется.')
                     return redirect(url_for('upload_file', upload_type='data'))
             form.file.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            ext = '.' in filename and filename.rsplit('.', 1)[1].lower()
+            #ext = '.' in filename and filename.rsplit('.', 1)[1].lower()
             try:
                 wb = open_workbook(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 num_sheets = len(wb.sheet_names())
@@ -457,22 +464,33 @@ def upload_file(upload_type):
                 file_content = request.get_array(field_name='file')
                 if upload_type == 'dictionary':
                     del file_content[0]#удаляем первую запись в массиве (заголовок)
-                    process_res = process_file('Dictionary',form.dict_type.data,file_content,datetime.utcnow(),1)
+                    process_res = process_file('Dictionary',form.dict_type.data,file_content,datetime.utcnow(),1,1,1,1)
                     if process_res:
                         flash('Файл успешно обработан!')
                     else:
                         flash('При обработке файла возникли ошибки!')
+                        try:
+                            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        except:
+                            pass
+                        db.session.delete(upload)
+                        db.session.commit()
                     return redirect(url_for('upload_file', upload_type='dictionary'))
                 elif upload_type == 'data':
                     frst_row = int(form.frst_row.data)#первая строка с данными по компаниям
+                    others_col_1 = int(form.others_col_1.data)#столбец с иными классами, ДЛС
+                    others_col_2 = int(form.others_col_2.data)#столбец с иными классами, ДИС
+                    others_col_3 = int(form.others_col_3.data)#столбец с иными классами, ОС
                     try:
-                        process_res = process_file('Data',form.data_type.data,file_content,form.report_date.data,frst_row)
+                        process_res = process_file('Data',form.data_type.data,file_content,form.report_date.data,frst_row,others_col_1,others_col_2,others_col_3)
                     except:
                         flash('Не удалось обработать файл! Проверьте входной файл и корректность заполнения номера первой строки с данными.')                        
                         try:
                             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                         except:
                             pass
+                        db.session.delete(upload)
+                        db.session.commit()                            
                         return redirect(url_for('upload_file', upload_type='data'))
                     if process_res:
                         try:
@@ -487,6 +505,8 @@ def upload_file(upload_type):
                                 os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                             except:
                                 pass
+                            db.session.delete(upload)
+                            db.session.commit()                                
                             return redirect(url_for('upload_file', upload_type='data'))
                     else:
                         flash('При обработке файла возникли ошибки!')
@@ -495,6 +515,13 @@ def upload_file(upload_type):
             flash('Файл не выбран, либо некорректное расширение. Доступные расширения:'+str(app.config['ALLOWED_EXTENSIONS']))
     return render_template('upload_file.html',title='Загрузка файла',form=form,descr=descr)
 
+
+def class_has_other_names(class_id):
+    res = False
+    names = Insclass_all_names.query.filter(Insclass_all_names.insclass_id==class_id).all()
+    if len(names)>1:
+        res = True
+    return res
 
 def company_has_other_names(company_id):
     res = False
@@ -529,7 +556,7 @@ def dictionary_values():
     return render_template('dictionary_values.html',title='Просмотр справочников',form=form, \
         show_companies=show_companies,show_classes=show_classes,show_indicators=show_indicators, \
         companies=companies,insclasses=insclasses,indicators=indicators, \
-        company_has_other_names=company_has_other_names)
+        company_has_other_names=company_has_other_names,class_has_other_names=class_has_other_names)
 
 
 @app.route('/add_new_company_name/<company_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
@@ -548,6 +575,26 @@ def add_new_company_name(company_id=None):
         flash('Новое наименование добавлено')
         return redirect(url_for('add_new_company_name', company_id=company_id))
     return render_template('company_all_names.html',company_name=company_name,all_names=all_names, \
+                            form=form)
+
+
+@app.route('/add_new_class_name/<class_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def add_new_class_name(class_id=None):
+    insclass = Insclass.query.filter(Insclass.id==class_id).first()
+    class_name = insclass.alias
+    all_names = Insclass_all_names.query.filter(Insclass_all_names.insclass_id==class_id).all()
+    form = AddNewClassName()
+    if form.validate_on_submit():
+        new_name = form.name.data
+        new_fullname = form.fullname.data
+        c_all_names = Insclass_all_names(name=new_name,fullname=new_fullname,insclass_id=class_id)
+        db.session.add(c_all_names)
+        db.session.commit()
+        flash('Новое наименование добавлено')
+        return redirect(url_for('add_new_class_name', class_id=class_id))
+    return render_template('class_all_names.html',class_name=class_name,all_names=all_names, \
                             form=form)
 
 
