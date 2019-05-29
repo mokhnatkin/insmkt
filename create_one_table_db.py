@@ -36,6 +36,6 @@ class Insclass_all_names(db.Model):#все наименования классо
         return '<InsclassAllName {}>'.format(self.name)
 
 
-Insclass_all_names.__table__.drop(db.session.bind)
-#Insclass.__table__.create(db.session.bind, checkfirst=True)
+#Insclass.__table__.drop(db.session.bind)
+Insclass.__table__.create(db.session.bind, checkfirst=True)
 #Insclass_all_names.__table__.create(db.session.bind, checkfirst=True)
