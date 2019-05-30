@@ -495,7 +495,7 @@ def upload_file(upload_type):
                     if process_res:
                         try:
                             N_rows, rand_rows = check_process_file_res(form.data_type.data,form.report_date.data)
-                            flash('Файл загружен и обоработан. Проверьте результаты загруки и произведите перерасчёт!')
+                            flash('Файл загружен и обработан. Проверьте результаты загруки и произведите перерасчёт!')
                             flash('Результаты загрузки: создано записей ' + str(N_rows) + '. Проверьте случайные записи из числа созданных:')
                             for r in rand_rows:
                                 flash('---' + str(r))
@@ -931,7 +931,8 @@ def company_profile():#портрет компании
     b = g.min_report_date
     e = g.last_report_date
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
-        form.begin_d.data = g.min_report_date
+        beg_this_year = datetime(g.last_report_date.year,1,1)
+        form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
@@ -1137,15 +1138,15 @@ def create_plot(c_id,plot_type,b,e):#plots pie chart for a given company
         for i,j in zip(labels,values):
             ax.annotate(str(j),xy=(i,j))
     elif plot_type == 'net_prem':
-        ax.set_title('Помесячная динамика чистых премий, тыс.тг.')
+        ax.set_title('Помесячная динамика чистых премий, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(round(j)),xy=(i,j))
     elif plot_type == 'equity':
-        ax.set_title('Помесячная динамика собственного капитала, тыс.тг.')
+        ax.set_title('Помесячная динамика собственного капитала, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(round(j)),xy=(i,j))
     elif plot_type == 'reserves':
-        ax.set_title('Помесячная динамика страховых резервов, тыс.тг.')
+        ax.set_title('Помесячная динамика страховых резервов, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(round(j)),xy=(i,j))
     return fig
@@ -1177,7 +1178,7 @@ def get_data_for_plot(company_id,plot_type,b,e):
         for el in net_prem:
             label = str(el.beg_date.year) + '-' +str(el.beg_date.month)
             labels.append(label)
-            values.append(el.value)
+            values.append(el.value/1000)
     elif plot_type =='equity':
         _eq_id = Indicator.query.filter(Indicator.name == 'equity').first()
         eq_id = _eq_id.id
@@ -1189,7 +1190,7 @@ def get_data_for_plot(company_id,plot_type,b,e):
         for el in equity:
             label = str(el.report_date.year) + '-' +str(el.report_date.month)
             labels.append(label)
-            values.append(el.value)
+            values.append(el.value/1000)
     elif plot_type =='reserves':
         _rs_id = Indicator.query.filter(Indicator.name == 'reserves').first()
         rs_id = _rs_id.id
@@ -1201,7 +1202,7 @@ def get_data_for_plot(company_id,plot_type,b,e):
         for el in equity:
             label = str(el.report_date.year) + '-' +str(el.report_date.month)
             labels.append(label)
-            values.append(el.value)            
+            values.append(el.value/1000)            
     return labels, values
 
 
@@ -1311,21 +1312,21 @@ def create_plot_for_class(c_id,b,e,chart_type):#plots pie chart for a given comp
     values_claim = list()    
     for el in class_info:
         labels.append(el['month_name'])
-        values_prem.append(round(el['premium']))
-        values_claim.append(round(el['claim']))        
+        values_prem.append(round(el['premium']/1000))
+        values_claim.append(round(el['claim']/1000))        
     #plot chart depending on chart_type
     if chart_type == 'prem':
         values = values_prem
         fig, ax = plt.subplots()
         ax.plot(labels, values)
-        ax.set_title('Помесячная динамика премий, тыс.тг.')
+        ax.set_title('Помесячная динамика премий, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(j),xy=(i,j))
     elif chart_type == 'claim':
         values = values_claim
         fig, ax = plt.subplots()
         ax.plot(labels, values)
-        ax.set_title('Помесячная динамика выплат, тыс.тг.')
+        ax.set_title('Помесячная динамика выплат, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(round(j)),xy=(i,j))    
     return fig
@@ -1345,7 +1346,8 @@ def class_profile():#инфо по классу
     img_path_prem = None
     img_path_claim = None    
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
-        form.begin_d.data = g.min_report_date
+        beg_this_year = datetime(g.last_report_date.year,1,1)
+        form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
@@ -1395,7 +1397,8 @@ def peers_review():#сравнение с конкурентами
     b = g.min_report_date
     e = g.last_report_date
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
-        form.begin_d.data = g.min_report_date
+        beg_this_year = datetime(g.last_report_date.year,1,1)
+        form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
@@ -1573,7 +1576,8 @@ def ranking():
     lr_list = None
     lr_list_len = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
-        form.begin_d.data = g.min_report_date
+        beg_this_year = datetime(g.last_report_date.year,1,1)
+        form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)

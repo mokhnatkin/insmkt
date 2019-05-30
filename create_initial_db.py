@@ -50,7 +50,7 @@ class Company(db.Model):#страховая компания
     claims = db.relationship('Claim',backref='company',lazy='dynamic')
     financials_per_month = db.relationship('Financial_per_month',backref='company',lazy='dynamic')
     premiums_per_month = db.relationship('Premium_per_month',backref='company',lazy='dynamic')
-    claims_per_month = db.relationship('Claim_per_month',backref='company',lazy='dynamic')    
+    claims_per_month = db.relationship('Claim_per_month',backref='company',lazy='dynamic')
     all_names = db.relationship('Company_all_names',backref='company',lazy='dynamic')
 
     def __repr__(self):
@@ -78,10 +78,21 @@ class Insclass(db.Model):#класс страхования
     premiums = db.relationship('Premium',backref='insclass',lazy='dynamic')
     claims = db.relationship('Claim',backref='insclass',lazy='dynamic')
     premiums_per_month = db.relationship('Premium_per_month',backref='insclass',lazy='dynamic')
-    claims_per_month = db.relationship('Claim_per_month',backref='insclass',lazy='dynamic')    
+    claims_per_month = db.relationship('Claim_per_month',backref='insclass',lazy='dynamic')
+    all_names = db.relationship('Insclass_all_names',backref='insclass',lazy='dynamic')
 
     def __repr__(self):
         return '<Class {}>'.format(self.name)
+
+
+class Insclass_all_names(db.Model):#все наименования классов
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(128),index=True,unique=True)
+    fullname = db.Column(db.String(256))
+    insclass_id = db.Column(db.Integer,db.ForeignKey('insclass.id'))
+
+    def __repr__(self):
+        return '<InsclassAllName {}>'.format(self.name)
 
 
 class Indicator(db.Model):#класс страхования
