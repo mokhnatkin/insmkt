@@ -181,8 +181,14 @@ def user(username):
 @login_required
 @required_roles('admin')
 def users():
-    users = User.query.all()
-    return render_template('users.html',users=users)
+    users = None
+    users_len = 0
+    try:
+        users = User.query.all()
+        users_len = len(users)
+    except:
+        pass
+    return render_template('users.html',users=users,users_len=users_len)
 
 @app.route('/files')#список загруженных файлов
 @login_required

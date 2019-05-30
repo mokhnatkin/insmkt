@@ -5,19 +5,23 @@
 <div>
     <table class="table table-hover">
         <tr>
+            <th>N</th>
             <th>Логин</th>
             <th>Роль</th>
             <th>e-mail</th>
             <th>Последний вход</th>
         </tr>
-        {% for user in users %}
-        <tr>
-            <td><a href="{{ url_for('user',username=user.username) }}">{{ user.username }}</a></td>
-            <td>{{ user.role }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ moment(user.last_seen).format('LLL') }} </td>            
-        </tr>
-        {% endfor %}
+        {% if users_len>0 %}
+            {% for rownum in range(users_len) %}
+                <tr>
+                    <td>{{ rownum + 1 }}</td>
+                    <td><a href="{{ url_for('user',username=users[rownum].username) }}">{{ users[rownum].username }}</a></td>
+                    <td>{{ users[rownum].role }}</td>
+                    <td>{{ users[rownum].email }}</td>
+                    <td>{{ moment(users[rownum].last_seen).format('LLL') }} </td>            
+                </tr>
+            {% endfor %}
+        {% endif %}
     </table>
 </div>
 
