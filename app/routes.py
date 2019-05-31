@@ -955,9 +955,17 @@ def company_profile():#портрет компании
         img_path_equity = base_img_path + "/equity"
         img_path_reserves = base_img_path + "/reserves"
         #подготовим данные для таблиц
-        peers = Company.query.with_entities(Company.id).filter(Company.nonlife==True).all()#list of non-life companies
-        company_name, balance_indicators, flow_indicators = show_company_profile(int(form.company.data),peers,b,e,None)
-        other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
+        try:
+            peers = Company.query.with_entities(Company.id).filter(Company.nonlife==True).all()#list of non-life companies
+        except:
+            flash('Не могу получить список компаний с сервера. Проверьте справочник Компаний или обратитесь к администратору')
+            return redirect(url_for('company_profile'))
+        try:
+            company_name, balance_indicators, flow_indicators = show_company_profile(int(form.company.data),peers,b,e,None)
+            other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
+        except:
+            flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
+            return redirect(url_for('company_profile'))
         show_charts = True
         if len(other_financial_indicators) > 0:
             show_other_financial_indicators = True        
@@ -1362,9 +1370,13 @@ def class_profile():#инфо по классу
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         class_id = int(form.insclass.data)
-        class_name, class_companies = get_class_companies(class_id,b,e)#информация по компаниям
+        try:
+            class_name, class_companies = get_class_companies(class_id,b,e)#информация по компаниям по выбранному классу
+            class_info = get_class_info(class_id,b,e)
+        except:
+            flash('Не могу получить информацию с сервера. Возможно, данные по выбранному классу за заданный период отсутствуют. Попробуйте задать другой период.')
+            return redirect(url_for('class_profile'))
         class_companies_len = len(class_companies)
-        class_info = get_class_info(class_id,b,e)
         #базовый путь к графикам
         base_img_path = "/chart_for_class.png/" + form.insclass.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')
         img_path_prem = base_img_path + "/prem"
@@ -1418,9 +1430,13 @@ def peers_review():#сравнение с конкурентами
         peers = list()
         for c in peers_str:#convert id to int
             peers.append((int(c),))
-        company_name, balance_indicators, flow_indicators = show_company_profile(c_id,peers,b,e,len(peers))
-        other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
-        peers_names = get_peers_names(peers)
+        try:
+            company_name, balance_indicators, flow_indicators = show_company_profile(c_id,peers,b,e,len(peers))
+            other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
+            peers_names = get_peers_names(peers)
+        except:
+            flash('Не могу получить информацию с сервера. Возможно, данные по выбранным компаниям за заданный период отсутствуют. Попробуйте задать другой период.')
+            return redirect(url_for('peers_review'))            
         if len(other_financial_indicators) > 0:
             show_other_financial_indicators = True
         if len(balance_indicators) > 0:
