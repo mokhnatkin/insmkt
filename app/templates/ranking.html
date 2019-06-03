@@ -13,116 +13,172 @@
                 {{ wtf.quick_form(form) }}
             </div>
         </div>
-    {% if net_premiums %}
-    <div>
-        <h2>Чистые премии</h2>
-        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания</th>
-                    <th align="right">Чистые премии, тыс.тг.</th>
-                </tr>
-                {% for rownum in range(net_premiums_len) %}
-                    <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ net_premiums[rownum].alias }}</td>
-                        <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                {% if net_premiums %}
+                    <div>
+                        <h2>Чистые премии</h2>
+                        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                        <p><i>Компании отсортированы по убыванию по чистым премиям</i></p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tr>
+                                    <th>N</th>
+                                    <th>Компания</th>
+                                    <th align="right">Чистые премии, тыс.тг.</th>
+                                    <th align="right">Доля, %</th>
+                                </tr>
+                                {% for rownum in range(net_premiums_len) %}
+                                    <tr>
+                                        <td>{{ rownum + 1 }}</td>
+                                        <td>{{ net_premiums[rownum].alias }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
+                                        <td align="right">{{ net_premiums[rownum].share }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td></td>
+                                    <td><b>ИТОГО</b></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total) }}</b></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                {% if lr_list %}
+                        <div>
+                        <h2>Коэффициент выплат</h2>
+                        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                        <p><i>Компании отсортированы по убыванию по чистым премиям</i></p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tr>
+                                    <th>N</th>
+                                    <th>Компания</th>
+                                    <th align="right">Коэффициент выплат, %</th>
+                                </tr>
+                                {% for rownum in range(lr_list_len) %}
+                                    <tr>
+                                        <td>{{ rownum + 1 }}</td>
+                                        <td>{{ lr_list[rownum].company_name }}</td>
+                                        <td align="right">{{ lr_list[rownum].lr }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td></td>
+                                    <td><b>Среднее</b></td>
+                                    <td align="right"><b>{{ lr_av }}</b></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    </div>    
-    {% endif %}
-    {% if netincome %}
-    <div>
-        <h2>Прибыль (убыток)</h2>
-        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания</th>
-                    <th align="right">Прибыль (убыток), тыс.тг.</th>
-                </tr>
-                {% for rownum in range(netincome_len) %}
-                <tr>
-                    <td>{{ rownum + 1 }}</td>
-                    <td>{{ netincome[rownum].alias }}</td>
-                    <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                {% if netincome %}
+                    <div>
+                        <h2>Прибыль (убыток)</h2>
+                        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                        <p><i>Показаны все компании, у которых была прибыль (убыток) за заданный период</i></p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tr>
+                                    <th>N</th>
+                                    <th>Компания</th>
+                                    <th align="right">Прибыль (убыток), тыс.тг.</th>
+                                    <th align="right">Доля, %</th>
+                                </tr>
+                                {% for rownum in range(netincome_len) %}
+                                <tr>
+                                    <td>{{ rownum + 1 }}</td>
+                                    <td>{{ netincome[rownum].alias }}</td>
+                                    <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
+                                    <td align="right">{{ netincome[rownum].share }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td></td>
+                                    <td><b>ИТОГО</b></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(netincome_total) }}</b></td>
+                                    <td></td>
+                                </tr>                                
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                {% if equity %}
+                    <div>
+                        <h2>Собственный капитал</h2>
+                        <p>на {{ moment(e).format('LL') }}</p>
+                        <p><i>Показаны те компании, которые действуют на указанную дату</i></p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tr>
+                                    <th>N</th>
+                                    <th>Компания</th>
+                                    <th align="right">Собственный капитал, тыс.тг.</th>
+                                    <th align="right">Доля, %</th>
+                                </tr>
+                                {% for rownum in range(equity_len) %}
+                                    <tr>
+                                        <td>{{ rownum + 1 }}</td>
+                                        <td>{{ equity[rownum].alias }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
+                                        <td>{{ equity[rownum].share }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td></td>
+                                    <td><b>ИТОГО</b></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(equity_total) }}</b></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    </div>    
-    {% endif %}
-    {% if equity %}
-    <div>
-        <h2>Собственный капитал</h2>
-        <p>на {{ moment(e).format('LL') }}</p>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания</th>
-                    <th align="right">Собственный капитал, тыс.тг.</th>
-                </tr>
-                {% for rownum in range(equity_len) %}
-                    <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ equity[rownum].alias }}</td>
-                        <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                {% if solvency_margin %}
+                    <div>
+                        <h2>Норматив ФМП</h2>
+                        <p>на {{ moment(e).format('LL') }}</p>
+                        <p><i>Показаны те компании, которые действуют на указанную дату</i></p>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                <tr>
+                                    <th>N</th>
+                                    <th>Компания</th>
+                                    <th align="right">Норматив ФМП</th>
+                                </tr>
+                                {% for rownum in range(solvency_margin_len) %}
+                                    <tr>
+                                        <td>{{ rownum + 1 }}</td>
+                                        <td>{{ solvency_margin[rownum].alias }}</td>
+                                        <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td></td>
+                                    <td><b>Среднее</b></td>
+                                    <td align="right"><b>{{ solvency_margin_av }}</b></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    </div>    
-    {% endif %}
-    {% if lr_list %}
-    <div>
-        <h2>Коэффициент выплат</h2>
-        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-        <p><i>Компании отсортированы по убыванию по чистым премиям</i></p>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания</th>
-                    <th align="right">Коэффициент выплат (чистые выплаты / чистые премии), %</th>
-                </tr>
-                {% for rownum in range(lr_list_len) %}
-                    <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ lr_list[rownum].company_name }}</td>
-                        <td align="right">{{ lr_list[rownum].lr }}</td> <!--"{:,.1f}".format(lr_list[rownum].lr)-->
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>    
-    {% endif %}
-    {% if solvency_margin %}
-    <div>
-        <h2>Норматив ФМП</h2>
-        <p>на {{ moment(e).format('LL') }}</p>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания</th>
-                    <th align="right">Норматив ФМП</th>
-                </tr>
-                {% for rownum in range(solvency_margin_len) %}
-                    <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ solvency_margin[rownum].alias }}</td>
-                        <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>    
-    {% endif %}    
-
+    </div>
 {% endblock %}

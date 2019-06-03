@@ -21,24 +21,38 @@
             <p><i>В списке отображаются только те компании, у которых были премии или выплаты по классу {{ class_name }} за выбранный период</i></p>
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <tr>
-                        <th>N</th>
-                        <th>Компания</th>
-                        <th align="right">Премии, тыс.тг.</th>
-                        <th align="right">Доля рынка, %</th>
-                        <th align="right">Выплаты, тыс.тг.</th>
-                        <th align="right">Коэффициент выплат, %</th>
-                    </tr>
-                    {% for rownum in range(class_companies_len) %}
+                    <thead>
                         <tr>
-                            <td>{{ rownum + 1 }}</td>
-                            <td>{{ class_companies[rownum].name }}</td>
-                            <td align="right">{{ "{:,.0f}".format(class_companies[rownum].premium) }}</td>
-                            <td align="right">{{ class_companies[rownum].share }}</td>
-                            <td align="right">{{ "{:,.0f}".format(class_companies[rownum].claim) }}</td>
-                            <td align="right">{{ class_companies[rownum].lr }}</td>
+                            <th>N</th>
+                            <th>Компания</th>
+                            <th align="right">Премии, тыс.тг.</th>
+                            <th align="right">Доля рынка, %</th>
+                            <th align="right">Выплаты, тыс.тг.</th>
+                            <th align="right">Коэффициент выплат, %</th>
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                        {% for rownum in range(class_companies_len) %}
+                            <tr>
+                                <td>{{ rownum + 1 }}</td>
+                                <td>{{ class_companies[rownum].name }}</td>
+                                <td align="right">{{ "{:,.0f}".format(class_companies[rownum].premium) }}</td>
+                                <td align="right">{{ class_companies[rownum].share }}</td>
+                                <td align="right">{{ "{:,.0f}".format(class_companies[rownum].claim) }}</td>
+                                <td align="right">{{ class_companies[rownum].lr }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td><b>ИТОГО</b></td>
+                            <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_p) }}</b></td>
+                            <td></td>
+                            <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_c) }}</b></td>
+                            <td align="right"><b>{{ class_totals.total_lr }}</b></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
