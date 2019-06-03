@@ -50,15 +50,20 @@
             <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
             <p><i>Информация по всем компаниям</i></p>
             <div class="container">
-                <div align="center"><h2>Премии по месяцам</h2>
-                    <img src="{{ img_path_prem }}" style="max-width:100%" alt="premium plot">
+                <div class="row">
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                        <div align="center"><h2>Премии по месяцам</h2>
+                            <img src="{{ img_path_prem }}" style="max-width:100%" alt="premium plot">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                        <div align="center"><h2>Выплаты по месяцам</h2>
+                            <img src="{{ img_path_claim }}" style="max-width:100%" alt="claim plot">
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="container">
-                <div align="center"><h2>Выплаты по месяцам</h2>
-                    <img src="{{ img_path_claim }}" style="max-width:100%" alt="claim plot">
-                </div>
-            </div>
+
             <h2>Коэффициент выплат по месяцам</h2>
             <div class="table-responsive">
                 <table class="table table-hover">

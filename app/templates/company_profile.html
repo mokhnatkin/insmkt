@@ -25,7 +25,7 @@
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}, тыс.тг.</th>
                         <th align="right">Всего по non-life рынку, тыс.тг.</th>
-                        <th align="right">Среднее арифметическое по non-life рынку, тыс.тг.</th>
+                        <th align="right">Среднее по non-life рынку, тыс.тг.</th>
                         <th align="right">Доля %</th>
                     </tr>
                     {% for ind in balance_indicators %}
@@ -65,7 +65,7 @@
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}, тыс.тг.</th>
                         <th align="right">Всего по non-life рынку, тыс.тг.</th>
-                        <th align="right">Среднее арифметическое по non-life рынку, тыс.тг.</th>
+                        <th align="right">Среднее по non-life рынку, тыс.тг.</th>
                         <th align="right">Доля %</th>
                     </tr>
                     {% for ind in flow_indicators %}
@@ -97,7 +97,7 @@
                     <tr>
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}</th>
-                        <th align="right">Среднее значение по non-life рынку</th>
+                        <th align="right">Среднее по non-life рынку</th>
                     </tr>
                     {% for ind in other_financial_indicators %}
                         <tr>
@@ -110,42 +110,82 @@
             </div>
     {% endif %}
 
+    {% if show_premiums %}
+    <div align="center">
+        <h2>Страховой портфель</h2>
+        <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+        <p><i>В списке отображаются только те классы, по которым были премии или выплаты {{ class_name }} за выбранный период</i></p>        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>
+                    <th>Класс</th>
+                    <th align="right">Премии, тыс.тг.</th>
+                    <th align="right">Выплаты, тыс.тг.</th>
+                    <th align="right">Коэффициент выплат, %</th>
+                </tr>
+                {% for p in premiums %}
+                    <tr>
+                        <td>{{ p.name }}</td>
+                        <td>{{ "{:,.0f}".format(p.premium) }}</td>
+                        <td>{{ "{:,.0f}".format(p.claim) }}</td>
+                        <td>{{ p.LR }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% endif %}
+
     {% if show_charts %}
     <div class="container">
-        <div align="center"><h2>Разбивка премий по продуктам</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <img src="{{ img_path_premiums_by_LoB_pie }}" style="max-width:100%" alt="Premium LoB pie plot">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                <div align="center"><h2>Разбивка премий по продуктам</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                    <img src="{{ img_path_premiums_by_LoB_pie }}" style="max-width:100%" alt="Premium LoB pie plot">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12">                
+                <div align="center"><h2>Коэффициент выплат по продуктам</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                    <img src="{{ img_path_lr_by_LoB }}" style="max-width:100%" alt="LR LoB plot">
+                </div>
+            </div>            
         </div>
     </div>
+
     <div class="container">
-        <div align="center"><h2>Коэффициент выплат по продуктам</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <img src="{{ img_path_lr_by_LoB }}" style="max-width:100%" alt="LR LoB plot">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                <div align="center"><h2>Динамика изменения собственного капитала</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                    <img src="{{ img_path_equity }}" style="max-width:100%" alt="equity plot">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                <div align="center"><h2>Динамика изменения страховых резервов</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                    <img src="{{ img_path_reserves }}" style="max-width:100%" alt="equity plot">
+                </div>
+            </div>
         </div>
     </div>
+
     <div class="container">
-        <div align="center"><h2>Динамика изменения собственного капитала</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <img src="{{ img_path_equity }}" style="max-width:100%" alt="equity plot">
+        <div class="row">
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                <div align="center"><h2>Динамика норматива фактической маржи платежеспособности</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+                    <img src="{{ img_path_solvency_margin }}" style="max-width:100%" alt="solvency margin plot">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12">
+                <div align="center"><h2>Чистые премии по месяцам</h2>
+                    <img src="{{ img_path_net_premium }}" style="max-width:100%" alt="net premium plot">
+                </div>
+            </div>
         </div>
     </div>
-    <div class="container">
-        <div align="center"><h2>Динамика изменения страховых резервов</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <img src="{{ img_path_reserves }}" style="max-width:100%" alt="equity plot">
-        </div>
-    </div>    
-    <div class="container">
-        <div align="center"><h2>Динамика норматива фактической маржи платежеспособности</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <img src="{{ img_path_solvency_margin }}" style="max-width:100%" alt="solvency margin plot">
-        </div>
-    </div>
-    <div class="container">
-        <div align="center"><h2>Чистые премии по месяцам</h2>
-            <img src="{{ img_path_net_premium }}" style="max-width:100%" alt="net premium plot">
-        </div>
-    </div>
+
     {% endif %}
     
 {% endblock %}

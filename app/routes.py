@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 import os
 import re
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import io
@@ -859,7 +860,46 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
         ind['total'] = total_v
         ind['mkt_av'] = round(total_v / c_N,2)
         ind['share'] = (ind["value"] / total_v)*100#market share
-    return company_name, balance_indicators, flow_indicators
+    #now premium by class
+    premiums = list()
+    prem_per_m = list()
+    claim_per_m = list()
+    insclasses = Insclass.query.all()
+    for month in months:
+        begin = month['begin']
+        end = month['end']
+        prem_m = Premium_per_month.query \
+                    .with_entities(Premium_per_month.value,Premium_per_month.insclass_id) \
+                    .filter(Premium_per_month.company_id == company_id) \
+                    .filter(Premium_per_month.beg_date == begin) \
+                    .filter(Premium_per_month.end_date == end).all()
+        for i in prem_m:
+            prem_per_m.append({'insclass_id':i.insclass_id,'premium':i.value})
+        claim_m = Claim_per_month.query \
+                    .with_entities(Claim_per_month.value,Claim_per_month.insclass_id) \
+                    .filter(Claim_per_month.company_id == company_id) \
+                    .filter(Claim_per_month.beg_date == begin) \
+                    .filter(Claim_per_month.end_date == end).all()
+        for i in claim_m:
+            claim_per_m.append({'insclass_id':i.insclass_id,'claim':i.value})
+    for cl in insclasses:
+        total_prem = 0.0
+        total_claim = 0.0
+        for p in prem_per_m:
+            if cl.id == p['insclass_id']:
+                total_prem += p['premium']
+        for c in claim_per_m:
+            if cl.id == c['insclass_id']:
+                total_claim += c['claim']
+        if total_prem>0.0:
+            LR = round(total_claim / total_prem * 100,2)
+        else:
+            LR = 'N.A.'
+        if total_prem>0.0 or total_claim>0.0:
+            premiums.append({'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
+    premiums.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию премий
+    return company_name, balance_indicators, flow_indicators, premiums
+
 
 def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#расчет других фин. показателей
     other_financial_indicators = list()
@@ -927,9 +967,11 @@ def company_profile():#портрет компании
     show_balance = False
     show_income_statement = False
     show_other_financial_indicators = False
+    show_premiums = False
     img_path_premiums_by_LoB_pie =None
     img_path_lr_by_LoB = None
     company_name = None
+    premiums = None
     img_path_solvency_margin = None
     img_path_net_premium = None
     img_path_equity = None
@@ -961,7 +1003,7 @@ def company_profile():#портрет компании
             flash('Не могу получить список компаний с сервера. Проверьте справочник Компаний или обратитесь к администратору')
             return redirect(url_for('company_profile'))
         try:
-            company_name, balance_indicators, flow_indicators = show_company_profile(int(form.company.data),peers,b,e,None)
+            company_name, balance_indicators, flow_indicators, premiums = show_company_profile(int(form.company.data),peers,b,e,None)
             other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
         except:
             flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
@@ -973,6 +1015,8 @@ def company_profile():#портрет компании
             show_balance = True
         if len(flow_indicators) > 0:
             show_income_statement = True
+        if len(premiums) > 0:
+            show_premiums = True
     return render_template('company_profile.html',title='Портрет компании',form=form,descr=descr,company_name=company_name, \
                 balance_indicators=balance_indicators, flow_indicators=flow_indicators, \
                 show_charts=show_charts,img_path_premiums_by_LoB_pie=img_path_premiums_by_LoB_pie, \
@@ -980,7 +1024,7 @@ def company_profile():#портрет компании
                 img_path_net_premium=img_path_net_premium,b=b,e=e,show_other_financial_indicators=show_other_financial_indicators, \
                 show_balance=show_balance,show_income_statement=show_income_statement, \
                 img_path_equity=img_path_equity,other_financial_indicators=other_financial_indicators, \
-                img_path_reserves=img_path_reserves)
+                img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums)
 
 
 @app.route('/chart.png/<c_id>/<begin>/<end>/<chart_type>')#plot chart for a given company (id = c_id) and chart type, and given period
@@ -1163,6 +1207,7 @@ def create_plot(c_id,plot_type,b,e):#plots pie chart for a given company
         ax.set_title('Помесячная динамика страховых резервов, млн.тг.')
         for i,j in zip(labels,values):
             ax.annotate(str(round(j)),xy=(i,j))
+    fig.autofmt_xdate()
     return fig
 
 
@@ -1342,7 +1387,8 @@ def create_plot_for_class(c_id,b,e,chart_type):#plots pie chart for a given comp
         ax.plot(labels, values)
         ax.set_title('Помесячная динамика выплат, млн.тг.')
         for i,j in zip(labels,values):
-            ax.annotate(str(round(j)),xy=(i,j))    
+            ax.annotate(str(round(j)),xy=(i,j))
+    fig.autofmt_xdate()
     return fig
 
 
@@ -1431,7 +1477,7 @@ def peers_review():#сравнение с конкурентами
         for c in peers_str:#convert id to int
             peers.append((int(c),))
         try:
-            company_name, balance_indicators, flow_indicators = show_company_profile(c_id,peers,b,e,len(peers))
+            company_name, balance_indicators, flow_indicators, premiums = show_company_profile(c_id,peers,b,e,len(peers))
             other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
             peers_names = get_peers_names(peers)
         except:
