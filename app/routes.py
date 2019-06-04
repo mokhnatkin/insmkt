@@ -981,7 +981,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
         else:
             LR = 'N.A.'
         if total_prem>0.0 or total_claim>0.0:
-            premiums.append({'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
+            premiums.append({'id':cl.id, 'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
     premiums.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию премий
     return company_name, balance_indicators, flow_indicators, premiums, peers_names_arr
 
@@ -1114,6 +1114,17 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
     return other_financial_indicators
 
 
+def is_id_in_premiums_arr(_id, _arr):
+    arr = list()
+    for el in _arr:
+        cur_id = el['id']
+        arr.append(cur_id)
+    if _id in arr:
+        res = True
+    else:
+        res = False
+    return res
+
 @app.route('/company_profile',methods=['GET','POST'])
 @login_required
 def company_profile():#портрет компании
@@ -1122,6 +1133,9 @@ def company_profile():#портрет компании
     balance_indicators = list()
     flow_indicators = list()
     other_financial_indicators = list()
+    balance_indicators_l_y = list()
+    flow_indicators_l_y = list()
+    other_financial_indicators_l_y = list()    
     show_charts = False
     show_balance = False
     show_income_statement = False
@@ -1131,10 +1145,12 @@ def company_profile():#портрет компании
     img_path_lr_by_LoB = None
     company_name = None
     premiums = None
+    premiums_l_y = None
     img_path_solvency_margin = None
     img_path_net_premium = None
     img_path_equity = None
     img_path_reserves = None
+    show_last_year = False
     b = g.min_report_date
     e = g.last_report_date
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
@@ -1147,6 +1163,10 @@ def company_profile():#портрет компании
         e = form.end_d.data
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
+        show_last_year = form.show_last_year.data
+        #аналогичный период прошлого года
+        b_l_y = datetime(b.year-1,b.month,1)
+        e_l_y = datetime(e.year-1,e.month,1)
         #зададим пути к диаграммам
         base_img_path = "/chart.png/" + form.company.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')
         img_path_premiums_by_LoB_pie = base_img_path + "/premiums_lob"
@@ -1160,10 +1180,17 @@ def company_profile():#портрет компании
             peers = Company.query.with_entities(Company.id).filter(Company.nonlife==True).all()#list of non-life companies
         except:
             flash('Не могу получить список компаний с сервера. Проверьте справочник Компаний или обратитесь к администратору')
-            return redirect(url_for('company_profile'))        
+            return redirect(url_for('company_profile'))
         try:
             company_name, balance_indicators, flow_indicators, premiums, peers_names_arr = show_company_profile(int(form.company.data),peers,b,e,None,False)
             other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
+            if show_last_year == True:
+                try:
+                    company_name_l_y, balance_indicators_l_y, flow_indicators_l_y, premiums_l_y, peers_names_arr_l_y = show_company_profile(int(form.company.data),peers,b_l_y,e_l_y,None,False)
+                    other_financial_indicators_l_y = get_other_financial_indicators(balance_indicators_l_y,flow_indicators_l_y,b_l_y,e_l_y)
+                except:
+                    flash('Не могу получить данные за прошлый год')
+                    return redirect(url_for('company_profile'))
         except:
             flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
             return redirect(url_for('company_profile'))
@@ -1183,7 +1210,10 @@ def company_profile():#портрет компании
                 img_path_net_premium=img_path_net_premium,b=b,e=e,show_other_financial_indicators=show_other_financial_indicators, \
                 show_balance=show_balance,show_income_statement=show_income_statement, \
                 img_path_equity=img_path_equity,other_financial_indicators=other_financial_indicators, \
-                img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums)
+                img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums, \
+                show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
+                balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
+                premiums_l_y=premiums_l_y,round=round,is_id_in_premiums_arr=is_id_in_premiums_arr)
 
 
 @app.route('/chart.png/<c_id>/<begin>/<end>/<chart_type>')#plot chart for a given company (id = c_id) and chart type, and given period

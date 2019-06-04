@@ -27,6 +27,10 @@
                         <th align="right">Всего по non-life рынку, тыс.тг.</th>
                         <th align="right">Среднее по non-life рынку, тыс.тг.</th>
                         <th align="right">Доля %</th>
+                        {% if show_last_year %}
+                            <th align="right">Значение по {{ company_name }} за аналогичный период прошлого года, тыс.тг.</th>
+                            <th align="right">{{ company_name }}: изменение по сравнению с аналогичным периодом прошлого года, %</th>
+                        {% endif %}
                     </tr>
                     {% for ind in balance_indicators %}
                     <tr>
@@ -36,6 +40,14 @@
                             <td align="right">N.A.</td>
                             <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>
                             <td align="right">N.A.</td>
+                            {% if show_last_year %}
+                                {% for ind_l_y in balance_indicators_l_y %}
+                                    {% if ind_l_y.id == ind.id %}
+                                        <td align="right">{{ "{:,.2f}".format(ind_l_y.value) }}</td>
+                                        <td align="right">{{ ind.value-ind_l_y.value }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
                             <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
                             <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
@@ -47,6 +59,14 @@
                                     N.A.
                                 {% endif %}
                             </td>
+                            {% if show_last_year %}
+                                {% for ind_l_y in balance_indicators_l_y %}
+                                    {% if ind_l_y.id == ind.id %}
+                                        <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>
+                                        <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -67,6 +87,10 @@
                         <th align="right">Всего по non-life рынку, тыс.тг.</th>
                         <th align="right">Среднее по non-life рынку, тыс.тг.</th>
                         <th align="right">Доля %</th>
+                        {% if show_last_year %}
+                            <th align="right">Значение по {{ company_name }} за аналогичный период прошлого года, тыс.тг.</th>
+                            <th align="right">{{ company_name }}: изменение по сравнению с аналогичным периодом прошлого года, %</th>
+                        {% endif %}
                     </tr>
                     {% for ind in flow_indicators %}
                     <tr>
@@ -81,6 +105,14 @@
                                 N.A.
                             {% endif %}
                         </td>
+                        {% if show_last_year %}
+                            {% for ind_l_y in flow_indicators_l_y %}
+                                {% if ind_l_y.id == ind.id %}
+                                    <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>
+                                    <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </table>
@@ -98,12 +130,28 @@
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}</th>
                         <th align="right">Среднее по non-life рынку</th>
+                        {% if show_last_year %}
+                            <th align="right">Значение по {{ company_name }} за аналогичный период прошлого года</th>
+                            <th align="right">{{ company_name }}: изменение по сравнению с аналогичным периодом прошлого года</th>
+                        {% endif %}
                     </tr>
                     {% for ind in other_financial_indicators %}
                         <tr>
                             <td>{{ ind.name }}</td>
                             <td>{{ ind.value_c }}</td>
                             <td>{{ ind.value_m }}</td>
+                            {% if show_last_year %}
+                                {% for ind_l_y in other_financial_indicators_l_y %}
+                                    {% if ind_l_y.name == ind.name %}
+                                        <td align="right">{{ ind_l_y.value_c }}</td>
+                                        {% if ind_l_y.value_c != 'N.A.' and ind.value_c != 'N.A.' %}
+                                            <td align="right">{{ round(ind.value_c-ind_l_y.value_c,2) }}</td>
+                                        {% else %}
+                                        <td align="right">N.A.</td>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         </tr>
                     {% endfor %}
                 </table>
@@ -122,13 +170,71 @@
                     <th align="right">Премии, тыс.тг.</th>
                     <th align="right">Выплаты, тыс.тг.</th>
                     <th align="right">Коэффициент выплат, %</th>
+                    {% if show_last_year %}
+                        <th align="right">Премии за аналогичный период прошлого года, тыс.тг.</th>
+                        <th align="right">Выплаты за аналогичный период прошлого года, тыс.тг.</th>
+                        <th align="right">Коэффициент выплат за аналогичный период прошлого года, %</th>
+                        <th align="right">Изменение премий по сравнению с аналогичным периодом прошлого года, %</th>
+                        <th align="right">Изменение выплат по сравнению с аналогичным периодом прошлого года, %</th>
+                        <th align="right">Изменение коэффициента выплат по сравнению с аналогичным периодом прошлого года</th>
+                    {% endif %}
                 </tr>
                 {% for p in premiums %}
                     <tr>
                         <td>{{ p.name }}</td>
-                        <td>{{ "{:,.0f}".format(p.premium) }}</td>
-                        <td>{{ "{:,.0f}".format(p.claim) }}</td>
-                        <td>{{ p.LR }}</td>
+                        <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
+                        <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
+                        <td align="right">{{ p.LR }}</td>
+                        {% if show_last_year %}
+                            {% if is_id_in_premiums_arr(p.id, premiums_l_y) %}
+                                {% for p_l_y in premiums_l_y %}
+                                    {% if p_l_y.id == p.id %}
+                                        <td align="right">{{ "{:,.0f}".format(p_l_y.premium) }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(p_l_y.claim) }}</td>
+                                        <td align="right">{{ p_l_y.LR }}</td>                                        
+                                        {% if p_l_y.premium != 'N.A.' and p.premium != 'N.A.' %}
+                                            {% if p_l_y.premium > 0 %}
+                                                <td align="right">{{ round((p.premium-p_l_y.premium)/p_l_y.premium*100,1) }}</td>
+                                            {% else %}
+                                                {% if p_l_y.premium==0 and p.premium==0 %}
+                                                    <td align="right">0</td>
+                                                {% else %}
+                                                    <td align="right">N.A.</td>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <td>N.A.</td>
+                                        {% endif %}
+                                        {% if p.claim != 'N.A.' and p_l_y.claim != 'N.A.' %}
+                                            {% if p_l_y.claim > 0 %}
+                                                <td align="right">{{ round((p.claim-p_l_y.claim)/p_l_y.claim*100,1) }}</td>
+                                            {% else %}
+                                                {% if p_l_y.claim==0 and p.claim==0 %}
+                                                    <td align="right">0</td>
+                                                {% else %}
+                                                    <td align="right">N.A.</td>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <td align="right">N.A.</td>
+                                        {% endif %}
+                                        {% if p.LR != 'N.A.' and p_l_y.LR != 'N.A.' %}
+                                            <td align="right">{{ round(p.LR-p_l_y.LR,2) }}</td>
+                                        {% else %}
+                                            <td align="right">N.A.</td>
+                                        {% endif %}
+                                        
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <td align="right">N.A.</td>
+                                <td align="right">N.A.</td>
+                                <td align="right">N.A.</td>
+                                <td align="right">N.A.</td>
+                                <td align="right">N.A.</td>
+                                <td align="right">N.A.</td>                                
+                            {% endif %}
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </table>

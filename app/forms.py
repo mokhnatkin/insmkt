@@ -78,6 +78,7 @@ class CompanyProfileForm(FlaskForm):#портрет компании - выбо�
     company = SelectField('Выберите компанию',choices = [],validators=[DataRequired()])
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
     submit = SubmitField('Показать портрет')
 
     def validate(self):#дата окончания должна быть больше даты начала
@@ -101,7 +102,7 @@ class CompanyProfileForm(FlaskForm):#портрет компании - выбо�
         companies = Company.query.with_entities(Company.id,Company.alias) \
                 .filter(Company.nonlife==True).order_by(Company.alias).all()
         sources_db = [(str(a.id), a.alias) for a in companies]
-        self.company.choices = sources_db
+        self.company.choices = sources_db        
 
 
 class ClassProfileForm(FlaskForm):#информация по продукту    
@@ -167,8 +168,7 @@ class PeersForm(FlaskForm):#обзор конкурентов
         sources_db = [(str(a.id), a.alias) for a in companies]
         self.company.choices = sources_db
         self.peers.choices = sources_db
-        self.show_competitors.data = True
-
+        
 
 class RankingForm(FlaskForm):#ранкинг    
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
