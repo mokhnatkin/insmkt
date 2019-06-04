@@ -199,10 +199,10 @@ class DictSelectForm(FlaskForm):#выбор типа справочника дл
 
 class AddNewCompanyName(FlaskForm):#добавление нового названия компании
     name = StringField('Название',validators=[DataRequired()])
-    submit = SubmitField('Добавить')
+    submit = SubmitField('Добавить / изменить')
 
 
 class AddNewClassName(FlaskForm):#добавление нового названия класса
     name = StringField('Название',validators=[DataRequired()])
     fullname = StringField('Полное название (из файлов НБ)',validators=[DataRequired()])
-    submit = SubmitField('Добавить')
+    submit = SubmitField('Добавить / изменить')

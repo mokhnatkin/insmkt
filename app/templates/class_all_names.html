@@ -12,19 +12,21 @@
                 <th>id класса</th>
                 <th>Название</th>
                 <th>Полное название</th>
+                <th>Изменить</th>
             </tr>
             {% for c in all_names %}
                 <tr>
                     <td>{{ c.id }}</td>
                     <td>{{ c.insclass_id }}</td>
                     <td>{{ c.name }}</td> 
-                    <td>{{ c.fullname }}</td>                      
+                    <td>{{ c.fullname }}</td>
+                    <td><a href="{{ url_for('edit_class_name',class_id=c.insclass_id,_id=c.id) }}">Изменить</a></td>
                 </tr>
             {% endfor %}
         </table>
     </div>
 </div>
-<h2>Добавить ещё наименование</h2>
+<h2>Добавить ещё наименование / Изменить текущее</h2>
 <div class="row">
     <div class="col-md-4">
         {{ wtf.quick_form(form) }}

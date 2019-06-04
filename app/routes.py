@@ -585,6 +585,25 @@ def add_new_company_name(company_id=None):
                             form=form)
 
 
+@app.route('/edit_company_name/<company_id>/<_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def edit_company_name(company_id=None,_id = None):
+    form = AddNewCompanyName()
+    obj = Company_all_names.query.filter(Company_all_names.id == _id).first()
+    company = Company.query.filter(Company.id==company_id).first()
+    company_name = company.alias
+    all_names = Company_all_names.query.filter(Company_all_names.company_id==company_id).all()    
+    if request.method == 'GET':
+        form = AddNewCompanyName(obj=obj)
+    if form.validate_on_submit():
+        obj.name = form.name.data        
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('add_new_company_name', company_id=company_id))
+    return render_template('company_all_names.html',form=form,company_name=company_name,all_names=all_names)
+
+
 @app.route('/add_new_class_name/<class_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
 @login_required
 @required_roles('admin')
@@ -603,6 +622,26 @@ def add_new_class_name(class_id=None):
         return redirect(url_for('add_new_class_name', class_id=class_id))
     return render_template('class_all_names.html',class_name=class_name,all_names=all_names, \
                             form=form)
+
+
+@app.route('/edit_class_name/<class_id>/<_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def edit_class_name(class_id=None,_id = None):
+    form = AddNewClassName()
+    obj = Insclass_all_names.query.filter(Insclass_all_names.id == _id).first()
+    insclass = Insclass.query.filter(Insclass.id==class_id).first()
+    class_name = insclass.alias
+    all_names = Insclass_all_names.query.filter(Insclass_all_names.insclass_id==class_id).all()    
+    if request.method == 'GET':
+        form = AddNewClassName(obj=obj)
+    if form.validate_on_submit():
+        obj.name = form.name.data
+        obj.fullname = form.fullname.data
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('add_new_class_name', class_id=class_id))
+    return render_template('class_all_names.html',form=form,class_name=class_name,all_names=all_names)
 
 
 def compute_indicators(data_type,begin_date,end_date):#рассчитать показатели за месяц
