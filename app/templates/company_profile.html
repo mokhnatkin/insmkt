@@ -173,13 +173,14 @@
     <div class="container">
         <div class="row">
             <div class="col-md-6 col-sm-12 col-xs-12">
-                <div align="center"><h2>Динамика норматива фактической маржи платежеспособности</h2>
+                <div align="center"><h2>Динамика норматива ФМП</h2>
                     <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
                     <img src="{{ img_path_solvency_margin }}" style="max-width:100%" alt="solvency margin plot">
                 </div>
             </div>
             <div class="col-md-6 col-sm-12 col-xs-12">
                 <div align="center"><h2>Чистые премии по месяцам</h2>
+                    <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
                     <img src="{{ img_path_net_premium }}" style="max-width:100%" alt="net premium plot">
                 </div>
             </div>

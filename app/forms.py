@@ -142,6 +142,7 @@ class PeersForm(FlaskForm):#обзор конкурентов
     peers = SelectMultipleField('Выберите тех, кого считаете конкурентами (удерживайте Ctrl)',choices = [],validators=[DataRequired()])
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_competitors = BooleanField('Показать детали по каждому конкуренту')
     submit = SubmitField('Сравнить с конкурентами')
 
     def validate(self):#дата окончания должна быть больше даты начала
@@ -166,6 +167,7 @@ class PeersForm(FlaskForm):#обзор конкурентов
         sources_db = [(str(a.id), a.alias) for a in companies]
         self.company.choices = sources_db
         self.peers.choices = sources_db
+        self.show_competitors.data = True
 
 
 class RankingForm(FlaskForm):#ранкинг    

@@ -783,9 +783,10 @@ def get_num_companies_per_period(b,e,given_number):#сколько nonlife ко�
     return N
 
 
-def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспомогательная функция - выдаем статистику по компании
+def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competitors):#вспомогательная функция - выдаем статистику по компании
     _company_name = Company.query.with_entities(Company.alias).filter(Company.id == company_id).first()
     company_name = _company_name[0]
+    ############################################################################
     #balance financial indicators for given company
     main_indicators_balance = Financial.query.join(Indicator) \
                         .with_entities(Indicator.id,Indicator.name,Indicator.fullname,Financial.value) \
@@ -795,7 +796,9 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
     c_N = get_num_companies_per_period(begin_d,end_d,N_companies)#number of non-life companies
     mkt_balance_indicators = list()
     balance_indicators = list()
+    peers_balance_indicators = list()    
     #now compute balance ind for the market
+    peers_names_arr = list()
     for company in peers:
         indicators_for_c = Financial.query.join(Indicator) \
                             .with_entities(Indicator.id,Financial.value) \
@@ -803,7 +806,14 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
                             .filter(Financial.company_id == company[0]) \
                             .filter(Financial.report_date == end_d).all()
         mkt_balance_indicators.append(indicators_for_c)
+        if show_competitors:
+            cur_company = Company.query.filter(Company.id == company[0]).first()
+            cur_company_name = cur_company.alias
+            peers_names_arr.append({'peer_name':cur_company_name})
+            for ind in indicators_for_c:
+                peers_balance_indicators.append({'peer_name':cur_company_name,'indicator_id':ind.id,'peer_value':ind.value})
     for i in main_indicators_balance:
+        peers_balance_ind = list()
         total_v = 0.0
         for company in mkt_balance_indicators:
             for el in company:
@@ -811,8 +821,14 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
                     total_v += el.value
         mkt_av = round(total_v / c_N,2) #market average for indicator i
         share = (i.value / total_v)*100#market share
-        balance_ind = {'id': i.id, 'name': i.name, 'fullname': i.fullname, 'value': i.value, 'mkt_av': mkt_av, 'total': total_v, 'share':share}
+        for ind in peers_balance_indicators:
+            if ind['indicator_id'] == i.id:
+                peers_balance_ind.append({'peer_name':ind['peer_name'],'peer_value':ind['peer_value']})
+        balance_ind = {'id': i.id, 'name': i.name, 'fullname': i.fullname, \
+            'value': i.value, 'mkt_av': mkt_av, 'total': total_v, 'share':share, \
+            'peers_balance_ind': peers_balance_ind}
         balance_indicators.append(balance_ind) #now contains marker average for each indicator
+    ############################################################################
     #now compute flow indicators
     flow_indicators = list()
     flow_indicators_per_month = list()
@@ -838,6 +854,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
         flow_ind_el = {'id': ind.id, 'name': ind.name, 'fullname': ind.fullname, 'value': total_v}
         flow_indicators.append(flow_ind_el)
     #now compute mkt average for flow indicators
+    peers_flow_indicators = list()
     flow_indicators_per_month_per_c = list()
     for company in peers:
         for month in months:
@@ -852,14 +869,27 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
             for i in main_indicators_flow:
                 ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
                 flow_indicators_per_month_per_c.append(ind)
+            if show_competitors:
+                for el in main_indicators_flow:
+                    peers_flow_indicators.append({'peer_id':company[0],'indicator_id':el.id,'peer_value':el.value})
     for ind in flow_indicators:
+        peers_flow_ind = list()
         total_v = 0
         for i in flow_indicators_per_month_per_c:
             if i['id'] == ind['id']:
                 total_v += i['value']
         ind['total'] = total_v
         ind['mkt_av'] = round(total_v / c_N,2)
-        ind['share'] = (ind["value"] / total_v)*100#market share
+        ind['share'] = (ind["value"] / total_v)*100#market share        
+        for p in peers:#по каждому конкуренту
+            total_v_p = 0.0
+            for el in peers_flow_indicators:
+                if el['indicator_id'] == ind['id'] and el['peer_id'] == p[0]:
+                    total_v_p += el['peer_value']
+            peers_flow_ind.append({'peer_value':total_v_p})
+        ind['peers_flow_ind'] = peers_flow_ind
+
+    ############################################################################
     #now premium by class
     premiums = list()
     prem_per_m = list()
@@ -898,60 +928,134 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies):#вспом
         if total_prem>0.0 or total_claim>0.0:
             premiums.append({'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
     premiums.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию премий
-    return company_name, balance_indicators, flow_indicators, premiums
+    return company_name, balance_indicators, flow_indicators, premiums, peers_names_arr
 
 
 def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#расчет других фин. показателей
     other_financial_indicators = list()
     #получаем нужные значения по компании и по рынку
     #ищем среди показателей ОПУ
+    peer_net_income = list()
+    peer_premiums = list()
+    peer_net_premiums = list()
+    peer_claims = list()
+    peer_net_claims = list()
     for x in flow_indicators:
         if x['name'] == 'net_income':#прибыль
             net_income_c = x['value']
             net_income_m = x['total']
+            for p in x['peers_flow_ind']:
+                peer_net_income.append(p['peer_value'])
         elif x['name'] == 'premiums':#гросс премии
             premiums_c = x['value']
             premiums_m = x['total']
+            for p in x['peers_flow_ind']:
+                peer_premiums.append(p['peer_value'])
         elif x['name'] == 'net_premiums':#чистые премии
             net_premiums_c = x['value']
             net_premiums_m = x['total']
+            for p in x['peers_flow_ind']:
+                peer_net_premiums.append(p['peer_value'])
         elif x['name'] == 'claims':#гросс выплаты
             claims_c = x['value']
             claims_m = x['total']
+            for p in x['peers_flow_ind']:
+                peer_claims.append(p['peer_value'])
         elif x['name'] == 'net_claims':#чистые выплаты
             net_claims_c = x['value']
             net_claims_m = x['total']
+            for p in x['peers_flow_ind']:
+                peer_net_claims.append(p['peer_value'])
         else:
             continue
+    #####################################################################
     #ищем среди балансовых показателей
+    peer_equity = list()
     for y in balance_indicators:
         if y['name'] == 'equity':#собственный капитал
             equity_c = y['value']
             equity_m = y['total']
+            for p in y['peers_balance_ind']:
+                peer_equity.append(p['peer_value'])
             break
     months = get_months(b,e)#период анализа
     N = len(months)#кол-во месяцев в анализируемом периоде
     #расчитываем нужные показатели
+    Npeers = len(peer_equity)
+    peers_roe = list()
+    peers_eq_us = list()
+    peers_lr = list()
+    peers_re_p = list()
+    peers_re_c = list()
+    #########################################################################
     name = 'ROE (экстраполированная годовая прибыль к собственному капиталу), %'
-    value_c = round(net_income_c / equity_c / N * 12 * 100, 1)
+    value_c = round(net_income_c / equity_c / N * 12 * 100, 1)    
     value_m = round(net_income_m / equity_m / N * 12 * 100, 1)
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m})
+    if value_c < 0:
+        value_c = 'N.A.'
+    if value_m < 0:
+        value_m = 'N.A.'
+    for i in range (0,Npeers):
+        value_p = round(peer_net_income[i] / peer_equity[i] / N * 12 * 100, 1)
+        if value_p < 0:
+            value_p = 'N.A.'
+        peers_roe.append({'peer_value':value_p})
+    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_roe})
     name = 'Использование капитала (экстраполированные годовые чистые премии к собственному капиталу)'
     value_c = round(net_premiums_c / equity_c / N * 12, 2)
     value_m = round(net_premiums_m / equity_m / N * 12, 2)
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m})
+    for i in range (0,Npeers):
+        value_p = round(peer_net_premiums[i] / peer_equity[i] / N * 12, 2)
+        peers_eq_us.append({'peer_value':value_p})
+    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_eq_us})
     name = 'Коэффициент выплат (чистые выплаты к чистым премиям), %'
-    value_c = round(net_claims_c / net_premiums_c * 100,1)
-    value_m = round(net_claims_m / net_premiums_m * 100,1)
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m})
-    name = 'Доля перестрахования в премиях'
-    value_c = round((premiums_c-net_premiums_c)/premiums_c*100,1)
-    value_m = round((premiums_m-net_premiums_m)/premiums_m*100,1)
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m})
-    name = 'Доля перестрахования в выплатах'
-    value_c = round((claims_c-net_claims_c)/claims_c*100,1)
-    value_m = round((claims_m-net_claims_m)/claims_m*100,1)
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m})
+    try:
+        value_c = round(net_claims_c / net_premiums_c * 100,1)
+    except:
+        value_c = 'N.A.'
+    try:
+        value_m = round(net_claims_m / net_premiums_m * 100,1)
+    except:
+        value_m = 'N.A.'
+    for i in range (0,Npeers):
+        try:
+            value_p = round(peer_net_claims[i] / peer_net_premiums[i] * 100,1)
+        except:
+            value_p = 'N.A.'
+        peers_lr.append({'peer_value':value_p})
+    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_lr})
+    name = 'Доля перестрахования в премиях, %'
+    try:
+        value_c = round((premiums_c-net_premiums_c)/premiums_c*100,1)
+    except:
+        value_c = 'N.A.'
+    try:
+        value_m = round((premiums_m-net_premiums_m)/premiums_m*100,1)
+    except:
+        value_m = 'N.A.'
+    for i in range (0,Npeers):
+        try:
+            value_p = round((peer_premiums[i]-peer_net_premiums[i])/peer_premiums[i]*100,1)
+        except:
+            value_p = 'N.A.'
+        peers_re_p.append({'peer_value':value_p})
+    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_p})
+    name = 'Доля перестрахования в выплатах, %'
+    try:
+        value_c = round((claims_c-net_claims_c)/claims_c*100,1)
+    except:
+        value_c = 'N.A.'
+    try:
+        value_m = round((claims_m-net_claims_m)/claims_m*100,1)
+    except:
+        value_m = 'N.A.'
+    for i in range (0,Npeers):
+        try:
+            value_p = round((peer_claims[i]-peer_net_claims[i])/peer_claims[i]*100,1)
+        except:
+            value_p = 'N.A.'
+        peers_re_c.append({'peer_value':value_p})
+    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_c})
     return other_financial_indicators
 
 
@@ -1001,9 +1105,9 @@ def company_profile():#портрет компании
             peers = Company.query.with_entities(Company.id).filter(Company.nonlife==True).all()#list of non-life companies
         except:
             flash('Не могу получить список компаний с сервера. Проверьте справочник Компаний или обратитесь к администратору')
-            return redirect(url_for('company_profile'))
+            return redirect(url_for('company_profile'))        
         try:
-            company_name, balance_indicators, flow_indicators, premiums = show_company_profile(int(form.company.data),peers,b,e,None)
+            company_name, balance_indicators, flow_indicators, premiums, peers_names_arr = show_company_profile(int(form.company.data),peers,b,e,None,False)
             other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
         except:
             flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
@@ -1469,6 +1573,8 @@ def peers_review():#сравнение с конкурентами
     show_other_financial_indicators = False
     company_name = None
     peers_names = None
+    peers_names_arr = None
+    show_competitors = False
     b = g.min_report_date
     e = g.last_report_date
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
@@ -1487,13 +1593,19 @@ def peers_review():#сравнение с конкурентами
         peers = list()
         for c in peers_str:#convert id to int
             peers.append((int(c),))
+        if form.company.data in peers_str:
+            flash('''Вы выбрали Вашу компанию в списке конкурентов. 
+                Сравнивать себя с собой не имеет большого смысла, не правда ли?
+                Составьте список конкурентов без указания своей компании и попробуйте снова.''')
+            return redirect(url_for('peers_review'))
+        show_competitors = form.show_competitors.data#показывать детали по каждому конкуренту
         try:
-            company_name, balance_indicators, flow_indicators, premiums = show_company_profile(c_id,peers,b,e,len(peers))
+            company_name, balance_indicators, flow_indicators, premiums, peers_names_arr = show_company_profile(c_id,peers,b,e,len(peers),show_competitors)
             other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
-            peers_names = get_peers_names(peers)
+            peers_names = get_peers_names(peers)            
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные по выбранным компаниям за заданный период отсутствуют. Попробуйте задать другой период.')
-            return redirect(url_for('peers_review'))            
+            return redirect(url_for('peers_review'))
         if len(other_financial_indicators) > 0:
             show_other_financial_indicators = True
         if len(balance_indicators) > 0:
@@ -1505,7 +1617,7 @@ def peers_review():#сравнение с конкурентами
                         show_other_financial_indicators=show_other_financial_indicators,b=b,e=e, \
                         company_name=company_name,balance_indicators=balance_indicators, \
                         flow_indicators=flow_indicators,other_financial_indicators=other_financial_indicators, \
-                        peers_names=peers_names)
+                        peers_names=peers_names,show_competitors=show_competitors,peers_names_arr=peers_names_arr)
 
 
 def get_ranking(b,e):#вспомогательная функция - получаем данные для ранкинга

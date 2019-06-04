@@ -25,7 +25,12 @@
                     <tr>
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
-                        <th align="right">Среднее по конкурентам, тыс.тг.</th>                        
+                        <th align="right">Среднее по конкурентам, тыс.тг.</th>
+                        {% if show_competitors %}
+                            {% for c in peers_names_arr %}
+                                <th align="right">{{ c.peer_name }}</th>
+                            {% endfor %}
+                        {% endif %}
                     </tr>
                     {% for ind in balance_indicators %}
                     <tr>
@@ -36,6 +41,15 @@
                         {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
                             <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                            
                             <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                            
+                        {% endif %}
+                        {% if show_competitors %}
+                            {% for p in ind.peers_balance_ind %}
+                                {% if ind.name == 'solvency_margin' %}
+                                    <td align="right">{{ "{:,.2f}".format(p.peer_value) }}</td>
+                                {% else %}
+                                    <td align="right">{{ "{:,.0f}".format(p.peer_value) }}</td>
+                                {% endif %}
+                            {% endfor %}
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -53,13 +67,23 @@
                     <tr>
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
-                        <th align="right">Среднее по конкурентам, тыс.тг.</th>                        
+                        <th align="right">Среднее по конкурентам, тыс.тг.</th>
+                        {% if show_competitors %}
+                            {% for c in peers_names_arr %}
+                                <th align="right">{{ c.peer_name }}</th>
+                            {% endfor %}
+                        {% endif %}
                     </tr>
                     {% for ind in flow_indicators %}
                     <tr>
                         <td>{{ ind.fullname }}</td>
-                        <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                        
-                        <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                        
+                        <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
+                        <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
+                        {% if show_competitors %}
+                            {% for p in ind.peers_flow_ind %}
+                                <td align="right">{{ "{:,.0f}".format(p.peer_value) }}</td>
+                            {% endfor %}
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </table>
@@ -77,12 +101,22 @@
                         <th>Показатель</th>
                         <th align="right">Значение по {{ company_name }}</th>
                         <th align="right">Среднее по конкурентам</th>
+                        {% if show_competitors %}
+                            {% for c in peers_names_arr %}
+                                <th align="right">{{ c.peer_name }}</th>
+                            {% endfor %}
+                        {% endif %}
                     </tr>
                     {% for ind in other_financial_indicators %}
                         <tr>
                             <td>{{ ind.name }}</td>
                             <td>{{ ind.value_c }}</td>
                             <td>{{ ind.value_m }}</td>
+                            {% if show_competitors %}
+                                {% for p in ind.peers_other_fin_ind %}
+                                    <td align="right">{{ p.peer_value }}</td>
+                                {% endfor %}
+                            {% endif %}
                         </tr>
                     {% endfor %}
                 </table>
