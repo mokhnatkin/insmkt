@@ -782,6 +782,21 @@ def get_num_companies_per_period(b,e,given_number):#сколько nonlife ко�
                 N += 1
     return N
 
+def get_num_companies_at_date(report_date,given_number):#сколько nonlife компаний действовали за заданный период
+    N = 0
+    if given_number is not None:#число конкурентов уже известно
+        N = given_number
+    else:
+        #логика такая: если у компании есть балансовые показатели (собств. капитал) на заданную дату, то она считается действовавшей
+        _eq_id = Indicator.query.filter(Indicator.name == 'equity').first()
+        eq_id = _eq_id.id #id чистых премий
+        equity = Financial.query.join(Company) \
+                        .filter(Company.nonlife == True) \
+                        .filter(Financial.indicator_id == eq_id) \
+                        .filter(Financial.report_date == report_date).all()
+        N = len(equity)
+    return N
+
 
 def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competitors):#вспомогательная функция - выдаем статистику по компании
     _company_name = Company.query.with_entities(Company.alias).filter(Company.id == company_id).first()
@@ -793,7 +808,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
                         .filter(Indicator.flow == False) \
                         .filter(Financial.company_id == company_id) \
                         .filter(Financial.report_date == end_d).all()
-    c_N = get_num_companies_per_period(begin_d,end_d,N_companies)#number of non-life companies
+    c_N_b = get_num_companies_at_date(end_d,N_companies)
     mkt_balance_indicators = list()
     balance_indicators = list()
     peers_balance_indicators = list()    
@@ -819,7 +834,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
             for el in company:
                 if el.id == i.id:
                     total_v += el.value
-        mkt_av = round(total_v / c_N,2) #market average for indicator i
+        mkt_av = round(total_v / c_N_b,2) #market average for indicator i
         share = (i.value / total_v)*100#market share
         for ind in peers_balance_indicators:
             if ind['indicator_id'] == i.id:
@@ -872,6 +887,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
             if show_competitors:
                 for el in main_indicators_flow:
                     peers_flow_indicators.append({'peer_id':company[0],'indicator_id':el.id,'peer_value':el.value})
+    c_N = get_num_companies_per_period(begin_d,end_d,N_companies)#number of non-life companies
     for ind in flow_indicators:
         peers_flow_ind = list()
         total_v = 0
