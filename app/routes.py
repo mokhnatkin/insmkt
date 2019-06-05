@@ -748,9 +748,9 @@ def check_compute_res(data_type,begin_date,end_date):#проверка резу�
     found = 0
     while True:
         r = random.choice(rows)
-        if r.value > 0:
+        if r.value > 0.1:
             found += 1
-            rand_rows.append(random.choice(rows))
+            rand_rows.append(r)
         if found > 2:#выведем три случайные записи больше 0
             break
     return N_rows, rand_rows
