@@ -1114,7 +1114,7 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
     return other_financial_indicators
 
 
-def is_id_in_premiums_arr(_id, _arr):
+def is_id_in_arr(_id, _arr):
     arr = list()
     for el in _arr:
         cur_id = el['id']
@@ -1213,7 +1213,7 @@ def company_profile():#портрет компании
                 img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums, \
                 show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
                 balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
-                premiums_l_y=premiums_l_y,round=round,is_id_in_premiums_arr=is_id_in_premiums_arr)
+                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr)
 
 
 @app.route('/chart.png/<c_id>/<begin>/<end>/<chart_type>')#plot chart for a given company (id = c_id) and chart type, and given period
@@ -1502,7 +1502,7 @@ def get_class_companies(class_id,b,e):#инфо по выбранному кла
         else:
             lr = 'N.A.'
         if total_prem > 0 or total_claim > 0:
-            company_el = {'name': c.alias, 'premium': total_prem, 'claim': total_claim, 'lr':lr}
+            company_el = {'id': c.id, 'name': c.alias, 'premium': total_prem, 'claim': total_claim, 'lr':lr}
             class_companies.append(company_el)
     class_companies.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию
     #compute mkt share
@@ -1604,7 +1604,10 @@ def class_profile():#инфо по классу
     class_info = None
     class_name = None
     img_path_prem = None
-    img_path_claim = None    
+    img_path_claim = None
+    show_last_year = False
+    class_name_l_y = None
+    class_companies_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1615,10 +1618,20 @@ def class_profile():#инфо по классу
         e = form.end_d.data
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
+        show_last_year = form.show_last_year.data
+        #аналогичный период прошлого года
+        b_l_y = datetime(b.year-1,b.month,1)
+        e_l_y = datetime(e.year-1,e.month,1)
         class_id = int(form.insclass.data)
         try:
             class_name, class_companies = get_class_companies(class_id,b,e)#информация по компаниям по выбранному классу
             class_info, class_totals = get_class_info(class_id,b,e)
+            if show_last_year == True:
+                try:
+                    class_name_l_y, class_companies_l_y = get_class_companies(class_id,b_l_y,e_l_y)                    
+                except:
+                    flash('Не могу получить данные за прошлый год')
+                    return redirect(url_for('class_profile'))
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные по выбранному классу за заданный период отсутствуют. Попробуйте задать другой период.')
             return redirect(url_for('class_profile'))
@@ -1630,7 +1643,8 @@ def class_profile():#инфо по классу
     return render_template('class_profile.html',title='Информация по продукту',form=form,descr=descr, \
                 b=b,e=e,class_companies=class_companies,class_name=class_name, \
                 class_companies_len=class_companies_len,img_path_prem=img_path_prem, \
-                img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals)
+                img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
+                show_last_year=show_last_year,class_companies_l_y=class_companies_l_y)
 
 
 def get_peers_names(peers):#получаем имена конкурентов исходя из их id
@@ -1752,7 +1766,7 @@ def get_ranking(b,e):#вспомогательная функция - получ
     #query companies by equity
     if equity_id is not None and e is not None:
         equities = Financial.query.join(Company) \
-                            .with_entities(Financial.value,Company.alias) \
+                            .with_entities(Financial.value,Company.alias,Company.id) \
                             .filter(Financial.indicator_id == equity_id.id) \
                             .filter(Financial.report_date == e) \
                             .filter(Company.nonlife == True) \
@@ -1764,7 +1778,7 @@ def get_ranking(b,e):#вспомогательная функция - получ
             share = round(el.value / equity_total * 100,2)
             if share < 0:
                 share = 'N.A.'
-        equity.append({'value':el.value,'alias':el.alias,'share':share})
+        equity.append({'id': el.id, 'value':el.value,'alias':el.alias,'share':share})
     #########################################################################
     try:
         netincome_id = Indicator.query.filter(Indicator.name == 'net_income').first()
@@ -1809,7 +1823,7 @@ def get_ranking(b,e):#вспомогательная функция - получ
     #query solvency margins
     if solvency_margin_id is not None and e is not None:
         solvency_margin = Financial.query.join(Company) \
-                            .with_entities(Financial.value,Company.alias) \
+                            .with_entities(Financial.value,Company.alias,Company.id) \
                             .filter(Financial.indicator_id == solvency_margin_id.id) \
                             .filter(Financial.report_date == e) \
                             .filter(Company.nonlife == True) \
@@ -1857,7 +1871,7 @@ def get_ranking(b,e):#вспомогательная функция - получ
             lr = round(claim / premium * 100, 1)
         else:
             lr = 'N.A.'
-        element = {'company_name':company_name,'lr':lr}
+        element = {'id':p['id'], 'company_name':company_name,'lr':lr}
         lr_list.append(element)
     lr_av = round(netclaim_total / net_premiums_total * 100, 2)
     return net_premiums, equity, netincome, solvency_margin, lr_list, \
@@ -1885,6 +1899,17 @@ def ranking():
     lr_list = None
     lr_av = None
     lr_list_len = None
+    show_last_year = False
+    net_premiums_l_y = None
+    equity_l_y = None
+    netincome_l_y = None
+    solvency_margin_l_y = None
+    lr_list_l_y = None
+    net_premiums_total_l_y = None
+    equity_total_l_y = None
+    netincome_total_l_y = None
+    solvency_margin_av_l_y = None
+    lr_av_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1895,9 +1920,21 @@ def ranking():
         e = form.end_d.data
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
+        show_last_year = form.show_last_year.data
+        #аналогичный период прошлого года
+        b_l_y = datetime(b.year-1,b.month,1)
+        e_l_y = datetime(e.year-1,e.month,1)        
         net_premiums, equity, netincome, solvency_margin, lr_list, \
                 net_premiums_total, equity_total, netincome_total, \
                 solvency_margin_av, lr_av = get_ranking(b,e)#рассчитаем показатели
+        if show_last_year == True:
+            try:
+                net_premiums_l_y, equity_l_y, netincome_l_y, solvency_margin_l_y, lr_list_l_y, \
+                    net_premiums_total_l_y, equity_total_l_y, netincome_total_l_y, \
+                    solvency_margin_av_l_y, lr_av_l_y = get_ranking(b_l_y,e_l_y)#рассчитаем показатели за прошлый год
+            except:
+                flash('Не могу получить данные за прошлый год')
+                return redirect(url_for('ranking'))        
         net_premiums_len = len(net_premiums)
         equity_len = len(equity)
         netincome_len = len(netincome)
@@ -1905,9 +1942,15 @@ def ranking():
         lr_list_len = len(lr_list)
     return render_template('ranking.html', \
                     net_premiums=net_premiums,net_premiums_len=net_premiums_len, \
-                    equity=equity, equity_len=equity_len, b=b, e=e, \
+                    equity=equity, equity_len=equity_len, b=b, e=e, show_last_year=show_last_year, \
                     netincome=netincome, netincome_len=netincome_len, \
                     solvency_margin=solvency_margin, solvency_margin_len=solvency_margin_len, \
                     lr_list=lr_list, lr_list_len=lr_list_len,form=form, \
                     net_premiums_total=net_premiums_total,equity_total=equity_total, \
-                    netincome_total=netincome_total, solvency_margin_av=solvency_margin_av, lr_av=lr_av)
+                    netincome_total=netincome_total, solvency_margin_av=solvency_margin_av, \
+                    lr_av=lr_av,net_premiums_l_y=net_premiums_l_y, equity_l_y=equity_l_y, \
+                    netincome_l_y=netincome_l_y, solvency_margin_l_y=solvency_margin_l_y, \
+                    lr_list_l_y=lr_list_l_y, net_premiums_total_l_y=net_premiums_total_l_y, \
+                    equity_total_l_y=equity_total_l_y, netincome_total_l_y=netincome_total_l_y, \
+                    solvency_margin_av_l_y=solvency_margin_av_l_y, lr_av_l_y=lr_av_l_y, \
+                    round=round,is_id_in_arr=is_id_in_arr)

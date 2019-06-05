@@ -29,6 +29,11 @@
                             <th align="right">Доля рынка, %</th>
                             <th align="right">Выплаты, тыс.тг.</th>
                             <th align="right">Коэффициент выплат, %</th>
+                            {% if show_last_year %}
+                                <th align="right">Премии за аналогичный период прошлого года, тыс.тг.</th>
+                                <th align="right">Выплаты за аналогичный период прошлого года, тыс.тг.</th>
+                                <th align="right">Коэффициент выплат за аналогичный период прошлого года, тыс.тг.</th>                                
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -40,6 +45,27 @@
                                 <td align="right">{{ class_companies[rownum].share }}</td>
                                 <td align="right">{{ "{:,.0f}".format(class_companies[rownum].claim) }}</td>
                                 <td align="right">{{ class_companies[rownum].lr }}</td>
+                                {% if show_last_year %}
+                                    {% for c_l_y in class_companies_l_y %}
+                                        {% if c_l_y.id == class_companies[rownum].id %}
+                                            <td align="right">                                                
+                                                {% if c_l_y.premium > 0 %}
+                                                    {{ "{:,.0f}".format(c_l_y.premium) }}
+                                                {% else %}
+                                                    N.A.
+                                                {% endif %}
+                                            </td>
+                                            <td align="right">
+                                                {% if c_l_y.claim > 0 %}
+                                                    {{ "{:,.0f}".format(c_l_y.claim) }}
+                                                {% else %}
+                                                    N.A.
+                                                {% endif %}
+                                            </td>
+                                            <td align="right">{{ c_l_y.lr }}</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>

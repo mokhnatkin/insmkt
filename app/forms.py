@@ -108,7 +108,8 @@ class CompanyProfileForm(FlaskForm):#портрет компании - выбо�
 class ClassProfileForm(FlaskForm):#информация по продукту    
     insclass = SelectField('Выберите класс страхования',choices = [],validators=[DataRequired()])
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
-    end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])    
+    end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
     submit = SubmitField('Показать информацию')
 
     def __init__(self, *args, **kwargs):
@@ -173,7 +174,9 @@ class PeersForm(FlaskForm):#обзор конкурентов
 class RankingForm(FlaskForm):#ранкинг    
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
     submit = SubmitField('Показать')
+    
     def validate(self):#дата окончания должна быть больше даты начала
         d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
         d_end = datetime(self.end_d.data.year,self.end_d.data.month,self.end_d.data.day)

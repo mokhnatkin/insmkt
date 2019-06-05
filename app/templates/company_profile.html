@@ -109,7 +109,11 @@
                             {% for ind_l_y in flow_indicators_l_y %}
                                 {% if ind_l_y.id == ind.id %}
                                     <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>
-                                    <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
+                                    {% if ind.value > 0 and ind_l_y.value > 0 %}
+                                        <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
+                                    {% else %}
+                                        <td align="right">N.A.</td>
+                                    {% endif %}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -186,7 +190,7 @@
                         <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
                         <td align="right">{{ p.LR }}</td>
                         {% if show_last_year %}
-                            {% if is_id_in_premiums_arr(p.id, premiums_l_y) %}
+                            {% if is_id_in_arr(p.id, premiums_l_y) %}
                                 {% for p_l_y in premiums_l_y %}
                                     {% if p_l_y.id == p.id %}
                                         <td align="right">{{ "{:,.0f}".format(p_l_y.premium) }}</td>
