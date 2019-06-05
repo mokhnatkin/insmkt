@@ -412,7 +412,7 @@ def check_process_file_res(file_subtype,report_date):#проверка резу�
         r = random.choice(rows)
         if r.value > 0.1:
             found += 1
-            rand_rows.append(random.choice(rows))
+            rand_rows.append(r)
         if found > 2:#выведем три случайные записи больше 0
             break
     return N_rows, rand_rows
@@ -449,8 +449,7 @@ def upload_file(upload_type):
                 else:
                     flash('Данный файл уже был загружен. Повторная загрузка не требуется.')
                     return redirect(url_for('upload_file', upload_type='data'))
-            form.file.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            #ext = '.' in filename and filename.rsplit('.', 1)[1].lower()
+            form.file.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))            
             try:
                 wb = open_workbook(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 num_sheets = len(wb.sheet_names())
