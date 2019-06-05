@@ -77,6 +77,11 @@
                             <td></td>
                             <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_c) }}</b></td>
                             <td align="right"><b>{{ class_totals.total_lr }}</b></td>
+                            {% if show_last_year %}
+                                <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_p) }}</b></td>
+                                <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_c) }}</b></td>
+                                <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_lr) }}</b></td>
+                            {% endif %}
                         </tr>
                     </tfoot>
                 </table>

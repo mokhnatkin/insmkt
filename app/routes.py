@@ -1608,6 +1608,8 @@ def class_profile():#инфо по классу
     show_last_year = False
     class_name_l_y = None
     class_companies_l_y = None
+    class_info_l_y = None
+    class_totals_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1628,7 +1630,8 @@ def class_profile():#инфо по классу
             class_info, class_totals = get_class_info(class_id,b,e)
             if show_last_year == True:
                 try:
-                    class_name_l_y, class_companies_l_y = get_class_companies(class_id,b_l_y,e_l_y)                    
+                    class_name_l_y, class_companies_l_y = get_class_companies(class_id,b_l_y,e_l_y)
+                    class_info_l_y, class_totals_l_y = get_class_info(class_id,b_l_y,e_l_y)
                 except:
                     flash('Не могу получить данные за прошлый год')
                     return redirect(url_for('class_profile'))
@@ -1644,7 +1647,8 @@ def class_profile():#инфо по классу
                 b=b,e=e,class_companies=class_companies,class_name=class_name, \
                 class_companies_len=class_companies_len,img_path_prem=img_path_prem, \
                 img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
-                show_last_year=show_last_year,class_companies_l_y=class_companies_l_y)
+                show_last_year=show_last_year,class_companies_l_y=class_companies_l_y, \
+                class_totals_l_y=class_totals_l_y)
 
 
 def get_peers_names(peers):#получаем имена конкурентов исходя из их id
