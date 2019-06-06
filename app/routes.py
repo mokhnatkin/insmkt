@@ -2,7 +2,8 @@
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, DataUploadForm, \
                 ComputePerMonthIndicators, CompanyProfileForm, ClassProfileForm, PeersForm, \
-                RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName
+                RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName, \
+                AddEditCompanyForm, AddEditClassForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
@@ -1957,3 +1958,103 @@ def ranking():
                     equity_total_l_y=equity_total_l_y, netincome_total_l_y=netincome_total_l_y, \
                     solvency_margin_av_l_y=solvency_margin_av_l_y, lr_av_l_y=lr_av_l_y, \
                     round=round,is_id_in_arr=is_id_in_arr)
+
+
+@app.route('/add_new_company',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def add_new_company():
+    form = AddEditCompanyForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        alias = form.alias.data
+        nonlife = form.nonlife.data
+        alive = form.alive.data    
+        company = Company(name=name,alias=alias,nonlife=nonlife,alive=alive)
+        db.session.add(company)
+        db.session.commit()
+        try:
+            c_saved = Company.query.filter(Company.name == name).first()
+            _id = c_saved.id
+            company_all_names = Company_all_names(name=name,company_id=_id)
+            db.session.add(company_all_names)
+            db.session.commit()
+        except:
+            flash('Не могу получить id созданной компании')
+            return redirect(url_for('add_new_company'))        
+        flash('Новая компания добавлена')
+        return redirect(url_for('add_new_company'))
+    return render_template('add_edit_company.html', form=form)
+
+
+@app.route('/edit_company/<company_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def edit_company(company_id=None):
+    form = AddEditCompanyForm()
+    obj = Company.query.filter(Company.id == company_id).first()
+    if request.method == 'GET':        
+        form = AddEditCompanyForm(obj=obj)
+    if form.validate_on_submit():
+        obj.name = form.name.data
+        obj.alias = form.alias.data
+        obj.nonlife = form.nonlife.data
+        obj.alive = form.alive.data
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('edit_company', company_id=company_id))
+    return render_template('add_edit_company.html',form=form)
+
+
+@app.route('/add_new_class',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def add_new_class():
+    form = AddEditClassForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        fullname = form.fullname.data
+        alias = form.alias.data
+        nonlife = form.nonlife.data
+        obligatory = form.obligatory.data
+        voluntary_personal = form.voluntary_personal.data
+        voluntary_property = form.voluntary_property.data
+        insclass = Insclass(name=name,fullname=fullname,alias=alias, \
+                nonlife=nonlife,obligatory=obligatory, \
+                voluntary_personal=voluntary_personal,voluntary_property=voluntary_property)
+        db.session.add(insclass)
+        db.session.commit()
+        try:
+            c_saved = Insclass.query.filter(Insclass.name == name).first()
+            _id = c_saved.id
+            insclass_all_names = Insclass_all_names(name=name,fullname=fullname,insclass_id=_id)
+            db.session.add(insclass_all_names)
+            db.session.commit()
+        except:
+            flash('Не могу получить id созданного класса')
+            return redirect(url_for('add_new_class'))        
+        flash('Новый класс добавлен')
+        return redirect(url_for('add_new_class'))
+    return render_template('add_edit_class.html', form=form)
+
+
+@app.route('/edit_class/<class_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def edit_class(class_id=None):
+    form = AddEditClassForm()
+    obj = Insclass.query.filter(Insclass.id == class_id).first()
+    if request.method == 'GET':        
+        form = AddEditClassForm(obj=obj)
+    if form.validate_on_submit():
+        obj.name = form.name.data
+        obj.fullname = form.fullname.data
+        obj.alias = form.alias.data
+        obj.nonlife = form.nonlife.data
+        obj.obligatory = form.obligatory.data
+        obj.voluntary_personal = form.voluntary_personal.data
+        obj.voluntary_property = form.voluntary_property.data
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('edit_class', class_id=class_id))
+    return render_template('add_edit_class.html',form=form)

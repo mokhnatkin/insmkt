@@ -209,3 +209,23 @@ class AddNewClassName(FlaskForm):#добавление нового назван
     name = StringField('Название',validators=[DataRequired()])
     fullname = StringField('Полное название (из файлов НБ)',validators=[DataRequired()])
     submit = SubmitField('Добавить / изменить')
+
+
+class AddEditCompanyForm(FlaskForm):#добавить новую компанию / изменить
+    name = StringField('Полное название (из файлов НБ)',validators=[DataRequired()])
+    alias = StringField('Краткое (отображаемое) название',validators=[DataRequired()])
+    nonlife = BooleanField('Компания по общему страхованию')
+    alive = BooleanField('Действующая компания')
+    submit = SubmitField('Добавить / изменить')
+
+
+class AddEditClassForm(FlaskForm):#добавить новый класс страхования / изменить
+    name = StringField('Системное название на английском',validators=[DataRequired()])
+    fullname = StringField('Полное название (из файлов НБ)',validators=[DataRequired()])
+    alias = StringField('Краткое (отображаемое) название',validators=[DataRequired()])
+    nonlife = BooleanField('Относится к общему страхованию')
+    obligatory = BooleanField('Относится к обязательному страхованию')
+    voluntary_personal = BooleanField('Относится к добровольному личному страхованию')
+    voluntary_property = BooleanField('Относится к добровольному имущественному страхованию')
+    submit = SubmitField('Добавить / изменить')
+
