@@ -36,7 +36,7 @@ class RegistrationForm(FlaskForm):#зарегистрироваться
 
 class EditUserForm(FlaskForm):#изменить пользователя
     username = StringField('Логин',validators=[DataRequired()])
-    email = StringField('E-mail',validators=[DataRequired(), Email()])    
+    email = StringField('E-mail',validators=[DataRequired(), Email()])
     submit = SubmitField('Изменить')
 
 
