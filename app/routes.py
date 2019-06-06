@@ -3,7 +3,8 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, DataUploadForm, \
                 ComputePerMonthIndicators, CompanyProfileForm, ClassProfileForm, PeersForm, \
                 RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName, \
-                AddEditCompanyForm, AddEditClassForm, SendEmailToUsersForm, EditUserForm
+                AddEditCompanyForm, AddEditClassForm, SendEmailToUsersForm, EditUserForm, \
+                ResetPasswordRequestForm, ResetPasswordForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
@@ -2005,7 +2006,7 @@ def add_new_company():
     return render_template('add_edit_company.html', form=form)
 
 
-@app.route('/edit_company/<company_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@app.route('/edit_company/<company_id>',methods=['GET', 'POST'])#изменить имя компании (переименование)
 @login_required
 @required_roles('admin')
 def edit_company(company_id=None):
@@ -2024,7 +2025,7 @@ def edit_company(company_id=None):
     return render_template('add_edit_company.html',form=form)
 
 
-@app.route('/add_new_class',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@app.route('/add_new_class',methods=['GET', 'POST'])#добавить новое имя класса (переименование)
 @login_required
 @required_roles('admin')
 def add_new_class():
@@ -2056,7 +2057,7 @@ def add_new_class():
     return render_template('add_edit_class.html', form=form)
 
 
-@app.route('/edit_class/<class_id>',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@app.route('/edit_class/<class_id>',methods=['GET', 'POST'])#изменить имя класса (переименование)
 @login_required
 @required_roles('admin')
 def edit_class(class_id=None):
@@ -2121,3 +2122,45 @@ def send_email_to_users():
         flash('Сообщение отправлено.')
         return redirect(url_for('send_email_to_users'))
     return render_template('send_email.html', form=form, descr=descr)
+
+
+def send_password_reset_email(user):
+    token = user.get_reset_password_token()
+    subject = 'Восстановление пароля'
+    body = render_template('email/reset_password.txt',user=user,token=token)
+    recipients = [user.email]
+    send_email(subject,body,recipients)
+
+
+@app.route('/reset_password_request',methods=['GET', 'POST'])#запросить восстановление пароля
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter(User.email == form.email.data).first()
+        if user:
+            send_password_reset_email(user)
+            flash('Было отправлено письмо с дальнейшими инструкциями. Проверьте свой почтовый ящик.')
+            return redirect(url_for('login'))
+        else:
+            flash('Пользователь с таким e-mail не зарегистрирован')
+            return redirect(url_for('login'))
+    return render_template('reset_password_request.html',title='Восстановление пароля',form=form)
+
+
+@app.route('/reset_password/<token>',methods=['GET', 'POST'])#восстановление пароля - изменить пароль
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    user = User.verify_reset_password_token(token)
+    if not user:
+        return redirect(url_for('index'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()    
+        flash('Пароль успешно изменён')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html',title='Изменение пароля',form=form)
+

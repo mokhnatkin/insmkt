@@ -16,6 +16,17 @@ class LoginForm(FlaskForm):#вход
     submit = SubmitField('Вход')
 
 
+class ResetPasswordRequestForm(FlaskForm):#ввод email для восстановления пароля
+    email = StringField('E-mail',validators=[DataRequired(), Email()])
+    submit = SubmitField('Запросить восстановление пароля')
+
+
+class ResetPasswordForm(FlaskForm):#форма для ввода нового пароля при восстановлении
+    password = PasswordField('Пароль',validators=[DataRequired()])
+    password2 = PasswordField('Повторите пароль',validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Изменить пароль')
+
+
 class RegistrationForm(FlaskForm):#зарегистрироваться
     username = StringField('Логин',validators=[DataRequired()])
     email = StringField('E-mail',validators=[DataRequired(), Email()])
