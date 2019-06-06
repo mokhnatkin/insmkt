@@ -3,7 +3,7 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, DataUploadForm, \
                 ComputePerMonthIndicators, CompanyProfileForm, ClassProfileForm, PeersForm, \
                 RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName, \
-                AddEditCompanyForm, AddEditClassForm
+                AddEditCompanyForm, AddEditClassForm, SendEmailToUsersForm, EditUserForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
@@ -23,6 +23,7 @@ import numpy as np
 from xlrd import open_workbook
 from functools import wraps
 import random
+from exchangelib import Account, Credentials, Configuration, DELEGATE, Message
 
 
 @app.before_request
@@ -177,6 +178,23 @@ def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(author=user).order_by(Post.timestamp.desc())
     return render_template('user.html',user=user,posts=posts)
+
+
+@app.route('/edit_user/<user_id>',methods=['GET', 'POST'])#редактировать email пользователя
+@login_required
+@required_roles('admin')
+def edit_user(user_id=None):
+    form = EditUserForm()
+    obj = User.query.filter(User.id == user_id).first()
+    if request.method == 'GET':        
+        form = EditUserForm(obj=obj)
+    if form.validate_on_submit():
+        obj.username = form.username.data
+        obj.email = form.email.data
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('edit_user', user_id=user_id))
+    return render_template('edit_user.html',form=form)
 
 
 @app.route('/users')#список пользователей
@@ -2058,3 +2076,48 @@ def edit_class(class_id=None):
         flash('Успешно изменено!')
         return redirect(url_for('edit_class', class_id=class_id))
     return render_template('add_edit_class.html',form=form)
+
+
+def send_email(subject,body,recipients):#функция отправки email с заданной темой, телом
+    credentials = Credentials(username=app.config['EXCHANGE_USERNAME'],password=app.config['EXCHANGE_PASSWORD'])
+    config = Configuration(server=app.config['EXCHANGE_SERVER'],credentials=credentials)
+    account = Account(primary_smtp_address=app.config['EXCHANGE_PRIMARY_SMTP_ADDRESS'],config=config,autodiscover=False,access_type=DELEGATE)
+    m = Message(account=account,subject=subject,body=body,to_recipients=recipients)
+    m.send()
+
+
+@app.route('/send_email_to_users',methods=['GET', 'POST'])#отправить мейл пользователям
+@login_required
+@required_roles('admin')
+def send_email_to_users():
+    form = SendEmailToUsersForm()
+    descr = 'Заполните тему и текст сообщения. Выберите получателей, или пометьте Отправить всем'
+    if form.validate_on_submit():
+        subject = form.subject.data
+        body = form.body.data
+        send_to_all = form.send_to_all.data
+        recipients = list()
+        users_selected = list()
+        if send_to_all == True:#отправляем всем пользователям
+            try:
+                users = User.query.all()
+                for u in users:
+                    recipients.append(u.email)
+            except:
+                flash('Не могу получить список пользователей с сервера')
+                return redirect(url_for('send_email_to_users'))
+        else:#отправляем только выбранным
+            user_list = form.users.data
+            for c in user_list:#convert id to int
+                users_selected.append((int(c),))
+            for u in users_selected:
+                _u = User.query.filter(User.id == u[0]).first()                
+                recipients.append(_u.email)
+        try:#пытаемся отправить сообщение            
+            send_email(subject,body,recipients)
+        except:
+            flash('Не могу отправить сообщение')
+            return redirect(url_for('send_email_to_users'))
+        flash('Сообщение отправлено.')
+        return redirect(url_for('send_email_to_users'))
+    return render_template('send_email.html', form=form, descr=descr)

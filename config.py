@@ -15,4 +15,8 @@ class Config(object):
     UPLOAD_FOLDER = 'files_uploaded'#path to uploaded files
     MAX_CONTENT_PATH = 10485760#max size of uploaded file - 10MB
     ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])#extensions allowed for file uploads
-    
+    #Echange server conf
+    EXCHANGE_USERNAME = os.environ.get('EXCHANGE_USERNAME')
+    EXCHANGE_PASSWORD = os.environ.get('EXCHANGE_PASSWORD')
+    EXCHANGE_SERVER = os.environ.get('EXCHANGE_SERVER')
+    EXCHANGE_PRIMARY_SMTP_ADDRESS = os.environ.get('EXCHANGE_PRIMARY_SMTP_ADDRESS')

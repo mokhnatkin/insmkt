@@ -34,6 +34,12 @@ class RegistrationForm(FlaskForm):#зарегистрироваться
             raise ValidationError('Пользователь с таким e-mail адресом уже зарегистрирован.')
 
 
+class EditUserForm(FlaskForm):#изменить пользователя
+    username = StringField('Логин',validators=[DataRequired()])
+    email = StringField('E-mail',validators=[DataRequired(), Email()])    
+    submit = SubmitField('Изменить')
+
+
 class PostForm(FlaskForm):#опубликовать пост
     post = TextAreaField('Ваш пост:',validators=[DataRequired(), Length(min=1,max=500)])
     submit = SubmitField('Опубликовать')
@@ -228,4 +234,18 @@ class AddEditClassForm(FlaskForm):#добавить новый класс стр
     voluntary_personal = BooleanField('Относится к добровольному личному страхованию')
     voluntary_property = BooleanField('Относится к добровольному имущественному страхованию')
     submit = SubmitField('Добавить / изменить')
+
+
+class SendEmailToUsersForm(FlaskForm):#отправить всем пользователям email
+    subject = StringField('Тема сообщения',validators=[DataRequired()])
+    body = TextAreaField('Текст сообщения',validators=[DataRequired(), Length(min=1,max=500)])
+    send_to_all = BooleanField('Отправить всем')
+    users = SelectMultipleField('Получатели (удерживайте Ctrl)',choices = [])
+    submit = SubmitField('Отправить сообщение')
+
+    def __init__(self, *args, **kwargs):
+        super(SendEmailToUsersForm, self).__init__(*args, **kwargs)
+        all_users = User.query.order_by(User.last_seen.desc()).all()
+        all_users_str = [(str(a.id), a.username) for a in all_users]
+        self.users.choices = all_users_str
 

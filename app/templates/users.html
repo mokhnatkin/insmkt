@@ -10,6 +10,7 @@
             <th>Роль</th>
             <th>e-mail</th>
             <th>Последний вход</th>
+            <th>Изменить</th>
         </tr>
         {% if users_len>0 %}
             {% for rownum in range(users_len) %}
@@ -18,7 +19,8 @@
                     <td><a href="{{ url_for('user',username=users[rownum].username) }}">{{ users[rownum].username }}</a></td>
                     <td>{{ users[rownum].role }}</td>
                     <td>{{ users[rownum].email }}</td>
-                    <td>{{ moment(users[rownum].last_seen).format('LLL') }} </td>            
+                    <td>{{ moment(users[rownum].last_seen).format('LLL') }}</td>
+                    <td><a href="{{ url_for('edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
                 </tr>
             {% endfor %}
         {% endif %}
