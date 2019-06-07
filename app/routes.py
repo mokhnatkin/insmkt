@@ -25,6 +25,7 @@ from xlrd import open_workbook
 from functools import wraps
 import random
 from exchangelib import Account, Credentials, Configuration, DELEGATE, Message
+from threading import Thread
 
 
 @app.before_request
@@ -2079,12 +2080,18 @@ def edit_class(class_id=None):
     return render_template('add_edit_class.html',form=form)
 
 
+def send_async_email(app,msg):#асинхронная отправка email
+    with app.app_context():
+        msg.send()
+
+
 def send_email(subject,body,recipients):#функция отправки email с заданной темой, телом
     credentials = Credentials(username=app.config['EXCHANGE_USERNAME'],password=app.config['EXCHANGE_PASSWORD'])
     config = Configuration(server=app.config['EXCHANGE_SERVER'],credentials=credentials)
     account = Account(primary_smtp_address=app.config['EXCHANGE_PRIMARY_SMTP_ADDRESS'],config=config,autodiscover=False,access_type=DELEGATE)
-    m = Message(account=account,subject=subject,body=body,to_recipients=recipients)
-    m.send()
+    msg = Message(account=account,subject=subject,body=body,to_recipients=recipients)
+    Thread(target=send_async_email,args=(app,msg)).start()
+    #msg.send()
 
 
 @app.route('/send_email_to_users',methods=['GET', 'POST'])#отправить мейл пользователям
