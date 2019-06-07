@@ -1173,6 +1173,8 @@ def company_profile():#портрет компании
     show_last_year = False
     b = g.min_report_date
     e = g.last_report_date
+    b_l_y = None
+    e_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1233,7 +1235,7 @@ def company_profile():#портрет компании
                 img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums, \
                 show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
                 balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
-                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr)
+                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr,b_l_y=b_l_y,e_l_y=e_l_y)
 
 
 @app.route('/chart.png/<c_id>/<begin>/<end>/<chart_type>')#plot chart for a given company (id = c_id) and chart type, and given period
@@ -1630,6 +1632,8 @@ def class_profile():#инфо по классу
     class_companies_l_y = None
     class_info_l_y = None
     class_totals_l_y = None
+    b_l_y = None
+    e_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1668,7 +1672,7 @@ def class_profile():#инфо по классу
                 class_companies_len=class_companies_len,img_path_prem=img_path_prem, \
                 img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
                 show_last_year=show_last_year,class_companies_l_y=class_companies_l_y, \
-                class_totals_l_y=class_totals_l_y)
+                class_totals_l_y=class_totals_l_y,b_l_y=b_l_y,e_l_y=e_l_y)
 
 
 def get_peers_names(peers):#получаем имена конкурентов исходя из их id
@@ -1934,6 +1938,8 @@ def ranking():
     netincome_total_l_y = None
     solvency_margin_av_l_y = None
     lr_av_l_y = None
+    b_l_y = None
+    e_l_y = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -1977,7 +1983,7 @@ def ranking():
                     lr_list_l_y=lr_list_l_y, net_premiums_total_l_y=net_premiums_total_l_y, \
                     equity_total_l_y=equity_total_l_y, netincome_total_l_y=netincome_total_l_y, \
                     solvency_margin_av_l_y=solvency_margin_av_l_y, lr_av_l_y=lr_av_l_y, \
-                    round=round,is_id_in_arr=is_id_in_arr)
+                    round=round,is_id_in_arr=is_id_in_arr,b_l_y=b_l_y,e_l_y=e_l_y)
 
 
 @app.route('/add_new_company',methods=['GET', 'POST'])#добавить новое имя компании (переименование)

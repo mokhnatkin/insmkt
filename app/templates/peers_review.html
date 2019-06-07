@@ -19,13 +19,14 @@
         <h3>Выбранные конкуренты: {{ peers_names }}</h3>
         <div align="center">
             <h2>Основные балансовые показатели</h2>
-            <p>на {{ moment(e).format('LL') }}</p>
+            <p><b>на {{ moment(e).format('LL') }}</b></p>
+            <p><i>* все показатели, кроме норматива маржи платежеспособности, приведены <b>в тыс.тг.</b></i></p>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <tr>
                         <th>Показатель</th>
-                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
-                        <th align="right">Среднее по конкурентам, тыс.тг.</th>
+                        <th align="right">{{ company_name }}</th>                        
+                        <th align="right">Среднее по конкурентам</th>
                         {% if show_competitors %}
                             {% for c in peers_names_arr %}
                                 <th align="right">{{ c.peer_name }}</th>
@@ -61,13 +62,14 @@
     {% if show_income_statement %}
         <div align="center">
             <h2>Основные показатели ОПУ</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+            <p><i>* все показатели приведены <b>в тыс.тг.</b></i></p>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <tr>
                         <th>Показатель</th>
-                        <th align="right">Значение по {{ company_name }}, тыс.тг.</th>                        
-                        <th align="right">Среднее по конкурентам, тыс.тг.</th>
+                        <th align="right">{{ company_name }}</th>                        
+                        <th align="right">Среднее по конкурентам</th>
                         {% if show_competitors %}
                             {% for c in peers_names_arr %}
                                 <th align="right">{{ c.peer_name }}</th>
@@ -94,12 +96,12 @@
     {% if show_other_financial_indicators %}        
         <div align="center">
             <h2>Другие финансовые показатели</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <tr>
                         <th>Показатель</th>
-                        <th align="right">Значение по {{ company_name }}</th>
+                        <th align="right">{{ company_name }}</th>
                         <th align="right">Среднее по конкурентам</th>
                         {% if show_competitors %}
                             {% for c in peers_names_arr %}

@@ -15,24 +15,25 @@
     </div>
 
     {% if class_companies %}
-        <div>
+        <div align="center">
             <h2>Информация по классу {{ class_name }} в разрезе компаний</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <p><i>В списке отображаются только те компании, у которых были премии или выплаты по классу {{ class_name }} за выбранный период</i></p>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+            <p><i>* в списке отображаются только те компании, у которых были премии или выплаты по классу {{ class_name }} за выбранный период</i></p>
+            <p><i>** премии и выплаты приведены в <b>тыс.тг.</b></i></p>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>N</th>
                             <th>Компания</th>
-                            <th align="right">Премии, тыс.тг.</th>
+                            <th align="right">Премии</th>
                             <th align="right">Доля рынка, %</th>
-                            <th align="right">Выплаты, тыс.тг.</th>
+                            <th align="right">Выплаты</th>
                             <th align="right">Коэффициент выплат, %</th>
                             {% if show_last_year %}
-                                <th align="right">Премии за аналогичный период прошлого года, тыс.тг.</th>
-                                <th align="right">Выплаты за аналогичный период прошлого года, тыс.тг.</th>
-                                <th align="right">Коэффициент выплат за аналогичный период прошлого года, тыс.тг.</th>                                
+                                <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                                <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                                <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>                                
                             {% endif %}
                         </tr>
                     </thead>
@@ -90,10 +91,10 @@
     {% endif %}
 
     {% if class_info %}
-        <div>
+        <div align="center">
             <h2>Динамика развития класса {{ class_name }}</h2>
-            <p>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</p>
-            <p><i>Информация по всем компаниям</i></p>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+            <p><i> * информация приведена по всем компаниям</i></p>
             <div class="container">
                 <div class="row">
                     <div class="col-md-6 col-sm-12 col-xs-12">
@@ -114,7 +115,7 @@
                 <table class="table table-hover">
                     <tr>
                         <th>Месяц</th>                            
-                        <th>Коэффициент выплаты, %</th>
+                        <th>Коэффициент выплат, %</th>
                     </tr>
                         {% for m in class_info %}
                             <tr>                                
