@@ -8,7 +8,7 @@ from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, Dat
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
-            Compute, Company_all_names, Insclass_all_names
+            Compute, Company_all_names, Insclass_all_names, View_log
 from werkzeug.urls import url_parse
 from datetime import datetime
 from flask_babel import get_locale
@@ -68,6 +68,7 @@ def get_current_user_role():#возвращает роль текущего по
 @login_required
 def index():#домашняя страница
     form = PostForm()
+    save_to_log('index',current_user.id)
     if form.validate_on_submit():
         post = Post(body=form.post.data,author=current_user)
         db.session.add(post)
@@ -1183,6 +1184,7 @@ def company_profile():#портрет компании
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
         e = form.end_d.data
+        save_to_log('company_profile',current_user.id)
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -1642,6 +1644,7 @@ def class_profile():#инфо по классу
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
         e = form.end_d.data
+        save_to_log('class_profile',current_user.id)
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -1712,14 +1715,15 @@ def peers_review():#сравнение с конкурентами
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
         e = form.end_d.data
-        b = datetime(b.year,b.month,1)
-        e = datetime(e.year,e.month,1)
-        #подготовим данные для таблиц
         c_id = int(form.company.data)#компания
         peers_str = form.peers.data#выбранные конкуренты
         peers = list()
         for c in peers_str:#convert id to int
-            peers.append((int(c),))
+            peers.append((int(c),))        
+        save_to_log('peers_review',current_user.id)        
+        b = datetime(b.year,b.month,1)
+        e = datetime(e.year,e.month,1)
+        #подготовим данные для таблиц
         if form.company.data in peers_str:
             flash('''Вы выбрали Вашу компанию в списке конкурентов. 
                 Сравнивать себя с собой не имеет большого смысла, не правда ли?
@@ -1947,7 +1951,8 @@ def ranking():
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
-        e = form.end_d.data
+        e = form.end_d.data        
+        save_to_log('ranking',current_user.id)
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -2177,3 +2182,53 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html',title='Изменение пароля',form=form)
 
+#список функций для логирования
+views_for_logging = [{'id':0,'name':'index'},
+                        {'id':1,'name':'company_profile'},
+                        {'id':2,'name':'class_profile'},
+                        {'id':3,'name':'peers_review'},
+                        {'id':4,'name':'ranking'}
+                    ]
+
+
+def save_to_log(view_name,user_id):#сохраним факт запроса в лог
+    view_id = get_view_id(view_name)
+    log_instance = View_log(view_id=view_id,user_id=user_id)
+    db.session.add(log_instance)
+    db.session.commit()
+
+
+def get_view_id(name):#получаем id запрошенной функции
+    res = None
+    for v in views_for_logging:
+        if v['name'] == name:
+            res = v['id']
+    return res
+
+
+def get_view_name(_id):#получаем название запрошенной функции
+    res = None
+    for v in views_for_logging:
+        if v['id'] == _id:
+            res = v['name']
+    return res
+
+@app.route('/usage_log')#отправить мейл пользователям
+@login_required
+@required_roles('admin')
+def usage_log():
+    page = request.args.get('page',1,type=int)
+    log_events = View_log.query.join(User) \
+                .with_entities(User.username,View_log.timestamp,View_log.view_id) \
+                .order_by(View_log.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
+    next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
+    prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None                
+    return render_template('usage_log.html',title='Лог использования портала', \
+        get_view_name=get_view_name,log_events=log_events.items,next_url=next_url,prev_url=prev_url)
+
+
+    #page = request.args.get('page',1,type=int)
+    #posts = Post.query.order_by(Post.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
+    #next_url = url_for('explore',page=posts.next_num) if posts.has_next else None
+    #prev_url = url_for('explore',page=posts.prev_num) if posts.has_prev else None
+    #return render_template('explore.html',title='Все посты',posts=posts.items,next_url=next_url,prev_url=prev_url)

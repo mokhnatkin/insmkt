@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Действия пользователей (запросы)</h1>
+<div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <tr>
+                <th>Пользователь</th>
+                <th>View</th>
+                <th>Дата-время запроса</th>
+            </tr>
+            {% for e in log_events %}
+                <tr>
+                    <td>{{ e.username }}</td>
+                    <td>{{ get_view_name(e.view_id) }}</td>                    
+                    <td>{{ moment(e.timestamp).format('LLL') }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <nav aria-label="...">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> Более новые
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    Более старые <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+{% endblock %}

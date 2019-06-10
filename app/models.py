@@ -12,6 +12,7 @@ class User(UserMixin,db.Model):#пользователь (хранится в Б
     email = db.Column(db.String(120),index=True,unique=True)
     password_hash = db.Column(db.String(128))
     posts = db.relationship('Post',backref='author',lazy='dynamic')
+    views = db.relationship('View_log',backref='user',lazy='dynamic')
     last_seen = db.Column(db.DateTime,default=datetime.utcnow)
     role = db.Column(db.String(20),default='user', nullable=False)
 
@@ -188,6 +189,13 @@ class Compute(db.Model):#выполненные перерасчёты
     data_type = db.Column(db.String(20))
     beg_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
+    timestamp = db.Column(db.DateTime,default=datetime.utcnow)
+
+
+class View_log(db.Model):#лог - какие view запускал пользователь
+    id = db.Column(db.Integer,primary_key=True)
+    view_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer,db.ForeignKey('user.id'))
     timestamp = db.Column(db.DateTime,default=datetime.utcnow)
 
 
