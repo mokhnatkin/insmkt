@@ -2241,17 +2241,22 @@ def usage_log():
     form = UsageLogForm()
     if request.method == 'GET':
         today = datetime.utcnow()
-        beg_d = datetime(today.year,today.month,1)
+        beg_this_month = datetime(today.year,today.month,1)
+        stat_min_date = View_log.query \
+            .with_entities(func.min(View_log.timestamp).label("min_time")).first()        
+        #session.query(self.stats.c.ID, func.max(self.stats.c.STA_DATE))
+        min_date = stat_min_date[0]
+        beg_d = max(beg_this_month,min_date)
         end_d = today
         form.begin_d.data = beg_d
-        form.end_d.data = end_d        
+        form.end_d.data = end_d
         log_events, events_by_user, events_by_page = get_data_for_usage_log(beg_d,end_d)
     if form.validate_on_submit():
         b = form.begin_d.data
         e = form.end_d.data + timedelta(days=1)        
         log_events, events_by_user, events_by_page = get_data_for_usage_log(b,e)
     return render_template('usage_log.html',title='Лог использования портала', \
-        get_view_name=get_view_name,log_events=log_events, \
+        get_view_name=get_view_name,log_events=log_events, min_date=min_date, \
         events_by_user=events_by_user,events_by_page=events_by_page,form=form)
 
 
