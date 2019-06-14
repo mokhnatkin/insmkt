@@ -260,3 +260,17 @@ class SendEmailToUsersForm(FlaskForm):#отправить всем пользо�
         all_users_str = [(str(a.id), a.username) for a in all_users]
         self.users.choices = all_users_str
 
+
+class UsageLogForm(FlaskForm):#лог использования    
+    begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    submit = SubmitField('Показать')
+    
+    def validate(self):#дата окончания должна быть больше даты начала
+        d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
+        d_end = datetime(self.end_d.data.year,self.end_d.data.month,self.end_d.data.day)
+        if self.begin_d.data > self.end_d.data:
+            flash('Дата окончания должна быть больше даты начала')
+            return False        
+        else:
+            return True

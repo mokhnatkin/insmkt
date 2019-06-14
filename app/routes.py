@@ -4,13 +4,13 @@ from app.forms import LoginForm, RegistrationForm, PostForm, DictUploadForm, Dat
                 ComputePerMonthIndicators, CompanyProfileForm, ClassProfileForm, PeersForm, \
                 RankingForm, DictSelectForm, AddNewCompanyName, AddNewClassName, \
                 AddEditCompanyForm, AddEditClassForm, SendEmailToUsersForm, EditUserForm, \
-                ResetPasswordRequestForm, ResetPasswordForm
+                ResetPasswordRequestForm, ResetPasswordForm, UsageLogForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
             Compute, Company_all_names, Insclass_all_names, View_log
 from werkzeug.urls import url_parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_babel import get_locale
 from werkzeug.utils import secure_filename
 import os
@@ -26,6 +26,7 @@ from functools import wraps
 import random
 from exchangelib import Account, Credentials, Configuration, DELEGATE, Message
 from threading import Thread
+from sqlalchemy import func
 
 
 @app.before_request
@@ -2213,22 +2214,51 @@ def get_view_name(_id):#получаем название запрошенной
             res = v['name']
     return res
 
-@app.route('/usage_log')#отправить мейл пользователям
+
+def get_data_for_usage_log(beg_d,end_d,page):#получаем данные для лога
+    log_events = View_log.query.join(User) \
+                    .with_entities(User.username,View_log.timestamp,View_log.view_id) \
+                    .filter(View_log.timestamp >= beg_d) \
+                    .filter(View_log.timestamp <= end_d) \
+                    .order_by(View_log.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
+    events_by_user = View_log.query.join(User) \
+                    .with_entities(User.username,func.count(View_log.view_id).label("amount")) \
+                    .filter(View_log.timestamp >= beg_d) \
+                    .filter(View_log.timestamp <= end_d) \
+                    .group_by(User.username).order_by(func.count(View_log.view_id).desc()).all()
+    events_by_page = View_log.query \
+                    .with_entities(View_log.view_id,func.count(View_log.view_id).label("amount")) \
+                    .filter(View_log.timestamp >= beg_d) \
+                    .filter(View_log.timestamp <= end_d) \
+                    .group_by(View_log.view_id).order_by(func.count(View_log.view_id).desc()).all()                    
+    return log_events, events_by_user, events_by_page
+
+
+@app.route('/usage_log',methods=['GET','POST'])#отправить мейл пользователям
 @login_required
 @required_roles('admin')
 def usage_log():
-    page = request.args.get('page',1,type=int)
-    log_events = View_log.query.join(User) \
-                .with_entities(User.username,View_log.timestamp,View_log.view_id) \
-                .order_by(View_log.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
-    next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
-    prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None                
+    form = UsageLogForm()
+    if request.method == 'GET':
+        today = datetime.utcnow()
+        beg_d = datetime(today.year,today.month,1)
+        end_d = today
+        form.begin_d.data = beg_d
+        form.end_d.data = end_d
+        page = request.args.get('page',1,type=int)
+        log_events, events_by_user, events_by_page = get_data_for_usage_log(beg_d,end_d,page)        
+        next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
+        prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None
+    if form.validate_on_submit():
+        b = form.begin_d.data
+        e = form.end_d.data + timedelta(days=1)
+        page = request.args.get('page',1,type=int)
+        log_events, events_by_user, events_by_page = get_data_for_usage_log(b,e,page)        
+        next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
+        prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None
     return render_template('usage_log.html',title='Лог использования портала', \
-        get_view_name=get_view_name,log_events=log_events.items,next_url=next_url,prev_url=prev_url)
+        get_view_name=get_view_name,log_events=log_events.items, \
+        next_url=next_url,prev_url=prev_url,events_by_user=events_by_user, \
+        events_by_page=events_by_page,form=form)
 
 
-    #page = request.args.get('page',1,type=int)
-    #posts = Post.query.order_by(Post.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
-    #next_url = url_for('explore',page=posts.next_num) if posts.has_next else None
-    #prev_url = url_for('explore',page=posts.prev_num) if posts.has_prev else None
-    #return render_template('explore.html',title='Все посты',posts=posts.items,next_url=next_url,prev_url=prev_url)
