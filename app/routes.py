@@ -2215,12 +2215,12 @@ def get_view_name(_id):#получаем название запрошенной
     return res
 
 
-def get_data_for_usage_log(beg_d,end_d,page):#получаем данные для лога
+def get_data_for_usage_log(beg_d,end_d):#получаем данные для лога
     log_events = View_log.query.join(User) \
                     .with_entities(User.username,View_log.timestamp,View_log.view_id) \
                     .filter(View_log.timestamp >= beg_d) \
                     .filter(View_log.timestamp <= end_d) \
-                    .order_by(View_log.timestamp.desc()).paginate(page,app.config['POSTS_PER_PAGE'],False)
+                    .order_by(View_log.timestamp.desc()).all()
     events_by_user = View_log.query.join(User) \
                     .with_entities(User.username,func.count(View_log.view_id).label("amount")) \
                     .filter(View_log.timestamp >= beg_d) \
@@ -2244,21 +2244,14 @@ def usage_log():
         beg_d = datetime(today.year,today.month,1)
         end_d = today
         form.begin_d.data = beg_d
-        form.end_d.data = end_d
-        page = request.args.get('page',1,type=int)
-        log_events, events_by_user, events_by_page = get_data_for_usage_log(beg_d,end_d,page)        
-        next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
-        prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None
+        form.end_d.data = end_d        
+        log_events, events_by_user, events_by_page = get_data_for_usage_log(beg_d,end_d)
     if form.validate_on_submit():
         b = form.begin_d.data
-        e = form.end_d.data + timedelta(days=1)
-        page = request.args.get('page',1,type=int)
-        log_events, events_by_user, events_by_page = get_data_for_usage_log(b,e,page)        
-        next_url = url_for('usage_log',page=log_events.next_num) if log_events.has_next else None
-        prev_url = url_for('usage_log',page=log_events.prev_num) if log_events.has_prev else None
+        e = form.end_d.data + timedelta(days=1)        
+        log_events, events_by_user, events_by_page = get_data_for_usage_log(b,e)
     return render_template('usage_log.html',title='Лог использования портала', \
-        get_view_name=get_view_name,log_events=log_events.items, \
-        next_url=next_url,prev_url=prev_url,events_by_user=events_by_user, \
-        events_by_page=events_by_page,form=form)
+        get_view_name=get_view_name,log_events=log_events, \
+        events_by_user=events_by_user,events_by_page=events_by_page,form=form)
 
 
