@@ -46,6 +46,23 @@
         </div>    
 </div>
 <div>
+    <h2>Запросы по дням</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>
+                    <th>Страница</th>
+                    <th>Кол-во запросов</th>                    
+                </tr>
+                {% for e in events_by_day %}
+                    <tr>
+                        <td>{{ moment(e.date).format('LL') }}</td>
+                        <td>{{ e.amount }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>    
+</div>
+<div>
     <h2>Список запросов</h2>
     <div class="table-responsive">
         <table class="table table-hover">
