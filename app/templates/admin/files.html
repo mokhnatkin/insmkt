@@ -19,7 +19,7 @@
                     <td>{{ f.file_type }}</td>
                     <td>{{ f.dict_type or f.data_type }}</td>
                     <td>{{ moment(f.report_date).format('LL') }}</td>
-                    <td><a href="{{ url_for('downloadFile',fname=f.file_name) }}">{{ f.file_name }}</a></td>
+                    <td><a href="{{ url_for('admin.downloadFile',fname=f.file_name) }}">{{ f.file_name }}</a></td>
                     <td>{{ moment(f.timestamp).format('LLL') }} </td>
                 </tr>
             {% endfor %}

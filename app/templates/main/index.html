@@ -17,19 +17,19 @@
         <b>{{ moment(g.min_report_date).format('LL') }}</b> по  
         <b>{{ moment(g.last_report_date).format('LL') }}</b>
     </p>
-    <p>На вкладке <a href="{{ url_for('company_profile') }}">Портрет компании</a>
+    <p>На вкладке <a href="{{ url_for('company_peers_profile.company_profile') }}">Портрет компании</a>
         можно посмотреть информацию о выбранной компании
         за выбранный период, а также сравнить основные показатели с рынком.
     </p>
-    <p>На вкладке <a href="{{ url_for('class_profile') }}">Инфо по классу</a>
+    <p>На вкладке <a href="{{ url_for('class_profile.class_profile') }}">Инфо по классу</a>
         можно посмотреть информацию о выбранном классе страхования
         за выбранный период, а также динамику его развития.
     </p>
-    <p>На вкладке <a href="{{ url_for('peers_review') }}">Обзор конкурентов</a>
+    <p>На вкладке <a href="{{ url_for('company_peers_profile.peers_review') }}">Обзор конкурентов</a>
         можно сравнить показатели выбранной компании с основными конкурентами
         (за выбранный период). Конкурентов нужно будет выбрать из списка.
     </p>
-    <p>На вкладке <a href="{{ url_for('ranking') }}">Рэнкинг</a>
+    <p>На вкладке <a href="{{ url_for('ranking.ranking') }}">Рэнкинг</a>
         можно посмотреть позицию компаний по основным показателям.
     </p>
     <p>Также вы можете оставлять посты, чтобы другие пользователи смогли увидеть
@@ -86,8 +86,8 @@
     <div>
         <h2>Последние посты</h2>
         {% for post in posts %}
-            {% include '_post.html' %}
+            {% include 'main/_post.html' %}
         {% endfor %}
-        <br><a href="{{ url_for('explore') }}">Все посты</a>
+        <br><a href="{{ url_for('main.explore') }}">Все посты</a>
     </div>
 {% endblock %}

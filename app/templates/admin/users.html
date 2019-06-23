@@ -17,11 +17,11 @@
                 {% for rownum in range(users_len) %}
                     <tr>
                         <td>{{ rownum + 1 }}</td>
-                        <td><a href="{{ url_for('user',username=users[rownum].username) }}">{{ users[rownum].username }}</a></td>
+                        <td><a href="{{ url_for('main.user',username=users[rownum].username) }}">{{ users[rownum].username }}</a></td>
                         <td>{{ users[rownum].role }}</td>
                         <td>{{ users[rownum].email }}</td>
                         <td>{{ moment(users[rownum].last_seen).format('LLL') }}</td>
-                        <td><a href="{{ url_for('edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
+                        <td><a href="{{ url_for('admin.edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
                     </tr>
                 {% endfor %}
             {% endif %}

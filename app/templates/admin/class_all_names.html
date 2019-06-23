@@ -20,7 +20,7 @@
                     <td>{{ c.insclass_id }}</td>
                     <td>{{ c.name }}</td> 
                     <td>{{ c.fullname }}</td>
-                    <td><a href="{{ url_for('edit_class_name',class_id=c.insclass_id,_id=c.id) }}">Изменить</a></td>
+                    <td><a href="{{ url_for('admin.edit_class_name',class_id=c.insclass_id,_id=c.id) }}">Изменить</a></td>
                 </tr>
             {% endfor %}
         </table>
