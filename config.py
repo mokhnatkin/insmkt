@@ -13,6 +13,7 @@ class Config(object):
     LANGUAGES = ['ru','en']
     #file upload
     UPLOAD_FOLDER = 'files_uploaded'#path to uploaded files
+    STATIC_FOLDER = 'static'#static files
     MAX_CONTENT_PATH = 10485760#max size of uploaded file - 10MB
     ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])#extensions allowed for file uploads
     #Echange server conf

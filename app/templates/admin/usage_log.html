@@ -11,75 +11,77 @@
         {{ wtf.quick_form(form) }}
     </div>
 </div>
-<div>
-    <h2>Запросы по пользователям</h2>
+
+{% if show_info %}
+    <div>
+        <h2>Запросы по пользователям</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Кол-во запросов</th>                    
+                    </tr>
+                    {% for u in events_by_user %}
+                        <tr>
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>    
+    </div>
+    <div>
+        <h2>Запросы по страницам</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Страница</th>
+                        <th>Кол-во запросов</th>                    
+                    </tr>
+                    {% for p in events_by_page %}
+                        <tr>
+                            <td>{{ get_view_name(p.view_id) }}</td>
+                            <td>{{ p.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>    
+    </div>
+    <div>
+        <h2>Запросы по дням</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Кол-во запросов</th>                    
+                    </tr>
+                    {% for e in events_by_day %}
+                        <tr>
+                            <td>{{ moment(e.date).format('LL') }}</td>
+                            <td>{{ e.amount }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>    
+    </div>
+    <div>
+        <h2>Список запросов</h2>
         <div class="table-responsive">
             <table class="table table-hover">
                 <tr>
                     <th>Пользователь</th>
-                    <th>Кол-во запросов</th>                    
+                    <th>View</th>
+                    <th>Дата-время запроса</th>
                 </tr>
-                {% for u in events_by_user %}
+                {% for e in log_events %}
                     <tr>
-                        <td>{{ u.username }}</td>
-                        <td>{{ u.amount }}</td>
+                        <td>{{ e.username }}</td>
+                        <td>{{ get_view_name(e.view_id) }}</td>                    
+                        <td>{{ moment(e.timestamp).format('LLL') }}</td>
                     </tr>
                 {% endfor %}
             </table>
-        </div>    
-</div>
-<div>
-    <h2>Запросы по страницам</h2>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>Страница</th>
-                    <th>Кол-во запросов</th>                    
-                </tr>
-                {% for p in events_by_page %}
-                    <tr>
-                        <td>{{ get_view_name(p.view_id) }}</td>
-                        <td>{{ p.amount }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>    
-</div>
-<div>
-    <h2>Запросы по дням</h2>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>Дата</th>
-                    <th>Кол-во запросов</th>                    
-                </tr>
-                {% for e in events_by_day %}
-                    <tr>
-                        <td>{{ moment(e.date).format('LL') }}</td>
-                        <td>{{ e.amount }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>    
-</div>
-<div>
-    <h2>Список запросов</h2>
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <tr>
-                <th>Пользователь</th>
-                <th>View</th>
-                <th>Дата-время запроса</th>
-            </tr>
-            {% for e in log_events %}
-                <tr>
-                    <td>{{ e.username }}</td>
-                    <td>{{ get_view_name(e.view_id) }}</td>                    
-                    <td>{{ moment(e.timestamp).format('LLL') }}</td>
-                </tr>
-            {% endfor %}
-        </table>
+        </div>
     </div>
-</div>
-
+{% endif %}
 {% endblock %}
