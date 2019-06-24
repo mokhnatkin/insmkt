@@ -88,6 +88,11 @@ def computes():
     computes = Compute.query.order_by(Compute.timestamp.desc()).all()
     return render_template('admin/computes.html',computes=computes)
 
+@bp.route('/download_from_static/<fname>')
+def download_from_static(fname):
+    p = os.path.join(os.path.dirname(os.path.abspath(current_app.config['STATIC_FOLDER'])),current_app.config['STATIC_FOLDER'],fname)
+    return send_file(p)
+
 
 @bp.route('/files/<fname>')#файл для скачивания на комп
 @login_required

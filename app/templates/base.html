@@ -1,8 +1,17 @@
 {% extends 'bootstrap/base.html' %}
 
-{% block title %}
-    {% if title %}{{ title }} - InsMkt{% else %}InsMkt{% endif %}
+{% block head %}
+    <title>
+        {% if title %}{{ title }}
+        {% else %}InsMkt статистика страховому рынку РК
+        {% endif %}
+    </title>
+    <link rel="icon" href="{{ url_for('admin.download_from_static',fname='favicon.ico') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">    
 {% endblock %}
+
 
 {% block navbar %}
     <nav class="navbar navbar-default">
