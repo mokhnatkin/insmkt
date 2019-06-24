@@ -46,6 +46,7 @@ def instruction():
 @required_roles('admin')
 def edit_user(user_id=None):
     form = EditUserForm()
+    h1_txt = 'Изменить данные пользователя'
     obj = User.query.filter(User.id == user_id).first()
     if request.method == 'GET':        
         form = EditUserForm(obj=obj)
@@ -55,7 +56,7 @@ def edit_user(user_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_user', user_id=user_id))
-    return render_template('admin/edit_user.html',form=form)
+    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt)
 
 
 @bp.route('/users')#список пользователей
@@ -298,6 +299,8 @@ def check_process_file_res(file_subtype,report_date):#проверка резу�
 @login_required
 @required_roles('admin')
 def upload_file(upload_type):
+    title = 'Загрузка файла'
+    h1_txt = 'Загрузка файла'
     if upload_type == 'dictionary':
         form = DictUploadForm()
         descr = 'Здесь из excel файлов загружаются справочники'
@@ -395,7 +398,8 @@ def upload_file(upload_type):
                     return redirect(url_for('admin.upload_file', upload_type='data'))
         else:
             flash('Файл не выбран, либо некорректное расширение. Доступные расширения:'+str(current_app.config['ALLOWED_EXTENSIONS']))
-    return render_template('admin/upload_file.html',title='Загрузка файла',form=form,descr=descr)
+    return render_template('admin/add_edit_DB_item.html',title=title, \
+                        form=form,descr=descr,h1_txt=h1_txt)
 
 
 def class_has_other_names(class_id):
@@ -639,6 +643,8 @@ def check_compute_res(data_type,begin_date,end_date):#проверка резу�
 def compute():#перерасчёт
     descr = 'Здесь запускается перерасчет показателей за месяц (премии, выплаты и др.). Выберите тип данных, начало и конец месяца.'
     form = ComputePerMonthIndicators()
+    title='Перерасчет показателей'
+    h1_txt = 'Перерасчет показателей за период'
     if form.validate_on_submit():
         #сначала проверим - возможно перерасчет за этот месяц уже выполнялся
         already_computed = Compute.query.filter(Compute.data_type == form.data_type.data).filter(Compute.beg_date == form.begin_date.data).filter(Compute.end_date == form.end_date.data).first()
@@ -656,7 +662,8 @@ def compute():#перерасчёт
         else:
             flash('Данный перерасчёт уже был выполнен. Повторного перерасчёта не требуется.')
             return redirect(url_for('admin.compute'))
-    return render_template('admin/compute.html',title='Перерасчет показателей',form=form,descr=descr)
+    return render_template('admin/add_edit_DB_item.html',title=title,
+                h1_txt=h1_txt,form=form,descr=descr)
 
 
 @bp.route('/add_new_company',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
@@ -664,6 +671,7 @@ def compute():#перерасчёт
 @required_roles('admin')
 def add_new_company():
     form = AddEditCompanyForm()
+    h1_txt = 'Добавить компанию'
     if form.validate_on_submit():
         name = form.name.data
         alias = form.alias.data
@@ -683,7 +691,7 @@ def add_new_company():
             return redirect(url_for('admin.add_new_company'))        
         flash('Новая компания добавлена')
         return redirect(url_for('admin.add_new_company'))
-    return render_template('admin/add_edit_company.html', form=form)
+    return render_template('admin/add_edit_DB_item.html', form=form, h1_txt=h1_txt)
 
 
 @bp.route('/edit_company/<company_id>',methods=['GET', 'POST'])#изменить имя компании (переименование)
@@ -691,6 +699,7 @@ def add_new_company():
 @required_roles('admin')
 def edit_company(company_id=None):
     form = AddEditCompanyForm()
+    h1_txt = 'Изменить компанию'
     obj = Company.query.filter(Company.id == company_id).first()
     if request.method == 'GET':        
         form = AddEditCompanyForm(obj=obj)
@@ -702,7 +711,7 @@ def edit_company(company_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_company', company_id=company_id))
-    return render_template('admin/add_edit_company.html',form=form)
+    return render_template('admin/add_edit_DB_item.html',form=form, h1_txt=h1_txt)
 
 
 @bp.route('/add_new_class',methods=['GET', 'POST'])#добавить новое имя класса (переименование)
@@ -710,6 +719,7 @@ def edit_company(company_id=None):
 @required_roles('admin')
 def add_new_class():
     form = AddEditClassForm()
+    h1_txt = 'Добавить класс'
     if form.validate_on_submit():
         name = form.name.data
         fullname = form.fullname.data
@@ -734,7 +744,7 @@ def add_new_class():
             return redirect(url_for('admin.add_new_class'))        
         flash('Новый класс добавлен')
         return redirect(url_for('admin.add_new_class'))
-    return render_template('admin/add_edit_class.html', form=form)
+    return render_template('admin/add_edit_DB_item.html', form=form, h1_txt=h1_txt)
 
 
 @bp.route('/edit_class/<class_id>',methods=['GET', 'POST'])#изменить имя класса (переименование)
@@ -742,6 +752,7 @@ def add_new_class():
 @required_roles('admin')
 def edit_class(class_id=None):
     form = AddEditClassForm()
+    h1_txt = 'Изменить класс'
     obj = Insclass.query.filter(Insclass.id == class_id).first()
     if request.method == 'GET':        
         form = AddEditClassForm(obj=obj)
@@ -756,7 +767,7 @@ def edit_class(class_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_class', class_id=class_id))
-    return render_template('admin/add_edit_class.html',form=form)
+    return render_template('admin/add_edit_DB_item.html',form=form, h1_txt=h1_txt)
 
 
 @bp.route('/send_email_to_users',methods=['GET', 'POST'])#отправить мейл пользователям
@@ -764,6 +775,7 @@ def edit_class(class_id=None):
 @required_roles('admin')
 def send_email_to_users():
     form = SendEmailToUsersForm()
+    h1_txt = 'Отправка email сообщения пользователям'
     descr = 'Заполните тему и текст сообщения. Выберите получателей, или пометьте Отправить всем'
     if form.validate_on_submit():
         subject = form.subject.data
@@ -793,7 +805,8 @@ def send_email_to_users():
             return redirect(url_for('admin.send_email_to_users'))
         flash('Сообщение отправлено.')
         return redirect(url_for('admin.send_email_to_users'))
-    return render_template('admin/send_email.html', form=form, descr=descr)
+    return render_template('admin/add_edit_DB_item.html', form=form, descr=descr, \
+                h1_txt=h1_txt)
 
 
 
