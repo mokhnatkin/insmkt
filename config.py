@@ -21,3 +21,10 @@ class Config(object):
     EXCHANGE_PASSWORD = os.environ.get('EXCHANGE_PASSWORD')
     EXCHANGE_SERVER = os.environ.get('EXCHANGE_SERVER')
     EXCHANGE_PRIMARY_SMTP_ADDRESS = os.environ.get('EXCHANGE_PRIMARY_SMTP_ADDRESS')
+    #loggin
+    VIEWS_FOR_LOGGING = [{'id':0,'name':'index'},
+                        {'id':1,'name':'company_profile'},
+                        {'id':2,'name':'class_profile'},
+                        {'id':3,'name':'peers_review'},
+                        {'id':4,'name':'ranking'},
+                        {'id':5,'name':'motor'}]

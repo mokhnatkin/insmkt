@@ -1,4 +1,4 @@
-from flask import flash, redirect, url_for, g
+from flask import flash, redirect, url_for, g, current_app
 from app import db
 from flask_login import current_user
 from app.models import Company, Indicator, Financial, \
@@ -119,22 +119,16 @@ def send_async_email(app,msg):#асинхронная отправка email
 
 
 def send_email(subject,body,recipients):#функция отправки email с заданной темой, телом
-    credentials = Credentials(username=app.config['EXCHANGE_USERNAME'],password=app.config['EXCHANGE_PASSWORD'])
-    config = Configuration(server=app.config['EXCHANGE_SERVER'],credentials=credentials)
-    account = Account(primary_smtp_address=app.config['EXCHANGE_PRIMARY_SMTP_ADDRESS'],config=config,autodiscover=False,access_type=DELEGATE)
+    credentials = Credentials(username=current_app.config['EXCHANGE_USERNAME'],password=current_app.config['EXCHANGE_PASSWORD'])
+    config = Configuration(server=current_app.config['EXCHANGE_SERVER'],credentials=credentials)
+    account = Account(primary_smtp_address=current_app.config['EXCHANGE_PRIMARY_SMTP_ADDRESS'],config=config,autodiscover=False,access_type=DELEGATE)
     msg = Message(account=account,subject=subject,body=body,to_recipients=recipients)
-    Thread(target=send_async_email,args=(app,msg)).start()
-    #msg.send()
-
+    Thread(target=send_async_email,args=(current_app,msg)).start()
+    
 
 
 #список функций для логирования
-views_for_logging = [{'id':0,'name':'index'},
-                        {'id':1,'name':'company_profile'},
-                        {'id':2,'name':'class_profile'},
-                        {'id':3,'name':'peers_review'},
-                        {'id':4,'name':'ranking'}
-                    ]
+views_for_logging = current_app.config['VIEWS_FOR_LOGGING']
 
 
 def save_to_log(view_name,user_id):#сохраним факт запроса в лог

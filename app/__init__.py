@@ -43,6 +43,8 @@ def create_app(config_class=Config):
         app.register_blueprint(main_bp)
         from app.ranking import bp as ranking_bp
         app.register_blueprint(ranking_bp)
+        from app.motor import bp as motor_bp
+        app.register_blueprint(motor_bp)
     return app
 
 

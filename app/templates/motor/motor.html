@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h1>Информация по общей динамике развития компаний и автострахованию</h1>
+    <p><i>{{ descr }}</i></p>
+    <p>
+        Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b>
+        по <b>{{ moment(g.last_report_date).format('LL') }}</b>
+    </p>
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+
+    {% if show_info %}
+        <div align="center">
+            <h2>Информация по компаниям и автострахованию</h2>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+            <p><i>* премии, чистые премии, выплаты и чистые выплаты приведены в <b>тыс.тг.</b></i></p>
+            <p><i>** в списке указаны все компании, у которых за запрошенный период 
+                были премии или выплаты по любому классу;
+                компании упорядочены по убыванию премий по автострахованию</i></p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>N</th>
+                            <th>Компания</th>
+                            {% if show_general_info %}
+                                <th>Премии</th>
+                                <th>Чистые премии</th>
+                                <th>Выплаты</th>
+                                <th>Чистые выплаты</th>
+                                <th>Чистые выплаты к Чистым премиям, %</th>
+                                <th>Доля RE в премиях, %</th>
+                            {% endif %}
+                            <th>Премии по каско</th>
+                            <th>Премии по ОС ГПО ВТС</th>
+                            <th>Всего премий по автострахованию</th>
+                            <th>Выплаты по каско</th>
+                            <th>Выплаты по ОС ГПО ВТС</th>
+                            <th>Всего выплат по автострахованию</th>
+                            <th>Доля ОС ГПО ВТС в валовых премиях, %</th>
+                            <th>Доля каско в валовых премиях, %</th>
+                            <th>Доля ОС ГПО ВТС в премиях по автострахованию, %</th>
+                            <th>Доля каско в премиях по автострахованию, %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rownum in range(len(general_info)) %}
+                            <tr>
+                                <td>{{ rownum + 1 }}</td>
+                                <td>{{ general_info[rownum].alias }}</td>
+                                {% if show_general_info %}
+                                    <td>{{ "{:,.0f}".format(general_info[rownum].premiums) }}</td>
+                                    <td>{{ "{:,.0f}".format(general_info[rownum].net_premiums) }}</td>
+                                    <td>{{ "{:,.0f}".format(general_info[rownum].claims) }}</td>
+                                    <td>{{ "{:,.0f}".format(general_info[rownum].net_claims) }}</td>
+                                    <td>{{ general_info[rownum].net_LR }}</td>
+                                    <td>{{ general_info[rownum].re_share }}</td>
+                                {% endif %}
+                                <td>{{ "{:,.0f}".format(general_info[rownum].casco_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_TPL_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(general_info[rownum].casco_claims) }}</td>
+                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_TPL_claims) }}</td>
+                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_claims) }}</td>
+                                <td>{{ general_info[rownum].motor_TPL_prem_share }}</td>
+                                <td>{{ general_info[rownum].casco_prem_share }}</td>
+                                <td>{{ general_info[rownum].motor_TPL_prem_share_in_motor }}</td>
+                                <td>{{ general_info[rownum].casco_prem_share_in_motor }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td><b>ИТОГО</b></td>
+                            {% if show_general_info %}
+                                <td><b>{{ "{:,.0f}".format(totals.total_premiums) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.total_net_premiums) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.total_claims) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.total_net_claims) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.total_net_LR) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.total_re_share) }}</b></td>                                
+                            {% endif %}
+                            <td><b>{{ "{:,.0f}".format(totals.total_casco_premiums) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_premiums) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_premiums) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_casco_claims) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_claims) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_claims) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_prem_share) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_casco_prem_share) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_prem_share_in_motor) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.total_casco_prem_share_in_motor) }}</b></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% if show_last_year %}
+            <div align="center">
+                <h2>Изменение по сравнению с прошлым годом</h2>
+                <p><b>{{ moment(b).format('LL') }} - {{ moment(e).format('LL') }}</b> 
+                    по сравнению с <b>{{ moment(b_l_y).format('LL') }} - {{ moment(e_l_y).format('LL') }}</b></p>
+                <p><i>* изменения показаны в процентах</i></p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>N</th>
+                                <th>Компания</th>
+                                {% if show_general_info %}
+                                    <th>Премии</th>
+                                    <th>Чистые премии</th>
+                                    <th>Выплаты</th>
+                                    <th>Чистые выплаты</th>
+                                {% endif %}
+                                <th>Премии по каско</th>
+                                <th>Премии по ОС ГПО ВТС</th>
+                                <th>Всего премий по автострахованию</th>
+                                <th>Выплаты по каско</th>
+                                <th>Выплаты по ОС ГПО ВТС</th>
+                                <th>Всего выплат по автострахованию</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rownum in range(len(delta_info)) %}
+                                <tr>
+                                    <td>{{ rownum + 1 }}</td>
+                                    <td>{{ delta_info[rownum].alias }}</td>
+                                    {% if show_general_info %}
+                                        <td>{{ delta_info[rownum].premiums_delta }}</td>
+                                        <td>{{ delta_info[rownum].net_premiums_delta }}</td>
+                                        <td>{{ delta_info[rownum].claims_delta }}</td>
+                                        <td>{{ delta_info[rownum].net_claims_delta }}</td>
+                                    {% endif %}
+                                    <td>{{ delta_info[rownum].casco_premiums_delta }}</td>
+                                    <td>{{ delta_info[rownum].motor_TPL_premiums_delta }}</td>
+                                    <td>{{ delta_info[rownum].motor_premiums_delta }}</td>
+                                    <td>{{ delta_info[rownum].casco_claims_delta }}</td>
+                                    <td>{{ delta_info[rownum].motor_TPL_claims_delta }}</td>
+                                    <td>{{ delta_info[rownum].motor_claims_delta }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td></td>
+                                <td><b>ИТОГО</b></td>
+                                {% if show_general_info %}
+                                    <td><b>{{ total_deltas.total_premiums_delta }}</b></td>
+                                    <td><b>{{ total_deltas.total_net_premiums_delta }}</b></td>
+                                    <td><b>{{ total_deltas.total_claims_delta }}</b></td>
+                                    <td><b>{{ total_deltas.total_net_claims_delta }}</b></td>
+                                {% endif %}
+                                <td><b>{{ total_deltas.total_casco_premiums_delta }}</b></td>
+                                <td><b>{{ total_deltas.total_motor_TPL_premiums_delta }}</b></td>
+                                <td><b>{{ total_deltas.total_motor_premiums_delta }}</b></td>
+                                <td><b>{{ total_deltas.total_casco_claims_delta }}</b></td>
+                                <td><b>{{ total_deltas.total_motor_TPL_claims_delta }}</b></td>
+                                <td><b>{{ total_deltas.total_motor_claims_delta }}</b></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+{% endblock %}

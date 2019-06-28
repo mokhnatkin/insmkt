@@ -48,7 +48,7 @@ def get_ranking(b,e):#вспомогательная функция - получ
                 if m['id'] == c.id:
                     total_v += m['value']            
             net_premiums.append({'id': c.id, 'alias': c.alias, 'value': total_v})
-        net_premiums.sort(key=lambda x: x['value'], reverse=True)#сортируем по убыванию    
+        net_premiums.sort(key=lambda x: x['value'], reverse=True)#сортируем по убыванию
     net_premiums_total = sum(i['value'] for i in net_premiums)
     for el in net_premiums:
         if net_premiums_total>0:
