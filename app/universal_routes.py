@@ -123,9 +123,8 @@ def send_email(subject,body,recipients):#функция отправки email �
     config = Configuration(server=current_app.config['EXCHANGE_SERVER'],credentials=credentials)
     account = Account(primary_smtp_address=current_app.config['EXCHANGE_PRIMARY_SMTP_ADDRESS'],config=config,autodiscover=False,access_type=DELEGATE)
     msg = Message(account=account,subject=subject,body=body,to_recipients=recipients)
-    Thread(target=send_async_email,args=(current_app,msg)).start()
+    Thread(target=send_async_email,args=(current_app._get_current_object(),msg)).start()
     
-
 
 #список функций для логирования
 views_for_logging = current_app.config['VIEWS_FOR_LOGGING']
