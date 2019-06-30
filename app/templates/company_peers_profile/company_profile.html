@@ -170,80 +170,84 @@
         <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
         <p><i>* в списке отображаются только те классы, по которым были премии или выплаты за выбранный период</i></p>
         <p><i>** премии и выплаты приведены <b>в тыс.тг.</b></i></p>
-        <div class="table-responsive">
+        <div class="table-responsive tableFixHead">
             <table class="table table-hover">
-                <tr>
-                    <th>Класс</th>
-                    <th align="right">Премии</th>
-                    <th align="right">Выплаты</th>
-                    <th align="right">Коэффициент выплат, %</th>
-                    {% if show_last_year %}
-                        <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
-                        <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
-                        <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
-                        <th align="right">Изменение премий по сравнению с прошлым годом, %</th>
-                        <th align="right">Изменение выплат по сравнению с прошлым годом, %</th>
-                        <th align="right">Изменение коэффициента выплат по сравнению с прошлым годом</th>
-                    {% endif %}
-                </tr>
-                {% for p in premiums %}
+                <thead>
                     <tr>
-                        <td>{{ p.name }}</td>
-                        <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
-                        <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
-                        <td align="right">{{ p.LR }}</td>
+                        <th>Класс</th>
+                        <th align="right">Премии</th>
+                        <th align="right">Выплаты</th>
+                        <th align="right">Коэффициент выплат, %</th>
                         {% if show_last_year %}
-                            {% if is_id_in_arr(p.id, premiums_l_y) %}
-                                {% for p_l_y in premiums_l_y %}
-                                    {% if p_l_y.id == p.id %}
-                                        <td align="right">{{ "{:,.0f}".format(p_l_y.premium) }}</td>
-                                        <td align="right">{{ "{:,.0f}".format(p_l_y.claim) }}</td>
-                                        <td align="right">{{ p_l_y.LR }}</td>                                        
-                                        {% if p_l_y.premium != 'N.A.' and p.premium != 'N.A.' %}
-                                            {% if p_l_y.premium > 0 %}
-                                                <td align="right">{{ round((p.premium-p_l_y.premium)/p_l_y.premium*100,1) }}</td>
-                                            {% else %}
-                                                {% if p_l_y.premium==0 and p.premium==0 %}
-                                                    <td align="right">0</td>
-                                                {% else %}
-                                                    <td align="right">N.A.</td>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% else %}
-                                            <td>N.A.</td>
-                                        {% endif %}
-                                        {% if p.claim != 'N.A.' and p_l_y.claim != 'N.A.' %}
-                                            {% if p_l_y.claim > 0 %}
-                                                <td align="right">{{ round((p.claim-p_l_y.claim)/p_l_y.claim*100,1) }}</td>
-                                            {% else %}
-                                                {% if p_l_y.claim==0 and p.claim==0 %}
-                                                    <td align="right">0</td>
-                                                {% else %}
-                                                    <td align="right">N.A.</td>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% else %}
-                                            <td align="right">N.A.</td>
-                                        {% endif %}
-                                        {% if p.LR != 'N.A.' and p_l_y.LR != 'N.A.' %}
-                                            <td align="right">{{ round(p.LR-p_l_y.LR,2) }}</td>
-                                        {% else %}
-                                            <td align="right">N.A.</td>
-                                        {% endif %}
-                                        
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                <td align="right">N.A.</td>
-                                <td align="right">N.A.</td>
-                                <td align="right">N.A.</td>
-                                <td align="right">N.A.</td>
-                                <td align="right">N.A.</td>
-                                <td align="right">N.A.</td>                                
-                            {% endif %}
+                            <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                            <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                            <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
+                            <th align="right">Изменение премий по сравнению с прошлым годом, %</th>
+                            <th align="right">Изменение выплат по сравнению с прошлым годом, %</th>
+                            <th align="right">Изменение коэффициента выплат по сравнению с прошлым годом</th>
                         {% endif %}
                     </tr>
-                {% endfor %}
+                </thead>
+                <tbody>
+                    {% for p in premiums %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
+                            <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
+                            <td align="right">{{ p.LR }}</td>
+                            {% if show_last_year %}
+                                {% if is_id_in_arr(p.id, premiums_l_y) %}
+                                    {% for p_l_y in premiums_l_y %}
+                                        {% if p_l_y.id == p.id %}
+                                            <td align="right">{{ "{:,.0f}".format(p_l_y.premium) }}</td>
+                                            <td align="right">{{ "{:,.0f}".format(p_l_y.claim) }}</td>
+                                            <td align="right">{{ p_l_y.LR }}</td>                                        
+                                            {% if p_l_y.premium != 'N.A.' and p.premium != 'N.A.' %}
+                                                {% if p_l_y.premium > 0 %}
+                                                    <td align="right">{{ round((p.premium-p_l_y.premium)/p_l_y.premium*100,1) }}</td>
+                                                {% else %}
+                                                    {% if p_l_y.premium==0 and p.premium==0 %}
+                                                        <td align="right">0</td>
+                                                    {% else %}
+                                                        <td align="right">N.A.</td>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                <td>N.A.</td>
+                                            {% endif %}
+                                            {% if p.claim != 'N.A.' and p_l_y.claim != 'N.A.' %}
+                                                {% if p_l_y.claim > 0 %}
+                                                    <td align="right">{{ round((p.claim-p_l_y.claim)/p_l_y.claim*100,1) }}</td>
+                                                {% else %}
+                                                    {% if p_l_y.claim==0 and p.claim==0 %}
+                                                        <td align="right">0</td>
+                                                    {% else %}
+                                                        <td align="right">N.A.</td>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                <td align="right">N.A.</td>
+                                            {% endif %}
+                                            {% if p.LR != 'N.A.' and p_l_y.LR != 'N.A.' %}
+                                                <td align="right">{{ round(p.LR-p_l_y.LR,2) }}</td>
+                                            {% else %}
+                                                <td align="right">N.A.</td>
+                                            {% endif %}
+                                            
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <td align="right">N.A.</td>
+                                    <td align="right">N.A.</td>
+                                    <td align="right">N.A.</td>
+                                    <td align="right">N.A.</td>
+                                    <td align="right">N.A.</td>
+                                    <td align="right">N.A.</td>                                
+                                {% endif %}
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     {% endif %}
