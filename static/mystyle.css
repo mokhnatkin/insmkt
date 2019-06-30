@@ -1,4 +1,33 @@
-.tableFixHead          { overflow-y: auto; height: 600px; }
-.tableFixHead thead th { position: sticky; top: 0; }
-table  { border-collapse: collapse; width: 100%; }
+table  { 
+    border-collapse: collapse; 
+    width: 100%; }
+
 th     { background:#eee; }
+
+.tableFixHead { 
+                overflow: scroll;
+                overflow-y: auto; 
+                height: 600px; }
+
+.tableFixHead thead th { 
+                        position: -webkit-sticky; 
+                        position: sticky; 
+                        top: 0; }
+
+.tableFixHead thead th:first-child {
+    left: 0;
+    z-index: 1;
+  }
+
+.tableFixHead  tbody th {
+    position: -webkit-sticky; /* for Safari */
+    position: sticky;
+    left: 0;
+  }
+
+.tableFixHead  tfoot th {
+    position: -webkit-sticky; /* for Safari */
+    position: sticky;
+    left: 0;
+  }  
+

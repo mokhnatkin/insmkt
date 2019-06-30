@@ -31,8 +31,8 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>N</th>
                                         <th>Компания</th>
+                                        <th>N</th>                                        
                                         <th align="right">Чистые премии</th>
                                         <th align="right">Доля, %</th>
                                         {% if show_last_year %}
@@ -45,8 +45,8 @@
                                 <tbody>
                                     {% for rownum in range(net_premiums_len) %}
                                         <tr>
-                                            <td>{{ rownum + 1 }}</td>
-                                            <td>{{ net_premiums[rownum].alias }}</td>
+                                            <th>{{ net_premiums[rownum].alias }}</th>
+                                            <td>{{ rownum + 1 }}</td>                                            
                                             <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
                                             <td align="right">{{ net_premiums[rownum].share }}</td>
                                             {% if show_last_year %}
@@ -75,8 +75,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td></td>
-                                        <td><b>ИТОГО</b></td>
+                                        <th>ИТОГО</th>
+                                        <td></td>                                        
                                         <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total) }}</b></td>
                                         <td></td>
                                         {% if show_last_year %}
@@ -105,8 +105,8 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>N</th>
                                         <th>Компания</th>
+                                        <th>N</th>                                        
                                         <th align="right">Коэффициент выплат, %</th>
                                         {% if show_last_year %}
                                             <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>                                        
@@ -117,8 +117,8 @@
                                 <tbody>
                                     {% for rownum in range(lr_list_len) %}
                                         <tr>
+                                            <th>{{ lr_list[rownum].company_name }}</th>
                                             <td>{{ rownum + 1 }}</td>
-                                            <td>{{ lr_list[rownum].company_name }}</td>
                                             <td align="right">{{ lr_list[rownum].lr }}</td>
                                             {% if show_last_year %}
                                                 {% for ind_l_y in lr_list_l_y %}
@@ -139,8 +139,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
+                                        <th>Среднее</th>
                                         <td></td>
-                                        <td><b>Среднее</b></td>
                                         <td align="right"><b>{{ lr_av }}</b></td>
                                         {% if show_last_year %}
                                             <td align="right"><b>{{ lr_av_l_y }}</b></td>
@@ -170,8 +170,8 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>N</th>
                                         <th>Компания</th>
+                                        <th>N</th>                                        
                                         <th align="right">Прибыль (убыток)</th>
                                         <th align="right">Доля, %</th>
                                         {% if show_last_year %}
@@ -183,8 +183,8 @@
                                 <tbody>
                                     {% for rownum in range(netincome_len) %}
                                     <tr>
-                                        <td>{{ rownum + 1 }}</td>
-                                        <td>{{ netincome[rownum].alias }}</td>
+                                        <th>{{ netincome[rownum].alias }}</th>
+                                        <td>{{ rownum + 1 }}</td>                                        
                                         <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
                                         <td align="right">{{ netincome[rownum].share }}</td>
                                         {% if show_last_year %}
@@ -211,8 +211,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
+                                        <th>ИТОГО</th>
                                         <td></td>
-                                        <td><b>ИТОГО</b></td>
                                         <td align="right"><b>{{ "{:,.0f}".format(netincome_total) }}</b></td>
                                         <td></td>
                                         {% if show_last_year %}
@@ -241,8 +241,8 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>N</th>
                                         <th>Компания</th>
+                                        <th>N</th>                                        
                                         <th align="right">Собственный капитал</th>
                                         <th align="right">Доля, %</th>
                                         {% if show_last_year %}
@@ -254,8 +254,8 @@
                                 <tbody>
                                     {% for rownum in range(equity_len) %}
                                         <tr>
+                                            <th>{{ equity[rownum].alias }}</th>
                                             <td>{{ rownum + 1 }}</td>
-                                            <td>{{ equity[rownum].alias }}</td>
                                             <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
                                             <td>{{ equity[rownum].share }}</td>
                                             {% if show_last_year %}
@@ -288,8 +288,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
+                                        <th>ИТОГО</th>
                                         <td></td>
-                                        <td><b>ИТОГО</b></td>
                                         <td align="right"><b>{{ "{:,.0f}".format(equity_total) }}</b></td>
                                         <td></td>
                                         {% if show_last_year %}
@@ -319,8 +319,8 @@
                                 <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>N</th>
                                         <th>Компания</th>
+                                        <th>N</th>                                        
                                         <th align="right">Норматив ФМП</th>
                                         {% if show_last_year %}
                                             <th align="right">Норматив ФМП на на {{ moment(e_l_y).format('LL') }}</th>
@@ -331,8 +331,8 @@
                                 <tbody>
                                     {% for rownum in range(solvency_margin_len) %}
                                         <tr>
+                                            <th>{{ solvency_margin[rownum].alias }}</th>
                                             <td>{{ rownum + 1 }}</td>
-                                            <td>{{ solvency_margin[rownum].alias }}</td>
                                             <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
                                             {% if show_last_year %}
                                                 {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
@@ -358,8 +358,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
+                                        <th>Среднее</th>
                                         <td></td>
-                                        <td><b>Среднее</b></td>
                                         <td align="right"><b>{{ solvency_margin_av }}</b></td>
                                         {% if show_last_year %}
                                             <td align="right"><b>{{ solvency_margin_av_l_y }}</b></td>

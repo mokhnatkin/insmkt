@@ -191,7 +191,7 @@
                 <tbody>
                     {% for p in premiums %}
                         <tr>
-                            <td>{{ p.name }}</td>
+                            <th>{{ p.name }}</th>
                             <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
                             <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
                             <td align="right">{{ p.LR }}</td>

@@ -26,8 +26,8 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>N</th>
                             <th>Компания</th>
+                            <th>N</th>                            
                             {% if show_general_info %}
                                 <th>Премии</th>
                                 <th>Чистые премии</th>
@@ -51,8 +51,8 @@
                     <tbody>
                         {% for rownum in range(len(general_info)) %}
                             <tr>
-                                <td>{{ rownum + 1 }}</td>
-                                <td>{{ general_info[rownum].alias }}</td>
+                                <th>{{ general_info[rownum].alias }}</td>
+                                <td>{{ rownum + 1 }}</td>                                
                                 {% if show_general_info %}
                                     <td>{{ "{:,.0f}".format(general_info[rownum].premiums) }}</td>
                                     <td>{{ "{:,.0f}".format(general_info[rownum].net_premiums) }}</td>
@@ -76,8 +76,8 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td></td>
-                            <td><b>ИТОГО</b></td>
+                            <th>ИТОГО</td>
+                            <td></td>                            
                             {% if show_general_info %}
                                 <td><b>{{ "{:,.0f}".format(totals.total_premiums) }}</b></td>
                                 <td><b>{{ "{:,.0f}".format(totals.total_net_premiums) }}</b></td>
@@ -111,8 +111,8 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>N</th>
                                 <th>Компания</th>
+                                <th>N</th>                                
                                 {% if show_general_info %}
                                     <th>Премии</th>
                                     <th>Чистые премии</th>
@@ -129,9 +129,9 @@
                         </thead>
                         <tbody>
                             {% for rownum in range(len(delta_info)) %}
-                                <tr>
+                                <tr>                                    
+                                    <th>{{ delta_info[rownum].alias }}</th>
                                     <td>{{ rownum + 1 }}</td>
-                                    <td>{{ delta_info[rownum].alias }}</td>
                                     {% if show_general_info %}
                                         <td>{{ delta_info[rownum].premiums_delta }}</td>
                                         <td>{{ delta_info[rownum].net_premiums_delta }}</td>
@@ -149,8 +149,8 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td></td>
-                                <td><b>ИТОГО</b></td>
+                                <th>ИТОГО</th>
+                                <td></td>                                
                                 {% if show_general_info %}
                                     <td><b>{{ total_deltas.total_premiums_delta }}</b></td>
                                     <td><b>{{ total_deltas.total_net_premiums_delta }}</b></td>

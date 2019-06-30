@@ -24,8 +24,8 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>N</th>
                             <th>Компания</th>
+                            <th>N</th>                            
                             <th align="right">Премии</th>
                             <th align="right">Доля рынка, %</th>
                             <th align="right">Выплаты</th>
@@ -40,8 +40,8 @@
                     <tbody>
                         {% for rownum in range(class_companies_len) %}
                             <tr>
+                                <th>{{ class_companies[rownum].name }}</th>
                                 <td>{{ rownum + 1 }}</td>
-                                <td>{{ class_companies[rownum].name }}</td>
                                 <td align="right">{{ "{:,.0f}".format(class_companies[rownum].premium) }}</td>
                                 <td align="right">{{ class_companies[rownum].share }}</td>
                                 <td align="right">{{ "{:,.0f}".format(class_companies[rownum].claim) }}</td>
@@ -72,8 +72,8 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td></td>
-                            <td><b>ИТОГО</b></td>
+                            <th>ИТОГО</th>
+                            <td></td>                            
                             <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_p) }}</b></td>
                             <td></td>
                             <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_c) }}</b></td>
