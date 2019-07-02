@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+
+<div class="row">
+    {% if hints %}        
+        <a href="{{ url_for('admin.add_new_hint') }}" class="btn btn-success" role="button" style="margin: 10px;">Добавить подсказку</a>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>                    
+                    <th>Системное название</th>
+                    <th>Заголовок подсказки</th>
+                    <th>Текст</th>                    
+                    <th>Изменить</th>
+                </tr>
+                {% for h in hints %}
+                    <tr>
+                        <td>{{ h.name }}</td>
+                        <td>{{ h.title }}</td>
+                        <td>{{ h.text }}</td>                        
+                        <td><a href="{{ url_for('admin.edit_hint',hint_id=h.id) }}">Изменить</a></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

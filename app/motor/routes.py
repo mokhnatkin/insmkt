@@ -7,7 +7,7 @@ from app.models import Company, Financial_per_month, Premium_per_month, \
 from datetime import datetime
 from app.motor import bp
 from app.universal_routes import before_request_u, required_roles_u, get_months, \
-                                get_months, save_to_log
+                                get_months, save_to_log, get_hint
 
 
 @bp.before_request
@@ -357,4 +357,5 @@ def motor():#инфо по автострахованию
                 b=b,e=e,show_last_year=show_last_year,b_l_y=b_l_y,e_l_y=e_l_y, \
                 general_info=general_info, len=len, show_info=show_info, \
                 general_info_l_y=general_info_l_y,show_general_info=show_general_info, \
-                delta_info=delta_info, totals=totals, totals_l_y=totals_l_y, total_deltas=total_deltas)
+                delta_info=delta_info, totals=totals, totals_l_y=totals_l_y, \
+                total_deltas=total_deltas, get_hint=get_hint)

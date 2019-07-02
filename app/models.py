@@ -200,6 +200,14 @@ class View_log(db.Model):#лог - какие view запускал пользо
     timestamp = db.Column(db.DateTime,default=datetime.utcnow)
 
 
+class Hint(db.Model):#всплывающая подсказка
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(128),index=True,unique=True,nullable=False)
+    text = db.Column(db.String(2000),nullable=False)
+    title = db.Column(db.String(500))
+    timestamp = db.Column(db.DateTime,default=datetime.utcnow)
+
+
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))

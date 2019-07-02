@@ -14,7 +14,7 @@ import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_num_companies_at_date, get_months, is_id_in_arr, \
-                    get_num_companies_per_period
+                    get_num_companies_per_period, get_hint
 
 
 @bp.before_request
@@ -232,7 +232,8 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
     peers_re_p = list()
     peers_re_c = list()
     #########################################################################
-    name = 'ROE (экстраполированная годовая прибыль к собственному капиталу), %'
+    name = 'ROE годовой, %'
+    ind_id = 'roe'
     value_c = round(net_income_c / equity_c / N * 12 * 100, 1)    
     value_m = round(net_income_m / equity_m / N * 12 * 100, 1)
     if value_c < 0:
@@ -244,15 +245,17 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
         if value_p < 0:
             value_p = 'N.A.'
         peers_roe.append({'peer_value':value_p})
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_roe})
-    name = 'Использование капитала (экстраполированные годовые чистые премии к собственному капиталу)'
+    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_roe})
+    name = 'Использование капитала'
+    ind_id = 'equity_usage'
     value_c = round(net_premiums_c / equity_c / N * 12, 2)
     value_m = round(net_premiums_m / equity_m / N * 12, 2)
     for i in range (0,Npeers):
         value_p = round(peer_net_premiums[i] / peer_equity[i] / N * 12, 2)
         peers_eq_us.append({'peer_value':value_p})
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_eq_us})
-    name = 'Коэффициент выплат (чистые выплаты к чистым премиям), %'
+    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_eq_us})
+    name = 'Коэффициент выплат, нетто %'
+    ind_id = 'LR_coef_net'
     try:
         value_c = round(net_claims_c / net_premiums_c * 100,1)
     except:
@@ -267,8 +270,9 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
         except:
             value_p = 'N.A.'
         peers_lr.append({'peer_value':value_p})
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_lr})
+    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_lr})
     name = 'Доля перестрахования в премиях, %'
+    ind_id = 'RE_prem'
     try:
         value_c = round((premiums_c-net_premiums_c)/premiums_c*100,1)
     except:
@@ -283,8 +287,9 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
         except:
             value_p = 'N.A.'
         peers_re_p.append({'peer_value':value_p})
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_p})
+    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_p})
     name = 'Доля перестрахования в выплатах, %'
+    ind_id = 'RE_claim'
     try:
         value_c = round((claims_c-net_claims_c)/claims_c*100,1)
     except:
@@ -299,7 +304,7 @@ def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#ра
         except:
             value_p = 'N.A.'
         peers_re_c.append({'peer_value':value_p})
-    other_financial_indicators.append({'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_c})
+    other_financial_indicators.append({'ind_id': ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_c})
     return other_financial_indicators
 
 
@@ -394,7 +399,8 @@ def company_profile():#портрет компании
                 img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums, \
                 show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
                 balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
-                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr,b_l_y=b_l_y,e_l_y=e_l_y)
+                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr, \
+                b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint)
 
 
 
@@ -636,8 +642,6 @@ def get_data_for_plot(company_id,plot_type,b,e):
     return labels, values
 
 
-
-
 def get_peers_names(peers):#получаем имена конкурентов исходя из их id
     ids = list()
     for p in peers:
@@ -708,4 +712,5 @@ def peers_review():#сравнение с конкурентами
                         show_other_financial_indicators=show_other_financial_indicators,b=b,e=e, \
                         company_name=company_name,balance_indicators=balance_indicators, \
                         flow_indicators=flow_indicators,other_financial_indicators=other_financial_indicators, \
-                        peers_names=peers_names,show_competitors=show_competitors,peers_names_arr=peers_names_arr)
+                        peers_names=peers_names,show_competitors=show_competitors, \
+                        peers_names_arr=peers_names_arr,get_hint=get_hint)

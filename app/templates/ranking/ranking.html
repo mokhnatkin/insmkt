@@ -23,7 +23,13 @@
             {% endif %}
                 {% if net_premiums %}
                     <div align="center">
-                        <h2>Чистые премии</h2>
+                        <h2>
+                            {% if get_hint('net_premium') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии</a>
+                            {% else %}
+                                Чистые премии
+                            {% endif %}
+                        </h2>
                         <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                         <p><i>* чистые премии приведены <b>в тыс.тг.</b></i></p>
                         <p><i>** компании отсортированы по убыванию по чистым премиям</i></p>
@@ -98,7 +104,13 @@
             {% endif %}
                 {% if lr_list %}
                         <div align="center">
-                        <h2>Коэффициент выплат</h2>
+                        <h2>
+                            {% if get_hint('LR_coef') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат</a>
+                            {% else %}
+                                Коэффициент выплат
+                            {% endif %}
+                        </h2>
                         <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                         <p><i>* компании отсортированы по убыванию по чистым премиям</i></p>
                         <div class="table-responsive tableFixHead">
@@ -312,7 +324,13 @@
             {% endif %}
                 {% if solvency_margin %}
                     <div align="center">
-                        <h2>Норматив ФМП</h2>
+                        <h2>
+                            {% if get_hint('solvency_margin') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">Норматив ФМП</a>
+                            {% else %}
+                                Норматив ФМП
+                            {% endif %}
+                        </h2>
                         <p><b>на {{ moment(e).format('LL') }}</b></p>
                         <p><i>* показаны те компании, которые действуют на указанную дату</i></p>
                             <div class="table-responsive tableFixHead">

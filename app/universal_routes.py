@@ -2,7 +2,7 @@ from flask import flash, redirect, url_for, g, current_app
 from app import db
 from flask_login import current_user
 from app.models import Company, Indicator, Financial, \
-            Premium, Financial_per_month, View_log
+            Premium, Financial_per_month, View_log, Hint
 from datetime import datetime
 from flask_babel import get_locale
 from functools import wraps
@@ -151,3 +151,8 @@ def get_view_name(_id):#получаем название запрошенной
         if v['id'] == _id:
             res = v['name']
     return res
+
+
+def get_hint(name):#получаем текст и url подсказки по её имени
+    hint = Hint.query.filter(Hint.name == name).first()
+    return hint

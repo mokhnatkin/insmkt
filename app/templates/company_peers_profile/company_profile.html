@@ -35,7 +35,13 @@
                     </tr>
                     {% for ind in balance_indicators %}
                     <tr>
-                        <td>{{ ind.fullname }}</td>
+                        {% if get_hint('solvency_margin') and ind.name == 'solvency_margin' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">{{ ind.fullname }}</a></td>
+                        {% elif get_hint('reserves') and ind.name == 'reserves'  %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">{{ ind.fullname }}</a></td>
+                        {% else %}
+                            <td>{{ ind.fullname }}</td>
+                        {% endif %}
                         {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
                             <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>
                             <td align="right">N.A.</td>
@@ -96,7 +102,13 @@
                     </tr>
                     {% for ind in flow_indicators %}
                     <tr>
-                        <td>{{ ind.fullname }}</td>
+                        {% if get_hint('net_premium') and ind.name == 'net_premiums' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">{{ ind.fullname }}</a></td>
+                        {% elif get_hint('net_claim') and ind.name == 'net_claims' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">{{ ind.fullname }}</a></td>
+                        {% else %}
+                            <td>{{ ind.fullname }}</td>
+                        {% endif %}
                         <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
                         <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
                         <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
@@ -143,7 +155,15 @@
                     </tr>
                     {% for ind in other_financial_indicators %}
                         <tr>
-                            <td>{{ ind.name }}</td>
+                            {% if get_hint('roe') and ind.ind_id == 'roe' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('roe').title }}" data-trigger="hover" data-content="{{ get_hint('roe').text }}">{{ ind.name }}</a></td>
+                            {% elif get_hint('equity_usage') and ind.ind_id == 'equity_usage' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('equity_usage').title }}" data-trigger="hover" data-content="{{ get_hint('equity_usage').text }}">{{ ind.name }}</a></td>
+                            {% elif get_hint('LR_coef_net') and ind.ind_id == 'LR_coef_net' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('LR_coef_net').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef_net').text }}">{{ ind.name }}</a></td>                            
+                            {% else %}
+                                <td>{{ ind.name }}</td>
+                            {% endif %}
                             <td>{{ ind.value_c }}</td>
                             <td>{{ ind.value_m }}</td>
                             {% if show_last_year %}
@@ -177,7 +197,13 @@
                         <th>Класс</th>
                         <th align="right">Премии</th>
                         <th align="right">Выплаты</th>
-                        <th align="right">Коэффициент выплат, %</th>
+                        <th align="right">
+                            {% if get_hint('LR_coef') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
+                            {% else %}
+                                Коэффициент выплат, %
+                            {% endif %}                            
+                        </th>
                         {% if show_last_year %}
                             <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
                             <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
@@ -262,7 +288,14 @@
                 </div>
             </div>
             <div class="col-md-6 col-sm-12 col-xs-12">                
-                <div align="center"><h2>Коэффициент выплат по продуктам</h2>
+                <div align="center">
+                <h2>
+                    {% if get_hint('LR_coef') %}
+                        <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат по продуктам</a>
+                    {% else %}
+                        Коэффициент выплат по продуктам
+                    {% endif %}
+                </h2>
                     <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                     <img src="{{ img_path_lr_by_LoB }}" style="max-width:100%" alt="LR LoB plot">
                 </div>
@@ -279,7 +312,14 @@
                 </div>
             </div>
             <div class="col-md-6 col-sm-12 col-xs-12">
-                <div align="center"><h2>Динамика изменения страховых резервов</h2>
+                <div align="center">
+                    <h2>
+                        {% if get_hint('reserves') %}
+                            <a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">Динамика изменения страховых резервов</a>
+                        {% else %}
+                            Динамика изменения страховых резервов
+                        {% endif %}
+                    </h2>
                     <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                     <img src="{{ img_path_reserves }}" style="max-width:100%" alt="equity plot">
                 </div>
@@ -290,13 +330,27 @@
     <div class="container">
         <div class="row">
             <div class="col-md-6 col-sm-12 col-xs-12">
-                <div align="center"><h2>Динамика норматива ФМП</h2>
+                <div align="center">
+                    <h2>
+                        {% if get_hint('solvency_margin') %}
+                            <a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">Динамика норматива ФМП</a>
+                        {% else %}
+                            Динамика норматива ФМП
+                        {% endif %}
+                    </h2>
                     <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                     <img src="{{ img_path_solvency_margin }}" style="max-width:100%" alt="solvency margin plot">
                 </div>
             </div>
             <div class="col-md-6 col-sm-12 col-xs-12">
-                <div align="center"><h2>Чистые премии по месяцам</h2>
+                <div align="center">
+                    <h2>
+                        {% if get_hint('net_premium') %}
+                            <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии по месяцам</a>
+                        {% else %}
+                            Чистые премии по месяцам
+                        {% endif %}
+                    </h2>
                     <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                     <img src="{{ img_path_net_premium }}" style="max-width:100%" alt="net premium plot">
                 </div>

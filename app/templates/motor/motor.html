@@ -30,11 +30,29 @@
                             <th>N</th>                            
                             {% if show_general_info %}
                                 <th>Премии</th>
-                                <th>Чистые премии</th>
+                                <th>
+                                    {% if get_hint('net_premium') %}
+                                        <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии</a>
+                                    {% else %}
+                                        Чистые премии
+                                    {% endif %}
+                                </th>
                                 <th>Выплаты</th>
-                                <th>Чистые выплаты</th>
-                                <th>Чистые выплаты к Чистым премиям, %</th>
-                                <th>Доля RE в премиях, %</th>
+                                <th>
+                                    {% if get_hint('net_claim') %}
+                                        <a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">Чистые выплаты</a>
+                                    {% else %}
+                                        Чистые выплаты
+                                    {% endif %}
+                                </th>
+                                <th>
+                                    {% if get_hint('LR_coef_net') %}
+                                        <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef_net').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef_net').text }}">Нетто коэффициент выплат, %</a>
+                                    {% else %}
+                                        Нетто коэффициент выплат, %
+                                    {% endif %}                                    
+                                </th>
+                                <th>Доля перестрахования в премиях, %</th>
                             {% endif %}
                             <th>Премии по каско</th>
                             <th>Премии по ОС ГПО ВТС</th>
@@ -115,9 +133,21 @@
                                 <th>N</th>                                
                                 {% if show_general_info %}
                                     <th>Премии</th>
-                                    <th>Чистые премии</th>
+                                    <th>
+                                        {% if get_hint('net_premium') %}
+                                            <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии</a>
+                                        {% else %}
+                                            Чистые премии
+                                        {% endif %}
+                                    </th>
                                     <th>Выплаты</th>
-                                    <th>Чистые выплаты</th>
+                                    <th>
+                                        {% if get_hint('net_claim') %}
+                                            <a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">Чистые выплаты</a>
+                                        {% else %}
+                                            Чистые выплаты
+                                        {% endif %}
+                                    </th>
                                 {% endif %}
                                 <th>Премии по каско</th>
                                 <th>Премии по ОС ГПО ВТС</th>

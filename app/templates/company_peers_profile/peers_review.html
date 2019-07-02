@@ -35,7 +35,13 @@
                     </tr>
                     {% for ind in balance_indicators %}
                     <tr>
-                        <td>{{ ind.fullname }}</td>
+                        {% if get_hint('solvency_margin') and ind.name == 'solvency_margin' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">{{ ind.fullname }}</a></td>
+                        {% elif get_hint('reserves') and ind.name == 'reserves'  %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">{{ ind.fullname }}</a></td>
+                        {% else %}
+                            <td>{{ ind.fullname }}</td>
+                        {% endif %}
                         {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
                             <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>                            
                             <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>                            
@@ -78,7 +84,13 @@
                     </tr>
                     {% for ind in flow_indicators %}
                     <tr>
-                        <td>{{ ind.fullname }}</td>
+                        {% if get_hint('net_premium') and ind.name == 'net_premiums' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">{{ ind.fullname }}</a></td>
+                        {% elif get_hint('net_claim') and ind.name == 'net_claims' %}
+                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">{{ ind.fullname }}</a></td>
+                        {% else %}
+                            <td>{{ ind.fullname }}</td>
+                        {% endif %}
                         <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
                         <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
                         {% if show_competitors %}
@@ -111,7 +123,15 @@
                     </tr>
                     {% for ind in other_financial_indicators %}
                         <tr>
-                            <td>{{ ind.name }}</td>
+                            {% if get_hint('roe') and ind.ind_id == 'roe' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('roe').title }}" data-trigger="hover" data-content="{{ get_hint('roe').text }}">{{ ind.name }}</a></td>
+                            {% elif get_hint('equity_usage') and ind.ind_id == 'equity_usage' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('equity_usage').title }}" data-trigger="hover" data-content="{{ get_hint('equity_usage').text }}">{{ ind.name }}</a></td>
+                            {% elif get_hint('LR_coef_net') and ind.ind_id == 'LR_coef_net' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('LR_coef_net').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef_net').text }}">{{ ind.name }}</a></td>                            
+                            {% else %}
+                                <td>{{ ind.name }}</td>
+                            {% endif %}
                             <td>{{ ind.value_c }}</td>
                             <td>{{ ind.value_m }}</td>
                             {% if show_competitors %}

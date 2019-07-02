@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import io
 from app.class_profile import bp
-from app.universal_routes import before_request_u, required_roles_u, get_months, save_to_log
+from app.universal_routes import before_request_u, required_roles_u, \
+                    get_months, save_to_log, get_hint
 
 
 @bp.before_request
@@ -220,4 +221,6 @@ def class_profile():#инфо по классу
                 class_companies_len=class_companies_len,img_path_prem=img_path_prem, \
                 img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
                 show_last_year=show_last_year,class_companies_l_y=class_companies_l_y, \
-                class_totals_l_y=class_totals_l_y,b_l_y=b_l_y,e_l_y=e_l_y)
+                class_totals_l_y=class_totals_l_y,b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint)
+
+

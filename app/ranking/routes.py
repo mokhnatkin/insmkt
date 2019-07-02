@@ -6,7 +6,7 @@ from app.models import Company, Indicator, Financial, Financial_per_month
 from datetime import datetime
 from app.ranking import bp
 from app.universal_routes import before_request_u, required_roles_u, save_to_log, \
-                            get_months, is_id_in_arr
+                            get_months, is_id_in_arr, get_hint
 
 
 @bp.before_request
@@ -255,4 +255,4 @@ def ranking():
                     lr_list_l_y=lr_list_l_y, net_premiums_total_l_y=net_premiums_total_l_y, \
                     equity_total_l_y=equity_total_l_y, netincome_total_l_y=netincome_total_l_y, \
                     solvency_margin_av_l_y=solvency_margin_av_l_y, lr_av_l_y=lr_av_l_y, \
-                    round=round,is_id_in_arr=is_id_in_arr,b_l_y=b_l_y,e_l_y=e_l_y)
+                    round=round,is_id_in_arr=is_id_in_arr,b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint)

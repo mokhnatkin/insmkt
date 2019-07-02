@@ -116,3 +116,10 @@ class SendEmailToUsersForm(FlaskForm):#отправить всем пользо�
         all_users_str = [(str(a.id), a.username) for a in all_users]
         self.users.choices = all_users_str
 
+
+class HintForm(FlaskForm):#добавить подсказку
+    name = StringField('Системное имя подсказки',validators=[DataRequired(), Length(min=1,max=128)])
+    title = StringField('Заголовок подсказки',validators=[DataRequired(), Length(min=1,max=500)])
+    text = TextAreaField('Текст подсказки',validators=[DataRequired(), Length(min=1,max=2000)])    
+    submit = SubmitField('Добавить / изменить подсказку')
+

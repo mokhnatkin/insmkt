@@ -5,11 +5,11 @@ from app.admin.forms import EditUserForm, DictUploadForm, DataUploadForm, \
                     ComputePerMonthIndicators, DictSelectForm, \
                     AddNewCompanyName, AddNewClassName, \
                     AddEditCompanyForm, AddEditClassForm, \
-                    UsageLogForm, SendEmailToUsersForm
+                    UsageLogForm, SendEmailToUsersForm, HintForm
 from flask_login import login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
-            Compute, Company_all_names, Insclass_all_names, View_log
+            Compute, Company_all_names, Insclass_all_names, View_log, Hint
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 import os
@@ -868,3 +868,48 @@ def usage_log():
         get_view_name=get_view_name,log_events=log_events, min_date=min_date, \
         events_by_user=events_by_user,events_by_page=events_by_page,form=form, \
         events_by_day=events_by_day,show_info=show_info)
+
+
+@bp.route('/add_new_hint',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
+@login_required
+@required_roles('admin')
+def add_new_hint():
+    form = HintForm()
+    title = 'Добавление подсказки'
+    h1_txt = 'Добавить новую подсказу'
+    if form.validate_on_submit():        
+        hint = Hint(name=form.name.data,text=form.text.data,title=form.title.data)
+        db.session.add(hint)
+        db.session.commit()
+        flash('Подсказка добавлена')
+        return redirect(url_for('admin.hints'))
+    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt,title=title)
+
+
+@bp.route('/edit_hint/<hint_id>',methods=['GET', 'POST'])#редактировать подсказку
+@login_required
+@required_roles('admin')
+def edit_hint(hint_id=None):
+    form = HintForm()
+    h1_txt = 'Изменить подсказку'
+    obj = Hint.query.filter(Hint.id == hint_id).first()
+    if request.method == 'GET':        
+        form = HintForm(obj=obj)
+    if form.validate_on_submit():
+        obj.name = form.name.data
+        obj.text = form.text.data
+        obj.title = form.title.data
+        db.session.commit()
+        flash('Успешно изменено!')
+        return redirect(url_for('admin.hints'))
+    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt)
+
+
+@bp.route('/hints')#список подсказок
+@login_required
+@required_roles('admin')
+def hints():
+    title = 'Список подсказок'
+    hints = Hint.query.all()
+    return render_template('admin/hints.html',title=title,hints=hints)
+

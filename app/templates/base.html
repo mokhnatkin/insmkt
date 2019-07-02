@@ -53,6 +53,7 @@
                                             <li><a class="dropdown-item" href="{{ url_for('admin.usage_log') }}">Лог использования</a></li>
                                             <li><a href="{{ url_for('main.explore') }}">Все посты</a></li>
                                             <li><a href="{{ url_for('admin.send_email_to_users') }}">Отправить email</a></li>
+                                            <li><a href="{{ url_for('admin.hints') }}">Подсказки</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -91,5 +92,10 @@
     {{ super() }}
     {{ moment.include_moment() }}
     {{ moment.locale(g.locale) }}
-
+    <script>
+        $(document).ready(function()
+        {
+            $('[data-toggle="popover"]').popover({html:true,container: 'body'});
+        });
+    </script>
 {% endblock %}

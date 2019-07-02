@@ -29,11 +29,23 @@
                             <th align="right">Премии</th>
                             <th align="right">Доля рынка, %</th>
                             <th align="right">Выплаты</th>
-                            <th align="right">Коэффициент выплат, %</th>
+                            <th align="right">
+                                {% if get_hint('LR_coef') %}
+                                    <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
+                                {% else %}
+                                    Коэффициент выплат, %
+                                {% endif %}
+                            </th>
                             {% if show_last_year %}
                                 <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
                                 <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
-                                <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>                                
+                                <th align="right">
+                                    {% if get_hint('LR_coef') %}
+                                        <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</a>
+                                    {% else %}
+                                        Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %
+                                    {% endif %}
+                                </th>                                
                             {% endif %}
                         </tr>
                     </thead>
@@ -114,8 +126,14 @@
             <div class="table-responsive">
                 <table class="table table-hover">
                     <tr>
-                        <th>Месяц</th>                            
-                        <th>Коэффициент выплат, %</th>
+                        <th>Месяц</th>
+                        <th>
+                            {% if get_hint('LR_coef') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
+                            {% else %}
+                                Коэффициент выплат, %
+                            {% endif %}
+                        </th>
                     </tr>
                         {% for m in class_info %}
                             <tr>                                
