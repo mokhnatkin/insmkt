@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, \
+﻿from flask import render_template, flash, redirect, url_for, request, \
                 current_app, jsonify, g, send_file, Response
 from app import db
 from app.admin.forms import EditUserForm, DictUploadForm, DataUploadForm, \
@@ -857,7 +857,7 @@ def usage_log():
     events_by_day = None
     show_info = False    
     stat_min_date = View_log.query \
-            .with_entities(func.min(View_log.timestamp).label("min_time")).first()        
+            .with_entities(func.min(View_log.timestamp).label("min_time")).first()
     min_date = stat_min_date[0]
     if form.validate_on_submit():
         b = form.begin_d.data

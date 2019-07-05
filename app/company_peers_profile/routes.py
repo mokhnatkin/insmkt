@@ -156,6 +156,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
                     .filter(Claim_per_month.end_date == end).all()
         for i in claim_m:
             claim_per_m.append({'insclass_id':i.insclass_id,'claim':i.value})
+    
     for cl in insclasses:
         total_prem = 0.0
         total_claim = 0.0
@@ -172,6 +173,63 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
         if total_prem>0.0 or total_claim>0.0:
             premiums.append({'id':cl.id, 'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
     premiums.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию премий
+
+    #now compute mkt average for premiums
+    premiums_per_month_per_c = list()
+    claims_per_month_per_c = list()
+    for company in peers:
+        for month in months:
+            begin = month['begin']
+            end = month['end']
+            prem_m = Premium_per_month.query \
+                        .with_entities(Premium_per_month.value,Premium_per_month.insclass_id) \
+                        .filter(Premium_per_month.company_id == company[0]) \
+                        .filter(Premium_per_month.beg_date == begin) \
+                        .filter(Premium_per_month.end_date == end).all()
+            for i in prem_m:
+                premiums_per_month_per_c.append({'peer_id':company[0], 'insclass_id':i.insclass_id,'premium':i.value})
+            claim_m = Claim_per_month.query \
+                        .with_entities(Claim_per_month.value,Claim_per_month.insclass_id) \
+                        .filter(Claim_per_month.company_id == company[0]) \
+                        .filter(Claim_per_month.beg_date == begin) \
+                        .filter(Claim_per_month.end_date == end).all()
+            for i in claim_m:
+                claims_per_month_per_c.append({'peer_id':company[0], 'insclass_id':i.insclass_id,'claim':i.value})    
+    c_N = get_num_companies_per_period(begin_d,end_d,N_companies)
+    for cl in premiums:
+        total_prem = 0.0
+        total_claim = 0.0
+        for p in premiums_per_month_per_c:
+            if cl['id'] == p['insclass_id']:
+                total_prem += p['premium']
+        for c in claims_per_month_per_c:
+            if cl['id'] == c['insclass_id']:
+                total_claim += c['claim']
+        if total_prem>0.0:
+            LR = round(total_claim / total_prem * 100,2)
+        else:
+            LR = 'N.A.'
+        cl['av_premium_mkt'] = total_prem / c_N
+        cl['av_claim_mkt'] = total_claim / c_N
+        cl['av_LR_mkt'] = LR
+
+        if show_competitors:
+            peers_prem_claim_LR = list()
+            for company in peers:
+                total_prem = 0.0
+                total_claim = 0.0
+                for p in premiums_per_month_per_c:
+                    if cl['id'] == p['insclass_id'] and p['peer_id'] == company[0]:
+                        total_prem += p['premium']
+                for c in claims_per_month_per_c:
+                    if cl['id'] == c['insclass_id'] and c['peer_id'] == company[0]:
+                        total_claim += c['claim']
+                if total_prem>0.0:
+                    LR = round(total_claim / total_prem * 100,2)
+                else:
+                    LR = 'N.A.'
+                peers_prem_claim_LR.append({'peer_id':company[0],'peer_premium':total_prem,'peer_claim':total_claim,'peer_LR':LR})
+            cl['peers_prem_claim_LR'] = peers_prem_claim_LR
     return company_name, balance_indicators, flow_indicators, premiums, peers_names_arr
 
 
@@ -668,7 +726,9 @@ def peers_review():#сравнение с конкурентами
     company_name = None
     peers_names = None
     peers_names_arr = None
+    premiums = None
     show_competitors = False
+    show_premiums = False
     b = g.min_report_date
     e = g.last_report_date
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
@@ -707,10 +767,12 @@ def peers_review():#сравнение с конкурентами
             show_balance = True
         if len(flow_indicators) > 0:
             show_income_statement = True
+        if len(premiums) > 0:            
+            show_premiums = True
     return render_template('company_peers_profile/peers_review.html',title='Сравнение с конкурентами',form=form,descr=descr, \
                         show_balance=show_balance,show_income_statement=show_income_statement, \
                         show_other_financial_indicators=show_other_financial_indicators,b=b,e=e, \
                         company_name=company_name,balance_indicators=balance_indicators, \
                         flow_indicators=flow_indicators,other_financial_indicators=other_financial_indicators, \
-                        peers_names=peers_names,show_competitors=show_competitors, \
-                        peers_names_arr=peers_names_arr,get_hint=get_hint)
+                        peers_names=peers_names,show_competitors=show_competitors,show_premiums=show_premiums, \
+                        peers_names_arr=peers_names_arr,get_hint=get_hint,premiums=premiums)
