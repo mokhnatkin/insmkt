@@ -27,6 +27,7 @@ from app.universal_routes import before_request_u, required_roles_u, \
 def before_request():
     return before_request_u()
 
+
 def required_roles(*roles):
     return required_roles_u(*roles)
 
