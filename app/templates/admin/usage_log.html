@@ -6,11 +6,7 @@
 <h1>Действия пользователей (запросы)</h1>
 <p>Выберите период</p>
 <p><i>Данные доступны с {{ moment(min_date).format('LL') }}</i></p>
-<div class="row">
-    <div class="col-md-4">
-        {{ wtf.quick_form(form) }}
-    </div>
-</div>
+    {% include 'just_form.html' %}
 
 {% if show_info %}
     <div>

@@ -31,3 +31,4 @@ class Config(object):
                         {'id':5,'name':'motor'}]
     DICT_TYPES = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников
     DATA_TYPES = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели'),('Prudentials','Пруденциальные нормативы')]#типы данных
+    ADMIN_EMAIL = 'a.mokhnatkin@a-i.kz'

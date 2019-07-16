@@ -8,11 +8,8 @@
         Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b> 
         по <b>{{ moment(g.last_report_date).format('LL') }}</b>
     </i></p>
-    <div class="row">
-        <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
-        </div>
-    </div>
+    {% include 'just_form.html' %}
+    
     {% if show_balance %}        
         <h1>Компания: {{ company_name }}</h1>
         <p><i>* данные по рынку включают в себя данные по компаниями по общему страхованию, без учёта компаний по страхованию жизни</i></p>

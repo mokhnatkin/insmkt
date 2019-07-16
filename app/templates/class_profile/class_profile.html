@@ -8,11 +8,9 @@
         Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b>
         по <b>{{ moment(g.last_report_date).format('LL') }}</b>
     </p>
-    <div class="row">
-        <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
-        </div>
-    </div>
+
+    {% include 'just_form.html' %}
+    
 
     {% if class_companies %}
         <div align="center">

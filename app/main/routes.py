@@ -76,10 +76,11 @@ def index():#домашняя страница
         pass                        
     if net_premiums is not None and net_premiums_len>0:
         show_net_prem = True
+    admin_email = current_app.config['ADMIN_EMAIL']
     return render_template('main/index.html',title='Домашняя страница', form=form, posts=posts, \
                     motor_TPL_premium=motor_TPL_premium, motor_TPL_premium_len=motor_TPL_premium_len, \
                     show_motor_TPL=show_motor_TPL, show_net_prem=show_net_prem, \
-                    net_premiums=net_premiums, net_premiums_len=net_premiums_len)
+                    net_premiums=net_premiums, net_premiums_len=net_premiums_len, admin_email=admin_email)
 
 
 @bp.route('/user/<username>')#профиль пользователя

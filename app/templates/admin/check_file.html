@@ -7,11 +7,7 @@
     <p>{{ descr }}</p>
 
     {% if show_form %}    
-        <div class="row">
-            <div class="col-md-4">
-                {{ wtf.quick_form(form) }}
-            </div>
-        </div>
+        {% include 'just_form.html' %}
     {% else %}    
         {% if indicators_not_found %}
         <h2>Список показателей из excel файла, не найденных в системе для привязки</h2>
