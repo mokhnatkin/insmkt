@@ -5,9 +5,8 @@ from wtforms import StringField, SubmitField, IntegerField, \
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 from app.models import User
 from wtforms.fields.html5 import DateField
-from flask import flash, g
+from flask import flash, g, current_app
 from datetime import datetime
-
 
 
 class EditUserForm(FlaskForm):#изменить пользователя
@@ -16,16 +15,16 @@ class EditUserForm(FlaskForm):#изменить пользователя
     submit = SubmitField('Изменить')
 
 
-class DictUploadForm(FlaskForm):#загрузить справочник компаний   
-    dict_types = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников
+class DictUploadForm(FlaskForm):#загрузить справочник компаний
+    dict_types = current_app.config['DICT_TYPES']    
     name = StringField('Описание',validators=[DataRequired()])
     dict_type = SelectField('Тип справочника',choices = dict_types,validators=[DataRequired()])
     file = FileField('Выберите файл для загрузки',validators=[DataRequired()])
     submit = SubmitField('Загрузить')
 
         
-class DataUploadForm(FlaskForm):#загрузить справочник компаний    
-    data_types = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели'),('Prudentials','Пруденциальные нормативы')]#типы данных
+class DataUploadForm(FlaskForm):#загрузить справочник компаний
+    data_types = current_app.config['DATA_TYPES']
     name = StringField('Описание',validators=[DataRequired()])
     data_type = SelectField('Тип данных',choices = data_types,validators=[DataRequired()])
     report_date = DateTimeField('Отчетная дата (в формате дд.мм.гггг)',format='%d.%m.%Y',validators=[DataRequired()])
@@ -38,7 +37,7 @@ class DataUploadForm(FlaskForm):#загрузить справочник ком�
 
 
 class ComputePerMonthIndicators(FlaskForm):#рассчитать показатели, премии, выплаты за месяц
-    data_types = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели')]#типы данных
+    data_types = current_app.config['DATA_TYPES']
     data_type = SelectField('Тип данных',choices = data_types)
     begin_date = DateTimeField('Начало (в формате дд.мм.гггг)',format='%d.%m.%Y',validators=[DataRequired()])
     end_date = DateTimeField('Конец (в формате дд.мм.гггг)',format='%d.%m.%Y',validators=[DataRequired()])
@@ -51,9 +50,8 @@ class ComputePerMonthIndicators(FlaskForm):#рассчитать показат�
             return True
 
 
-
 class DictSelectForm(FlaskForm):#выбор типа справочника для просмотра значений
-    dict_types = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников    
+    dict_types = current_app.config['DICT_TYPES']
     dict_type = SelectField('Тип справочника',choices = dict_types,validators=[DataRequired()])    
     submit = SubmitField('Показать')
 

@@ -13,6 +13,7 @@ class Config(object):
     LANGUAGES = ['ru','en']
     #file upload
     UPLOAD_FOLDER = 'files_uploaded'#path to uploaded files
+    TMP_UPLOAD_FOLDER = 'tmp'#path to uploaded files (temporary)
     STATIC_FOLDER = 'static'#static files
     MAX_CONTENT_PATH = 10485760#max size of uploaded file - 10MB
     ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])#extensions allowed for file uploads
@@ -28,3 +29,5 @@ class Config(object):
                         {'id':3,'name':'peers_review'},
                         {'id':4,'name':'ranking'},
                         {'id':5,'name':'motor'}]
+    DICT_TYPES = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников
+    DATA_TYPES = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели'),('Prudentials','Пруденциальные нормативы')]#типы данных

@@ -114,158 +114,126 @@ def add_str_timestamp(filename):#adds string timestamp to filename in order to m
     return u_filename
 
 
-def process_file(file_type,file_subtype,file_content,report_date,frst_row,others_col_1,others_col_2,others_col_3):#обработаем загруженный excel файл
+def process_file(file_type,file_subtype,wb,report_date,frst_row,others_col_1,others_col_2,others_col_3):#обработаем загруженный excel файл
+    xl_sheet = wb.sheet_by_index(0)
     processed_ok = False
-    companies_dict = dict()
-    indicators_dict = dict()
-    insclasses_dict = dict()
-    companies = Company_all_names.query.all()#получим список компаний
-    for company in companies:
-        companies_dict[company.name] = company.company_id #в словаре companies_dict храним id компании (ключ - имя)
-    indicators = Indicator.query.all()#получим список показателей
-    for indicator in indicators:
-        indicators_dict[indicator.fullname] = indicator.id #в словаре indicators_dict храним id показателя (ключ - имя)
-    insclasses = Insclass_all_names.query.all()#получим список классов
-    for insclass in insclasses:
-        if insclass.fullname == 'иные классы (виды) страхования':#иные классы (виды) повторяются 3 раза
-            tml_fullname = insclass.fullname + '_' + insclass.name#добавим для уникальности
-            insclasses_dict[tml_fullname] = insclass.insclass_id
-        else:
-            insclasses_dict[insclass.fullname] = insclass.insclass_id#в словаре insclasses_dict храним id класса (ключ - имя)    
-    if file_type == 'Dictionary' and file_subtype == 'CompaniesList':#загружаем справочники - список страховых компаний
-        for row in file_content:
-            name = row[0].strip()
-            nonlife = row[1]
-            alive = row[2]
-            alias = row[3]
-            company = Company(name=name,nonlife=nonlife,alive=alive,alias=alias)#сохраняем компанию
-            db.session.add(company)
-            db.session.commit()
-            #получаем id сохраненной компании
-            c_saved = Company.query.filter(Company.name == name).first()
-            c_id = c_saved.id
-            c_all_names = Company_all_names(name=name,company_id=c_id)
-            db.session.add(c_all_names)
-    elif file_type == 'Dictionary' and file_subtype == 'ClassesList':#загружаем справочники - список классов
-        for row in file_content:
-            name = row[0].strip()
-            fullname = row[1].strip()
-            nonlife = row[2]
-            obligatory = row[3]
-            voluntary_personal = row[4]
-            voluntary_property = row[5]
-            alias = row[6]
-            insclass = Insclass(name=name,fullname=fullname,nonlife=nonlife,obligatory=obligatory,voluntary_personal=voluntary_personal,voluntary_property=voluntary_property,alias=alias)            
-            db.session.add(insclass)
-            db.session.commit()
-            #получаем id сохраненного класса
-            c_saved = Insclass.query.filter(Insclass.name == name) \
-                            .filter(Insclass.fullname == fullname).first()
-            c_id = c_saved.id
-            c_all_names = Insclass_all_names(name=name,fullname=fullname,insclass_id=c_id)
-            db.session.add(c_all_names)
-    elif file_type == 'Dictionary' and file_subtype == 'IndicatorsList':#справочник - список показателей
-        for row in file_content:
-            name = row[0].strip()
-            fullname = row[1].strip()
-            description = row[2].strip()
-            flow = row[3]
-            basic = row[4]
-            indicator = Indicator(name=name,fullname=fullname,description=description,flow=flow,basic=basic)            
-            db.session.add(indicator)
-    elif file_type == 'Data' and file_subtype in ('Premiums','Claims'):#загружаем данные - премии или выплаты по классам и страховым
-        insclasses_list_raw = list()
-        insclasses_list = list()
-        insclasses_list_raw = file_content[frst_row-3]
-        for el in insclasses_list_raw:
-            cl = el.strip()
-            insclasses_list.append(cl)
-        N = len(insclasses_list)
-        cl_dict = dict()#словарь: ключ - номер колонки, значение - id класса
-        colnum = 0
-        for cl_fullname in insclasses_list:#пройдемся по строке с названиями показателей
-            try:
-                if cl_fullname == 'иные классы (виды) страхования':#особая логика
-                    if colnum == others_col_1-1:
-                        cl_fullname = cl_fullname + '_' + 'other_voluntary_personal'
-                    elif colnum == others_col_2-1:
-                        cl_fullname = cl_fullname + '_' + 'other_voluntary_property'
-                    elif colnum == others_col_3-1:
-                        cl_fullname = cl_fullname + '_' + 'other_obligatory'
-                cl_id = insclasses_dict[cl_fullname]
-                cl_dict[str(colnum)] = cl_id
-            except:
-                pass
-            colnum += 1
-        for row in file_content:#пройдемся по каждой строке файла
-            name = str(row[1]) #текстовое наименование компании
-            try:
-                company_id = companies_dict[name] #определим id компании
-            except:
-                continue
-            for i in range(2,N):
+    print('process_file started')
+    if file_type == 'Dictionary':
+        if file_subtype == 'CompaniesList':
+            for row in range(1,xl_sheet.nrows):
+                name = str(xl_sheet.cell_value(row, 0)).strip()                
+                nonlife = xl_sheet.cell_value(row, 1)
+                alive = xl_sheet.cell_value(row, 2)
+                alias = str(xl_sheet.cell_value(row, 3)).strip()
+                company = Company(name=name,nonlife=nonlife,alive=alive,alias=alias)#сохраняем компанию
+                db.session.add(company)
+                db.session.commit()
+                #получаем id сохраненной компании
+                c_saved = Company.query.filter(Company.name == name).first()
+                c_id = c_saved.id
+                c_all_names = Company_all_names(name=name,company_id=c_id)
+                db.session.add(c_all_names)
+        elif file_subtype == 'ClassesList':
+            for row in range(1,xl_sheet.nrows):
+                name = str(xl_sheet.cell_value(row, 0)).strip()
+                fullname = str(xl_sheet.cell_value(row, 1)).strip()
+                nonlife = xl_sheet.cell_value(row, 2)
+                obligatory = xl_sheet.cell_value(row, 3)
+                voluntary_personal = xl_sheet.cell_value(row, 4)
+                voluntary_property = xl_sheet.cell_value(row, 5)
+                alias = str(xl_sheet.cell_value(row, 6)).strip()
+                insclass = Insclass(name=name,fullname=fullname,nonlife=nonlife,obligatory=obligatory,voluntary_personal=voluntary_personal,voluntary_property=voluntary_property,alias=alias)            
+                db.session.add(insclass)
+                db.session.commit()
+                #получаем id сохраненного класса
+                c_saved = Insclass.query.filter(Insclass.name == name) \
+                                .filter(Insclass.fullname == fullname).first()
+                c_id = c_saved.id
+                c_all_names = Insclass_all_names(name=name,fullname=fullname,insclass_id=c_id)
+                db.session.add(c_all_names)
+        elif file_subtype == 'IndicatorsList':
+            for row in range(1,xl_sheet.nrows):
+                name = str(xl_sheet.cell_value(row, 0)).strip()
+                fullname = str(xl_sheet.cell_value(row, 1)).strip()
+                description = str(xl_sheet.cell_value(row, 2)).strip()
+                flow = xl_sheet.cell_value(row, 3)
+                basic = xl_sheet.cell_value(row, 4)
+                indicator = Indicator(name=name,fullname=fullname,description=description,flow=flow,basic=basic)            
+                db.session.add(indicator)
+        db.session.commit()
+        processed_ok = True
+
+    elif file_type == 'Data':
+        companies_dict, indicators_dict, insclasses_dict = get_dictionaries_file_check_and_processing()
+        if file_subtype in ('Premiums','Claims'):#загружаем данные - премии или выплаты по классам и страховым
+            insclasses_list, cl_dict, classes_not_found = create_insclasses_list(frst_row,xl_sheet,insclasses_dict,others_col_1,others_col_2,others_col_3)
+            for row in range(frst_row-1,xl_sheet.nrows):
+                name = str(xl_sheet.cell_value(row, 1)).strip()
                 try:
-                    insclass_id = cl_dict[str(i)]#определим id показателя
+                    company_id = companies_dict[name] #определим id компании                    
+                except:                    
+                    continue
+                for i in range(2,xl_sheet.ncols):
+                    try:
+                        insclass_id = cl_dict[str(i)]#определим id показателя                        
+                    except:                        
+                        continue
+                    try:                        
+                        value = float(xl_sheet.cell_value(row, i))
+                    except:
+                        value = 0.0                                        
+                    if file_subtype == 'Premiums':
+                        premium = Premium(report_date=report_date,company_id=company_id,insclass_id=insclass_id,value=value)
+                        db.session.add(premium)
+                    elif file_subtype == 'Claims':
+                        claim = Claim(report_date=report_date,company_id=company_id,insclass_id=insclass_id,value=value)
+                        db.session.add(claim)
+            db.session.commit()
+
+        elif file_subtype in ('Financials','Prudentials'):#загружаем данные - основные фин. показатели по страховым
+            ind_dict, indicators_not_found = create_indicators_list(file_subtype,frst_row,xl_sheet,indicators_dict)
+            for row in range(frst_row-1,xl_sheet.nrows):
+                name = str(xl_sheet.cell_value(row, 1)).strip() #текстовое наименование компании            
+                try:
+                    company_id = companies_dict[name] #определим id компании
                 except:
                     continue
-                try:
-                    value = float(row[i])
-                except:
-                    value = 0.0
-                    pass                
-                if file_subtype == 'Premiums':
-                    premium = Premium(report_date=report_date,company_id=company_id,insclass_id=insclass_id,value=value)
-                    db.session.add(premium)
-                elif file_subtype == 'Claims':
-                    claim = Claim(report_date=report_date,company_id=company_id,insclass_id=insclass_id,value=value)
-                    db.session.add(claim)
-    elif file_type == 'Data' and file_subtype in ('Financials','Prudentials'):#загружаем данные - основные фин. показатели по страховым
-        indicators_list_raw = list()
-        indicators_list = list()
-        if file_subtype == 'Financials':
-            indicators_list_raw = file_content[frst_row-3]#названия показателей хранятся в 5-й строке файла (осн. фин. показатели)
-        elif file_subtype == 'Prudentials':
-            indicators_list_raw = file_content[frst_row-5]#названия показателей хранятся в 8-й строке файла (прудики)
-        for el in indicators_list_raw:
-            ind = el.strip()
-            indicators_list.append(ind)
-        N = len(indicators_list)
-        ind_dict = dict()#словарь: ключ - номер колонки, значение - id показателя
-        colnum = 0
-        for ind_fullname in indicators_list:#пройдемся по строке с названиями показателей
-            try:
-                ind_id = indicators_dict[ind_fullname]
-                ind_dict[str(colnum)] = ind_id
-            except:
-                pass
-            colnum += 1
-        for row in file_content:#пройдемся по каждой строке файла            
-            name = str(row[1]) #текстовое наименование компании            
-            try:
-                company_id = companies_dict[name] #определим id компании
-            except:
-                continue                
-            for i in range(2,N):
-                try:
-                    indicator_id = ind_dict[str(i)]#определим id показателя
-                except:
-                    continue
-                try:
-                    value = float(row[i])
-                except:
-                    value = 0.0
-                    pass
-                financial = Financial(report_date=report_date,company_id=company_id,indicator_id=indicator_id,value=value)
-                db.session.add(financial)
-    else:
-        processed_ok = False
-        quit()
-    db.session.commit()
-    processed_ok = True
+                for i in range(2,xl_sheet.ncols):
+                    try:
+                        indicator_id = ind_dict[str(i)]#определим id показателя
+                    except:
+                        continue
+                    try:
+                        value = float(xl_sheet.cell_value(row, i))                        
+                    except:
+                        value = 0.0                        
+                    financial = Financial(report_date=report_date,company_id=company_id,indicator_id=indicator_id,value=value)
+                    db.session.add(financial)
+            db.session.commit()
+        processed_ok = True
     return processed_ok
 
 
+def delete_file_from_server(filename,param):#удалить файл; param=upload из папки UPLOAD_FOLDER, param=upload_temporary из папки TMP_UPLOAD_FOLDER
+    res = False
+    msg = 'Не удалось удалить файл ' + str(filename)
+    if param == 'upload':
+        try:
+            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            res = True
+        except:
+            pass
+    elif param == 'upload_temporary':
+        try:
+            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], current_app.config['TMP_UPLOAD_FOLDER'], filename))
+            res = True
+        except:
+            pass        
+    return res, msg    
+
+
 def check_process_file_res(file_subtype,report_date):#проверка результатов загрузки и отработки файла
+    print('start check_process_file_res')
     N_rows = 0
     rand_rows = list()
     _sm_id = Indicator.query.filter(Indicator.name=='solvency_margin').first()
@@ -290,14 +258,222 @@ def check_process_file_res(file_subtype,report_date):#проверка резу�
                 .filter(Claim.report_date == report_date).all()
     N_rows = len(rows)
     found = 0
+    count = 0
     while True:
+        count += 1
         r = random.choice(rows)
-        if r.value > 0.1:
+        if r.value > 0:
             found += 1
             rand_rows.append(r)
-        if found > 2:#выведем три случайные записи больше 0
+        if found > 2 or count > 1000:#выведем три случайные записи больше 0, либо после 1000 попыток
             break
     return N_rows, rand_rows
+
+
+def get_dictionaries_file_check_and_processing():#вспомогательная функция, наполним словари с компаниями, классами, показателями для обработки файлов
+    companies_dict = dict()
+    indicators_dict = dict()
+    insclasses_dict = dict()
+    companies = Company_all_names.query.all()#получим список компаний
+    for company in companies:
+        companies_dict[company.name] = company.company_id #в словаре companies_dict храним id компании (ключ - имя)
+    indicators = Indicator.query.all()#получим список показателей
+    for indicator in indicators:
+        indicators_dict[indicator.fullname] = indicator.id #в словаре indicators_dict храним id показателя (ключ - имя)
+    insclasses = Insclass_all_names.query.all()#получим список классов
+    for insclass in insclasses:
+        if insclass.fullname == 'иные классы (виды) страхования':#иные классы (виды) повторяются 3 раза
+            tml_fullname = insclass.fullname + '_' + insclass.name#добавим для уникальности
+            insclasses_dict[tml_fullname] = insclass.insclass_id
+        else:
+            insclasses_dict[insclass.fullname] = insclass.insclass_id#в словаре insclasses_dict храним id класса (ключ - имя)    
+    return companies_dict, indicators_dict, insclasses_dict
+
+
+def add_special_to_other_classes(cl_fullname,colnum,others_col_1,others_col_2,others_col_3):#добавляем для классов "иные", чтобы однозначно их опознать
+    if cl_fullname == 'иные классы (виды) страхования':#особая логика
+        if colnum == others_col_1-1:
+            cl_fullname = cl_fullname + '_' + 'other_voluntary_personal'
+        elif colnum == others_col_2-1:
+            cl_fullname = cl_fullname + '_' + 'other_voluntary_property'
+        elif colnum == others_col_3-1:
+            cl_fullname = cl_fullname + '_' + 'other_obligatory'
+    return cl_fullname
+
+
+def create_insclasses_list(frst_row,xl_sheet,insclasses_dict,others_col_1,others_col_2,others_col_3):#список классов исходя из первой строки файла
+    insclasses_list = list()
+    classes_not_found = list()
+    for i in range(2,xl_sheet.ncols):
+        el = xl_sheet.cell_value(frst_row-3, i)
+        try:
+            cl = el.strip()
+        except:
+            cl = el
+        insclasses_list.append(cl)
+    cl_dict = dict()#словарь: ключ - номер колонки, значение - id класса
+    colnum = 2
+    for cl_fullname in insclasses_list:#пройдемся по строке с названиями показателей
+        cl_fullname = add_special_to_other_classes(cl_fullname,colnum,others_col_1,others_col_2,others_col_3)
+        try:
+            cl_id = insclasses_dict[cl_fullname]
+            cl_dict[str(colnum)] = cl_id
+        except:
+            classes_not_found.append({'class':cl_fullname,'column_number':str(colnum+1)})
+        colnum += 1
+    return insclasses_list, cl_dict, classes_not_found
+
+
+def create_indicators_list(file_subtype,frst_row,xl_sheet,indicators_dict):#список классов исходя из первой строки файла
+    indicators_list = list()
+    indicators_not_found = list()
+    ind_dict = dict()#словарь: ключ - номер колонки, значение - id показателя
+    if file_subtype == 'Financials':
+        indicators_row_num = frst_row-3#названия показателей хранятся в 5-й строке файла (осн. фин. показатели)
+    elif file_subtype == 'Prudentials':
+        indicators_row_num = frst_row-5#названия показателей хранятся в 8-й строке файла (прудики)    
+    for i in range(2,xl_sheet.ncols):
+        el = xl_sheet.cell_value(indicators_row_num, i)
+        try:
+            cl = el.strip()
+        except:
+            cl = el
+        indicators_list.append(cl)
+    colnum = 2
+    for ind_fullname in indicators_list:#пройдемся по строке с названиями показателей
+        try:
+            ind_id = indicators_dict[ind_fullname]
+            ind_dict[str(colnum)] = ind_id
+        except:
+            indicators_not_found.append({'indicator':ind_fullname,'column_number':str(colnum+1)})
+        colnum += 1
+    return ind_dict, indicators_not_found
+
+
+def get_companies_values_from_sheet(companies_dict, xl_sheet, frst_row):#какие компании и классы не удалось прочитать
+    values_not_converted = list()
+    companies_not_found = list()
+    for row in range(frst_row-1,xl_sheet.nrows):#по каждой строке
+        name = str(xl_sheet.cell_value(row, 1))#текстовое наименование компании
+        try:
+            company_id = companies_dict[name]#определим id компании            
+        except:
+            companies_not_found.append({'company_name':name,'row_number':str(row+1)})
+        for i in range(2,xl_sheet.ncols):#по каждому классу читаем значение            
+            value_str = xl_sheet.cell_value(row, i)
+            if value_str != '':#cell not empty
+                try:
+                    value = float(value_str)
+                except:
+                    values_not_converted.append({'company_name':name,'row_number':str(row+1),'column_number':str(i+1),'value':str(value_str)})                
+    return values_not_converted, companies_not_found
+
+
+def check_file_content(file_subtype,wb,report_date,frst_row,others_col_1,others_col_2,others_col_3):#check content of data file
+    values_not_converted = None
+    companies_not_found = None
+    classes_not_found = None
+    indicators_not_found = None    
+    xl_sheet = wb.sheet_by_index(0)
+    companies_dict, indicators_dict, insclasses_dict = get_dictionaries_file_check_and_processing()
+    values_not_converted, companies_not_found = get_companies_values_from_sheet(companies_dict, xl_sheet, frst_row)
+    if file_subtype in ('Premiums','Claims'):#загружаем данные - премии или выплаты по классам и страховым
+        insclasses_list, cl_dict, classes_not_found = create_insclasses_list(frst_row,xl_sheet,insclasses_dict,others_col_1,others_col_2,others_col_3)        
+    elif file_subtype in ('Financials','Prudentials'):#загружаем данные - основные фин. показатели по страховым
+        ind_dict, indicators_not_found = create_indicators_list(file_subtype,frst_row,xl_sheet,indicators_dict)
+    return values_not_converted, companies_not_found, classes_not_found, indicators_not_found
+
+
+def check_file_name_ext(request,file_data,future_action):
+    res = False
+    msg = 'Файл не выбран'
+    filename = None
+    if 'file' not in request.files:# check if the post request has the file part        
+        return res, msg, filename
+    _file = request.files['file']
+    if _file.filename == '':# if user does not select file, browser also submit an empty part without filename
+        return res, msg, filename
+    if _file and allowed_file(_file.filename):        
+        filename = secure_filename(file_data.filename)
+        filename = add_str_timestamp(filename) #adds string timestamp to filename in order to make in unique
+        try:
+            if future_action == 'check':
+                file_data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], current_app.config['TMP_UPLOAD_FOLDER'], filename))
+            elif future_action == 'upload':
+                file_data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            res = True
+        except:
+            msg = 'Не получилось сохранить файл'
+    return res, msg, filename
+
+
+def open_xls_file(filename,future_action):#пытаемся открыть файл, проверяем кол-во листов
+    res = False
+    msg = None
+    wb = None    
+    try:
+        if future_action == 'check':
+            wb = open_workbook(os.path.join(current_app.config['UPLOAD_FOLDER'], current_app.config['TMP_UPLOAD_FOLDER'], filename))
+        elif future_action == 'upload':
+            wb = open_workbook(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+        num_sheets = len(wb.sheet_names())
+        if num_sheets == 1:
+            res = True
+        else:
+            msg = 'В выбранном файле более одного листа. Удалите лишние листы во избежание ошибок. Файл должен содержать только один лист.'
+            res_del, msg_del = delete_file_from_server(filename,'upload_temporary') #param= upload / upload_temporary
+            if not res_del:
+                msg = msg + msg_del
+    except:
+        msg = 'Не могу открыть excel файл, неизвестный формат'
+    return res, msg, wb
+
+
+@bp.route('/check_file_before_upload/<upload_type>',methods=['GET', 'POST'])#проверить файл перед загрузкой
+@login_required
+@required_roles('admin')
+def check_file_before_upload(upload_type):
+    title = 'Проверка файла перед загрузкой'
+    h1_txt = 'Проверка файлов перед загрузкой'
+    if upload_type == 'dictionary':
+        form = DictUploadForm()
+        descr = 'Проверка файла со справочниками'
+    elif upload_type == 'data':
+        form = DataUploadForm()
+        descr = 'Проверка файла с данными перед загрузкой в систему'    
+    values_not_converted = None
+    companies_not_found = None
+    classes_not_found = None
+    indicators_not_found = None
+    show_form = True
+    if form.validate_on_submit():
+        show_form = False
+        res, msg, filename = check_file_name_ext(request,form.file.data,'check')
+        if not res:#имя файла или расширение некорректные
+            flash(msg)
+            return redirect(request.url)
+        else:#всё ОК, файл сохранен, можно открывать и обрабатывать
+            res, msg, wb = open_xls_file(filename,'check')
+            if not res:#не удалось открыть файл, либо там более одного листа
+                flash(msg)
+                return redirect(request.url)
+            else:#всё ОК, получили файл в объекте wb
+                frst_row = int(form.frst_row.data)#первая строка с данными по компаниям
+                try:
+                    others_col_1 = int(form.others_col_1.data)#столбец с иными классами, ДЛС
+                    others_col_2 = int(form.others_col_2.data)#столбец с иными классами, ДИС
+                    others_col_3 = int(form.others_col_3.data)#столбец с иными классами, ОС
+                except:
+                    pass
+                values_not_converted, companies_not_found, classes_not_found, indicators_not_found = check_file_content(form.data_type.data,wb,form.report_date.data,frst_row,others_col_1,others_col_2,others_col_3)
+                res_del, msg_del = delete_file_from_server(filename,'upload_temporary') #param= upload / upload_temporary
+                if not res_del:
+                    flash(msg_del)
+    return render_template('admin/check_file.html',title=title, \
+                        form=form,descr=descr,h1_txt=h1_txt, show_form=show_form, \
+                        values_not_converted=values_not_converted, \
+                        companies_not_found=companies_not_found,classes_not_found=classes_not_found, \
+                        indicators_not_found=indicators_not_found)
 
 
 @bp.route('/upload_file/<upload_type>',methods=['GET', 'POST'])#загрузить файл
@@ -313,76 +489,59 @@ def upload_file(upload_type):
         form = DataUploadForm()
         descr = 'Здесь из excel файлов (источник - НБ РК, https://nationalbank.kz/?docid=1075&switch=russian) загружаются финансовые данные. Каждая книга должна содержать только один лист'
     if form.validate_on_submit():
-        if 'file' not in request.files:# check if the post request has the file part
-            flash('Файл не выбран')
+        res, msg, filename = check_file_name_ext(request,form.file.data,'upload')
+        if not res:#имя файла или расширение некорректные
+            flash(msg)
             return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '':# if user does not select file, browser also submit an empty part without filename
-            flash('Файл не выбран')
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            name = add_str_timestamp(form.name.data)
-            filename = secure_filename(form.file.data.filename)
-            filename = add_str_timestamp(filename) #adds string timestamp to filename in order to make in unique            
-            if upload_type == 'dictionary':
-                upload = Upload(name=name,file_type='Dictionary',dict_type=form.dict_type.data,file_name=filename)
-            elif upload_type == 'data':
-                already_uploaded = Upload.query.filter(Upload.file_type=='Data').filter(Upload.data_type == form.data_type.data).filter(Upload.report_date == form.report_date.data).first()
-                if already_uploaded is None:
-                    upload = Upload(name=name,file_type='Data',data_type=form.data_type.data,file_name=filename,report_date=form.report_date.data)
-                else:
-                    flash('Данный файл уже был загружен. Повторная загрузка не требуется.')
-                    return redirect(url_for('admin.upload_file', upload_type='data'))
-            form.file.data.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))            
-            try:
-                wb = open_workbook(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                num_sheets = len(wb.sheet_names())
-            except:
-                flash('Не могу открыть excel файл - неизвестный формат.')
-                return redirect(url_for('admin.upload_file', upload_type='data'))
-            if num_sheets > 1:
-                flash('В выбранном файле более одного листа. Удалите ненужные листы во избежание ошибок')
-                try:
-                    os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                except:
-                    pass
-                return redirect(url_for('admin.upload_file', upload_type='data'))
-            else:
+        else:#всё ОК, файл сохранен, можно открывать и обрабатывать
+            res, msg, wb = open_xls_file(filename,'upload')
+            if not res:#не удалось открыть файл, либо там более одного листа
+                flash(msg)
+                res_del, msg_del = delete_file_from_server(filename,'upload') #param= upload / upload_temporary
+                if not res_del:
+                    flash(msg_del)
+                return redirect(request.url)
+            else:#всё ОК, получили файл в объекте wb
+                #save to DB info about file uploaded
+                name = add_str_timestamp(form.name.data)
+                if upload_type == 'dictionary':
+                    upload = Upload(name=name,file_type='Dictionary',dict_type=form.dict_type.data,file_name=filename)
+                elif upload_type == 'data':
+                    already_uploaded = Upload.query.filter(Upload.file_type=='Data').filter(Upload.data_type == form.data_type.data).filter(Upload.report_date == form.report_date.data).first()
+                    if already_uploaded is None:
+                        upload = Upload(name=name,file_type='Data',data_type=form.data_type.data,file_name=filename,report_date=form.report_date.data)
+                    else:
+                        res_del, msg_del = delete_file_from_server(filename,'upload') #param= upload / upload_temporary
+                        if not res_del:
+                            flash(msg_del)                       
+                        flash('Данный файл уже был загружен. Повторная загрузка не требуется.')
+                        return redirect(request.url)
                 db.session.add(upload)
                 db.session.commit()
-                flash('Файл загружен!')
-                file_content = request.get_array(field_name='file')
-                if upload_type == 'dictionary':
-                    del file_content[0]#удаляем первую запись в массиве (заголовок)
-                    process_res = process_file('Dictionary',form.dict_type.data,file_content,datetime.utcnow(),1,1,1,1)
-                    if process_res:
+                flash('Файл сохранен на сервер и загружен!')
+                if upload_type == 'dictionary':                    
+                    process_res = process_file('Dictionary',form.dict_type.data,wb,datetime.utcnow(),1,1,1,1)
+                else:
+                    frst_row = int(form.frst_row.data)#первая строка с данными по компаниям
+                    try:
+                        others_col_1 = int(form.others_col_1.data)#столбец с иными классами, ДЛС
+                        others_col_2 = int(form.others_col_2.data)#столбец с иными классами, ДИС
+                        others_col_3 = int(form.others_col_3.data)#столбец с иными классами, ОС
+                    except:
+                        pass
+                    process_res = process_file('Data',form.data_type.data,wb,form.report_date.data,frst_row,others_col_1,others_col_2,others_col_3)                 
+                if not process_res:
+                    flash('При обработке файла возникли ошибки!')
+                    res_del, msg_del = delete_file_from_server(filename,'upload') #param= upload / upload_temporary
+                    if not res_del:
+                        flash(msg_del)
+                    db.session.delete(upload)
+                    db.session.commit()
+                    return redirect(request.url)
+                else:
+                    if upload_type == 'dictionary':
                         flash('Файл успешно обработан!')
                     else:
-                        flash('При обработке файла возникли ошибки!')
-                        try:
-                            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                        except:
-                            pass
-                        db.session.delete(upload)
-                        db.session.commit()
-                    return redirect(url_for('admin.upload_file', upload_type='dictionary'))
-                elif upload_type == 'data':
-                    frst_row = int(form.frst_row.data)#первая строка с данными по компаниям
-                    others_col_1 = int(form.others_col_1.data)#столбец с иными классами, ДЛС
-                    others_col_2 = int(form.others_col_2.data)#столбец с иными классами, ДИС
-                    others_col_3 = int(form.others_col_3.data)#столбец с иными классами, ОС
-                    try:
-                        process_res = process_file('Data',form.data_type.data,file_content,form.report_date.data,frst_row,others_col_1,others_col_2,others_col_3)
-                    except:
-                        flash('Не удалось обработать файл! Проверьте входной файл и корректность заполнения номера первой строки с данными.')                        
-                        try:
-                            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                        except:
-                            pass
-                        db.session.delete(upload)
-                        db.session.commit()                            
-                        return redirect(url_for('admin.upload_file', upload_type='data'))
-                    if process_res:
                         try:
                             N_rows, rand_rows = check_process_file_res(form.data_type.data,form.report_date.data)
                             flash('Файл загружен и обработан. Проверьте результаты загруки и произведите перерасчёт!')
@@ -391,18 +550,12 @@ def upload_file(upload_type):
                                 flash('---' + str(r))
                         except:
                             flash('Не получилось проверить результат обработки файла! Возможно, данные не были загружены в БД. Проверьте входной файл и корректность заполнения номера первой строки с данными.')
-                            try:
-                                os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                            except:
-                                pass
+                            res_del, msg_del = delete_file_from_server(filename,'upload') #param= upload / upload_temporary
+                            if not res_del:
+                                flash(msg_del)
                             db.session.delete(upload)
-                            db.session.commit()                                
-                            return redirect(url_for('admin.upload_file', upload_type='data'))
-                    else:
-                        flash('При обработке файла возникли ошибки!')
-                    return redirect(url_for('admin.upload_file', upload_type='data'))
-        else:
-            flash('Файл не выбран, либо некорректное расширение. Доступные расширения:'+str(current_app.config['ALLOWED_EXTENSIONS']))
+                            db.session.commit()
+                            return redirect(request.url)
     return render_template('admin/add_edit_DB_item.html',title=title, \
                         form=form,descr=descr,h1_txt=h1_txt)
 
@@ -601,9 +754,6 @@ def compute_indicators(data_type,begin_date,end_date):#рассчитать по
             elif data_type == 'Claims':
                 claim_per_month = Claim_per_month(beg_date=begin_date,end_date=end_date,company_id=company_id,insclass_id=insclass_id,value=delta)
                 db.session.add(claim_per_month)
-    else:
-        processed_ok = False
-        quit()
     #теперь сохраняем информацию о прошедшем перерасчете в модель Compute
     compute = Compute(data_type=data_type,beg_date=begin_date,end_date=end_date)
     db.session.add(compute)
@@ -812,7 +962,6 @@ def send_email_to_users():
         return redirect(url_for('admin.send_email_to_users'))
     return render_template('admin/add_edit_DB_item.html', form=form, descr=descr, \
                 h1_txt=h1_txt)
-
 
 
 def get_data_for_usage_log(beg_d,end_d):#получаем данные для лога

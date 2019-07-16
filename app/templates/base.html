@@ -44,6 +44,7 @@
                                         <ul class="nav navbar-nav">
                                             <li><a href="{{ url_for('admin.instruction') }}">Инструкция</a></li>
                                             <li><a class="dropdown-item" href="{{ url_for('admin.upload_file',upload_type='dictionary') }}">Загрузить справочники</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('admin.check_file_before_upload',upload_type='data') }}">Проверить файл</a></li>                                            
                                             <li><a class="dropdown-item" href="{{ url_for('admin.upload_file',upload_type='data') }}">Загрузить данные</a></li>
                                             <li><a class="dropdown-item" href="{{ url_for('admin.files') }}">Загруженные файлы</a></li>
                                             <li><a class="dropdown-item" href="{{ url_for('admin.dictionary_values') }}">Справочники</a></li>

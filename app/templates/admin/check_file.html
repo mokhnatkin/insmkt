@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+
+    <h1>{{ h1_txt }}</h1>
+    <p>{{ descr }}</p>
+
+    {% if show_form %}    
+        <div class="row">
+            <div class="col-md-4">
+                {{ wtf.quick_form(form) }}
+            </div>
+        </div>
+    {% else %}    
+        {% if indicators_not_found %}
+        <h2>Список показателей из excel файла, не найденных в системе для привязки</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Наименование</th>
+                        <th>Номер столбца</th>
+                    </tr>
+                    {% for c in indicators_not_found %}
+                        <tr>
+                            <td>{{ c.indicator }}</td>
+                            <td>{{ c.column_number }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}    
+        
+        {% if classes_not_found %}
+        <h2>Список классов из excel файла, не найденных в системе для привязки</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Наименование</th>
+                        <th>Номер столбца</th>
+                    </tr>
+                    {% for c in classes_not_found %}
+                        <tr>
+                            <td>{{ c.class }}</td>
+                            <td>{{ c.column_number }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+
+        {% if companies_not_found %}
+        <h2>Список компаний из excel файла, не найденных в системе для привязки</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Название</th>
+                        <th>Номер строки</th>
+                    </tr>
+                    {% for c in companies_not_found %}
+                        <tr>
+                            <td>{{ c.company_name }}</td>
+                            <td>{{ c.row_number }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+
+
+        {% if values_not_converted %}
+        <h2>Список значений из excel файла, которые не удалось сконвертировать в число</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tr>
+                        <th>Компания</th>
+                        <th>Номер строки</th>
+                        <th>Номер столбца</th>
+                        <th>Значение</th>
+                    </tr>
+                    {% for c in values_not_converted %}
+                        <tr>
+                            <td>{{ c.company_name }}</td>
+                            <td>{{ c.row_number }}</td>
+                            <td>{{ c.column_number }}</td>                                
+                            <td>{{ c.value }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}        
+        
+    {% endif %}
+
+{% endblock %}
