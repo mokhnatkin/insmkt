@@ -10,276 +10,203 @@
         </i></p>
         {% include 'just_form.html' %}
     
-    <div class="container">
-        <div class="row">
-            {% if show_last_year %}
-                <div class="col-md-12 col-sm-12 col-xs-12">
-            {% else %}
-                <div class="col-md-6 col-sm-12 col-xs-12">
-            {% endif %}
-                {% if net_premiums %}
-                    <div align="center">
-                        <h2>
-                            {% if get_hint('net_premium') %}
-                                <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии</a>
-                            {% else %}
-                                Чистые премии
-                            {% endif %}
-                        </h2>
-                        <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-                        <p><i>* чистые премии приведены <b>в тыс.тг.</b></i></p>
-                        <p><i>** компании отсортированы по убыванию по чистым премиям</i></p>
-                        <div class="table-responsive tableFixHead">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Компания</th>
-                                        <th>N</th>                                        
-                                        <th align="right">Чистые премии</th>
-                                        <th align="right">Доля, %</th>
-                                        {% if show_last_year %}
-                                            <th align="right">Чистые премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
-                                            <th align="right">Доля за период с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
-                                            <th align="right">Изменение по сравнению с прошлым годом, %</th>
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for rownum in range(net_premiums_len) %}
-                                        <tr>
-                                            <th>{{ net_premiums[rownum].alias }}</th>
-                                            <td>{{ rownum + 1 }}</td>                                            
-                                            <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
-                                            <td align="right">{{ net_premiums[rownum].share }}</td>
-                                            {% if show_last_year %}
-                                                {% for ind_l_y in net_premiums_l_y %}
-                                                    {% if ind_l_y.id == net_premiums[rownum].id %}
-                                                        <td align="right">                                                
-                                                            {% if ind_l_y.value > 0 %}
-                                                                {{ "{:,.0f}".format(ind_l_y.value) }}
-                                                            {% else %}
-                                                                N.A.
-                                                            {% endif %}
-                                                        </td>
-                                                        <td align="right">{{ ind_l_y.share }}</td>
-                                                        <td align="right">
-                                                            {% if ind_l_y.value > 0 %}
-                                                                {{ round((net_premiums[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
-                                                            {% else %}
-                                                                N.A.
-                                                            {% endif %}
-                                                        </td>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% endif %}
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>ИТОГО</th>
-                                        <td></td>                                        
-                                        <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total) }}</b></td>
-                                        <td></td>
-                                        {% if show_last_year %}
-                                            <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total_l_y) }}</b></td>
-                                            <td></td>
-                                            <td align="right"><b>{{ round((net_premiums_total-net_premiums_total_l_y)/net_premiums_total_l_y*100,1) }}</b></td>
-                                        {% endif %}
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
+    {% if show_info %}
+        <div class="container">
+            <div class="row">
+                {% if show_last_year %}
+                    <div class="col-md-12 col-sm-12 col-xs-12">
+                {% else %}
+                    <div class="col-md-6 col-sm-12 col-xs-12">
                 {% endif %}
-            </div>
-            {% if show_last_year %}
-                <div class="col-md-12 col-sm-12 col-xs-12">
-            {% else %}
-                <div class="col-md-6 col-sm-12 col-xs-12">
-            {% endif %}
-                {% if lr_list %}
+
+                    {% if net_premiums %}
                         <div align="center">
-                        <h2>
-                            {% if get_hint('LR_coef') %}
-                                <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат</a>
-                            {% else %}
-                                Коэффициент выплат
-                            {% endif %}
-                        </h2>
-                        <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-                        <p><i>* компании отсортированы по убыванию по чистым премиям</i></p>
-                        <div class="table-responsive tableFixHead">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Компания</th>
-                                        <th>N</th>                                        
-                                        <th align="right">Коэффициент выплат, %</th>
-                                        {% if show_last_year %}
-                                            <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>                                        
-                                            <th align="right">Изменение по сравнению с прошлым годом</th>
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for rownum in range(lr_list_len) %}
+                            <h2>
+                                {% if get_hint('net_premium') %}
+                                    <a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">Чистые премии</a>
+                                {% else %}
+                                    Чистые премии
+                                {% endif %}
+                            </h2>
+                            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                            <p><i>* чистые премии приведены <b>в тыс.тг.</b></i></p>
+                            <p><i>** компании отсортированы по убыванию по чистым премиям</i></p>
+                            <div class="table-responsive tableFixHead">
+                                <table class="table table-hover">
+                                    <thead>
                                         <tr>
-                                            <th>{{ lr_list[rownum].company_name }}</th>
-                                            <td>{{ rownum + 1 }}</td>
-                                            <td align="right">{{ lr_list[rownum].lr }}</td>
+                                            <th>Компания</th>
+                                            <th>N</th>                                        
+                                            <th align="right">Чистые премии</th>
+                                            <th align="right">Доля, %</th>
                                             {% if show_last_year %}
-                                                {% for ind_l_y in lr_list_l_y %}
-                                                    {% if ind_l_y.id == lr_list[rownum].id %}
-                                                        <td align="right">{{ ind_l_y.lr }}</td>                                                    
-                                                        <td align="right">
-                                                            {% if ind_l_y.lr != 'N.A.' and lr_list[rownum].lr != 'N.A.' %}
-                                                                {{ round(lr_list[rownum].lr-ind_l_y.lr,1) }}
-                                                            {% else %}
-                                                                N.A.
-                                                            {% endif %}
-                                                        </td>
-                                                    {% endif %}
-                                                {% endfor %}
+                                                <th align="right">Чистые премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                                                <th align="right">Доля за период с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
+                                                <th align="right">Изменение по сравнению с прошлым годом, %</th>
                                             {% endif %}
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>Среднее</th>
-                                        <td></td>
-                                        <td align="right"><b>{{ lr_av }}</b></td>
-                                        {% if show_last_year %}
-                                            <td align="right"><b>{{ lr_av_l_y }}</b></td>
-                                            <td align="right"><b>{{ round(lr_av-lr_av_l_y,1) }}</b></td>
-                                        {% endif %}
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-        <div class="row">
-            {% if show_last_year %}
-                <div class="col-md-12 col-sm-12 col-xs-12">
-            {% else %}
-                <div class="col-md-6 col-sm-12 col-xs-12">
-            {% endif %}
-                {% if netincome %}
-                    <div align="center">
-                        <h2>Прибыль (убыток)</h2>
-                        <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-                        <p><i>* прибыль (убыток) приведены в <b>тыс.тг.</b></i></p>
-                        <p><i>** показаны все компании, у которых была прибыль (убыток) за заданный период</i></p>
-                        <div class="table-responsive tableFixHead">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Компания</th>
-                                        <th>N</th>                                        
-                                        <th align="right">Прибыль (убыток)</th>
-                                        <th align="right">Доля, %</th>
-                                        {% if show_last_year %}
-                                            <th align="right">Прибыль (убыток) с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>                                        
-                                            <th align="right">Изменение по сравнению с прошлым годом, %</th>
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for rownum in range(netincome_len) %}
-                                    <tr>
-                                        <th>{{ netincome[rownum].alias }}</th>
-                                        <td>{{ rownum + 1 }}</td>                                        
-                                        <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
-                                        <td align="right">{{ netincome[rownum].share }}</td>
-                                        {% if show_last_year %}
-                                            {% if is_id_in_arr(netincome[rownum].id, netincome_l_y) %}
-                                                {% for ind_l_y in netincome_l_y %}
-                                                    {% if ind_l_y.id == netincome[rownum].id %}
-                                                        <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>                                                    
-                                                        <td align="right">
-                                                            {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
-                                                                {{ round((netincome[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
-                                                            {% else %}
-                                                                N.A.
-                                                            {% endif %}
-                                                        </td>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                <td align="right">N.A.</td>
-                                                <td align="right">N.A.</td>
-                                            {% endif %}
-                                        {% endif %}
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>ИТОГО</th>
-                                        <td></td>
-                                        <td align="right"><b>{{ "{:,.0f}".format(netincome_total) }}</b></td>
-                                        <td></td>
-                                        {% if show_last_year %}
-                                            <td align="right"><b>{{ "{:,.0f}".format(netincome_total_l_y) }}</b></td>
-                                            <td align="right"><b>{{ round((netincome_total-netincome_total_l_y)/netincome_total_l_y*100,1) }}</b></td>
-                                        {% endif %}
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-            {% if show_last_year %}
-                <div class="col-md-12 col-sm-12 col-xs-12">
-            {% else %}
-                <div class="col-md-6 col-sm-12 col-xs-12">
-            {% endif %}
-                {% if equity %}
-                    <div align="center">
-                        <h2>Собственный капитал</h2>
-                        <p><b>на {{ moment(e).format('LL') }}</b></p>
-                        <p><i>* собственный капитал приведен <b>в тыс.тг.</b></i></p>
-                        <p><i>** показаны те компании, которые действуют на указанную дату</i></p>
-                        <div class="table-responsive tableFixHead">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Компания</th>
-                                        <th>N</th>                                        
-                                        <th align="right">Собственный капитал</th>
-                                        <th align="right">Доля, %</th>
-                                        {% if show_last_year %}
-                                            <th align="right">Собственный капитал на {{ moment(e_l_y).format('LL') }}</th>
-                                            <th align="right">Изменение за год, %</th>
-                                        {% endif %}                                    
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for rownum in range(equity_len) %}
-                                        <tr>
-                                            <th>{{ equity[rownum].alias }}</th>
-                                            <td>{{ rownum + 1 }}</td>
-                                            <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
-                                            <td>{{ equity[rownum].share }}</td>
-                                            {% if show_last_year %}
-                                                {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
-                                                    {% for ind_l_y in equity_l_y %}
-                                                        {% if ind_l_y.id == equity[rownum].id %}
-                                                            <td align="right">
-                                                                {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
+                                    </thead>
+                                    <tbody>
+                                        {% for rownum in range(net_premiums_len) %}
+                                            <tr>
+                                                <th>{{ net_premiums[rownum].alias }}</th>
+                                                <td>{{ rownum + 1 }}</td>                                            
+                                                <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
+                                                <td align="right">{{ net_premiums[rownum].share }}</td>
+                                                {% if show_last_year %}
+                                                    {% for ind_l_y in net_premiums_l_y %}
+                                                        {% if ind_l_y.id == net_premiums[rownum].id %}
+                                                            <td align="right">                                                
+                                                                {% if ind_l_y.value > 0 %}
                                                                     {{ "{:,.0f}".format(ind_l_y.value) }}
                                                                 {% else %}
                                                                     N.A.
                                                                 {% endif %}
-                                                            </td>                                                    
+                                                            </td>
+                                                            <td align="right">{{ ind_l_y.share }}</td>
+                                                            <td align="right">
+                                                                {% if ind_l_y.value > 0 %}
+                                                                    {{ round((net_premiums[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
+                                                                {% else %}
+                                                                    N.A.
+                                                                {% endif %}
+                                                            </td>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>ИТОГО</th>
+                                            <td></td>                                        
+                                            <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total) }}</b></td>
+                                            <td></td>
+                                            {% if show_last_year %}
+                                                <td align="right"><b>{{ "{:,.0f}".format(net_premiums_total_l_y) }}</b></td>
+                                                <td></td>
+                                                <td align="right"><b>{{ round((net_premiums_total-net_premiums_total_l_y)/net_premiums_total_l_y*100,1) }}</b></td>
+                                            {% endif %}
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if show_last_year %}
+                    <div class="col-md-12 col-sm-12 col-xs-12">
+                {% else %}
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                {% endif %}
+
+                    {% if lr_list %}
+                            <div align="center">
+                            <h2>
+                                {% if get_hint('LR_coef') %}
+                                    <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат</a>
+                                {% else %}
+                                    Коэффициент выплат
+                                {% endif %}
+                            </h2>
+                            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                            <p><i>* компании отсортированы по убыванию по чистым премиям</i></p>
+                            <div class="table-responsive tableFixHead">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Компания</th>
+                                            <th>N</th>                                        
+                                            <th align="right">Коэффициент выплат, %</th>
+                                            {% if show_last_year %}
+                                                <th align="right">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>                                        
+                                                <th align="right">Изменение по сравнению с прошлым годом</th>
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rownum in range(lr_list_len) %}
+                                            <tr>
+                                                <th>{{ lr_list[rownum].company_name }}</th>
+                                                <td>{{ rownum + 1 }}</td>
+                                                <td align="right">{{ lr_list[rownum].lr }}</td>
+                                                {% if show_last_year %}
+                                                    {% for ind_l_y in lr_list_l_y %}
+                                                        {% if ind_l_y.id == lr_list[rownum].id %}
+                                                            <td align="right">{{ ind_l_y.lr }}</td>                                                    
+                                                            <td align="right">
+                                                                {% if ind_l_y.lr != 'N.A.' and lr_list[rownum].lr != 'N.A.' %}
+                                                                    {{ round(lr_list[rownum].lr-ind_l_y.lr,1) }}
+                                                                {% else %}
+                                                                    N.A.
+                                                                {% endif %}
+                                                            </td>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Среднее</th>
+                                            <td></td>
+                                            <td align="right"><b>{{ lr_av }}</b></td>
+                                            {% if show_last_year %}
+                                                <td align="right"><b>{{ lr_av_l_y }}</b></td>
+                                                <td align="right"><b>{{ round(lr_av-lr_av_l_y,1) }}</b></td>
+                                            {% endif %}
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                {% if show_last_year %}
+                    <div class="col-md-12 col-sm-12 col-xs-12">
+                {% else %}
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                {% endif %}
+
+                    {% if netincome %}
+                        <div align="center">
+                            <h2>Прибыль (убыток)</h2>
+                            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                            <p><i>* прибыль (убыток) приведены в <b>тыс.тг.</b></i></p>
+                            <p><i>** показаны все компании, у которых была прибыль (убыток) за заданный период</i></p>
+                            <div class="table-responsive tableFixHead">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Компания</th>
+                                            <th>N</th>                                        
+                                            <th align="right">Прибыль (убыток)</th>
+                                            <th align="right">Доля, %</th>
+                                            {% if show_last_year %}
+                                                <th align="right">Прибыль (убыток) с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>                                        
+                                                <th align="right">Изменение по сравнению с прошлым годом, %</th>
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rownum in range(netincome_len) %}
+                                        <tr>
+                                            <th>{{ netincome[rownum].alias }}</th>
+                                            <td>{{ rownum + 1 }}</td>                                        
+                                            <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
+                                            <td align="right">{{ netincome[rownum].share }}</td>
+                                            {% if show_last_year %}
+                                                {% if is_id_in_arr(netincome[rownum].id, netincome_l_y) %}
+                                                    {% for ind_l_y in netincome_l_y %}
+                                                        {% if ind_l_y.id == netincome[rownum].id %}
+                                                            <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>                                                    
                                                             <td align="right">
                                                                 {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
-                                                                    {{ round((equity[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
+                                                                    {{ round((netincome[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
                                                                 {% else %}
                                                                     N.A.
                                                                 {% endif %}
@@ -292,100 +219,180 @@
                                                 {% endif %}
                                             {% endif %}
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>ИТОГО</th>
-                                        <td></td>
-                                        <td align="right"><b>{{ "{:,.0f}".format(equity_total) }}</b></td>
-                                        <td></td>
-                                        {% if show_last_year %}
-                                            <td align="right"><b>{{ "{:,.0f}".format(equity_total_l_y) }}</b></td>
-                                            <td align="right"><b>{{ round((equity_total-equity_total_l_y)/equity_total_l_y*100,1) }}</b></td>
-                                        {% endif %}                                    
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-        <div class="row">
-            {% if show_last_year %}
-                <div class="col-md-12 col-sm-12 col-xs-12">
-            {% else %}
-                <div class="col-md-6 col-sm-12 col-xs-12">
-            {% endif %}
-                {% if solvency_margin %}
-                    <div align="center">
-                        <h2>
-                            {% if get_hint('solvency_margin') %}
-                                <a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">Норматив ФМП</a>
-                            {% else %}
-                                Норматив ФМП
-                            {% endif %}
-                        </h2>
-                        <p><b>на {{ moment(e).format('LL') }}</b></p>
-                        <p><i>* показаны те компании, которые действуют на указанную дату</i></p>
-                            <div class="table-responsive tableFixHead">
-                                <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Компания</th>
-                                        <th>N</th>                                        
-                                        <th align="right">Норматив ФМП</th>
-                                        {% if show_last_year %}
-                                            <th align="right">Норматив ФМП на на {{ moment(e_l_y).format('LL') }}</th>
-                                            <th align="right">Изменение за год</th>
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for rownum in range(solvency_margin_len) %}
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
                                         <tr>
-                                            <th>{{ solvency_margin[rownum].alias }}</th>
-                                            <td>{{ rownum + 1 }}</td>
-                                            <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
+                                            <th>ИТОГО</th>
+                                            <td></td>
+                                            <td align="right"><b>{{ "{:,.0f}".format(netincome_total) }}</b></td>
+                                            <td></td>
                                             {% if show_last_year %}
-                                                {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
-                                                    {% for ind_l_y in solvency_margin_l_y %}
-                                                        {% if ind_l_y.id == solvency_margin[rownum].id %}
-                                                            <td align="right">{{ ind_l_y.value }}</td>
-                                                            <td align="right">
-                                                                {% if ind_l_y.value != 'N.A.' and lr_list[rownum].value != 'N.A.' %}
-                                                                    {{ round(solvency_margin[rownum].value-ind_l_y.value,1) }}
-                                                                {% else %}
-                                                                    N.A.
-                                                                {% endif %}
-                                                            </td>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                {% else %}
-                                                    <td align="right">N.A.</td>
-                                                    <td align="right">N.A.</td>
-                                                {% endif %}                                                
+                                                <td align="right"><b>{{ "{:,.0f}".format(netincome_total_l_y) }}</b></td>
+                                                <td align="right"><b>{{ round((netincome_total-netincome_total_l_y)/netincome_total_l_y*100,1) }}</b></td>
                                             {% endif %}
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>Среднее</th>
-                                        <td></td>
-                                        <td align="right"><b>{{ solvency_margin_av }}</b></td>
-                                        {% if show_last_year %}
-                                            <td align="right"><b>{{ solvency_margin_av_l_y }}</b></td>
-                                            <td align="right"><b>{{ round(solvency_margin_av-solvency_margin_av_l_y,1) }}</b></td>
-                                        {% endif %}                                    
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
+                </div>
+                {% if show_last_year %}
+                    <div class="col-md-12 col-sm-12 col-xs-12">
+                {% else %}
+                    <div class="col-md-6 col-sm-12 col-xs-12">
                 {% endif %}
+
+                    {% if equity %}
+                        <div align="center">
+                            <h2>Собственный капитал</h2>
+                            <p><b>на {{ moment(e).format('LL') }}</b></p>
+                            <p><i>* собственный капитал приведен <b>в тыс.тг.</b></i></p>
+                            <p><i>** показаны те компании, которые действуют на указанную дату</i></p>
+                            <div class="table-responsive tableFixHead">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Компания</th>
+                                            <th>N</th>                                        
+                                            <th align="right">Собственный капитал</th>
+                                            <th align="right">Доля, %</th>
+                                            {% if show_last_year %}
+                                                <th align="right">Собственный капитал на {{ moment(e_l_y).format('LL') }}</th>
+                                                <th align="right">Изменение за год, %</th>
+                                            {% endif %}                                    
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rownum in range(equity_len) %}
+                                            <tr>
+                                                <th>{{ equity[rownum].alias }}</th>
+                                                <td>{{ rownum + 1 }}</td>
+                                                <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
+                                                <td>{{ equity[rownum].share }}</td>
+                                                {% if show_last_year %}
+                                                    {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
+                                                        {% for ind_l_y in equity_l_y %}
+                                                            {% if ind_l_y.id == equity[rownum].id %}
+                                                                <td align="right">
+                                                                    {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
+                                                                        {{ "{:,.0f}".format(ind_l_y.value) }}
+                                                                    {% else %}
+                                                                        N.A.
+                                                                    {% endif %}
+                                                                </td>                                                    
+                                                                <td align="right">
+                                                                    {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
+                                                                        {{ round((equity[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
+                                                                    {% else %}
+                                                                        N.A.
+                                                                    {% endif %}
+                                                                </td>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <td align="right">N.A.</td>
+                                                        <td align="right">N.A.</td>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>ИТОГО</th>
+                                            <td></td>
+                                            <td align="right"><b>{{ "{:,.0f}".format(equity_total) }}</b></td>
+                                            <td></td>
+                                            {% if show_last_year %}
+                                                <td align="right"><b>{{ "{:,.0f}".format(equity_total_l_y) }}</b></td>
+                                                <td align="right"><b>{{ round((equity_total-equity_total_l_y)/equity_total_l_y*100,1) }}</b></td>
+                                            {% endif %}                                    
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                {% if show_last_year %}
+                    <div class="col-md-12 col-sm-12 col-xs-12">
+                {% else %}
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                {% endif %}
+                
+                    {% if solvency_margin %}
+                        <div align="center">
+                            <h2>
+                                {% if get_hint('solvency_margin') %}
+                                    <a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">Норматив ФМП</a>
+                                {% else %}
+                                    Норматив ФМП
+                                {% endif %}
+                            </h2>
+                            <p><b>на {{ moment(e).format('LL') }}</b></p>
+                            <p><i>* показаны те компании, которые действуют на указанную дату</i></p>
+                                <div class="table-responsive tableFixHead">
+                                    <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Компания</th>
+                                            <th>N</th>                                        
+                                            <th align="right">Норматив ФМП</th>
+                                            {% if show_last_year %}
+                                                <th align="right">Норматив ФМП на на {{ moment(e_l_y).format('LL') }}</th>
+                                                <th align="right">Изменение за год</th>
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rownum in range(solvency_margin_len) %}
+                                            <tr>
+                                                <th>{{ solvency_margin[rownum].alias }}</th>
+                                                <td>{{ rownum + 1 }}</td>
+                                                <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
+                                                {% if show_last_year %}
+                                                    {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
+                                                        {% for ind_l_y in solvency_margin_l_y %}
+                                                            {% if ind_l_y.id == solvency_margin[rownum].id %}
+                                                                <td align="right">{{ ind_l_y.value }}</td>
+                                                                <td align="right">
+                                                                    {% if ind_l_y.value != 'N.A.' and lr_list[rownum].value != 'N.A.' %}
+                                                                        {{ round(solvency_margin[rownum].value-ind_l_y.value,1) }}
+                                                                    {% else %}
+                                                                        N.A.
+                                                                    {% endif %}
+                                                                </td>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <td align="right">N.A.</td>
+                                                        <td align="right">N.A.</td>
+                                                    {% endif %}                                                
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Среднее</th>
+                                            <td></td>
+                                            <td align="right"><b>{{ solvency_margin_av }}</b></td>
+                                            {% if show_last_year %}
+                                                <td align="right"><b>{{ solvency_margin_av_l_y }}</b></td>
+                                                <td align="right"><b>{{ round(solvency_margin_av-solvency_margin_av_l_y,1) }}</b></td>
+                                            {% endif %}                                    
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}

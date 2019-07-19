@@ -15,6 +15,7 @@ class Config(object):
     UPLOAD_FOLDER = 'files_uploaded'#path to uploaded files
     TMP_UPLOAD_FOLDER = 'tmp'#path to uploaded files (temporary)
     STATIC_FOLDER = 'static'#static files
+    TMP_STATIC_FOLDER = 'static_tmp'#static files (temporary)
     MAX_CONTENT_PATH = 10485760#max size of uploaded file - 10MB
     ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])#extensions allowed for file uploads
     #Echange server conf
@@ -28,7 +29,12 @@ class Config(object):
                         {'id':2,'name':'class_profile'},
                         {'id':3,'name':'peers_review'},
                         {'id':4,'name':'ranking'},
-                        {'id':5,'name':'motor'}]
+                        {'id':5,'name':'motor'},
+                        {'id':6,'name':'company_profile_file'},
+                        {'id':7,'name':'class_profile_file'},
+                        {'id':8,'name':'peers_review_file'},
+                        {'id':9,'name':'ranking_file'},
+                        {'id':10,'name':'motor_file'}]
     DICT_TYPES = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников
     DATA_TYPES = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели'),('Prudentials','Пруденциальные нормативы')]#типы данных
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')

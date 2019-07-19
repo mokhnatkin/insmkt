@@ -1,12 +1,13 @@
-from flask import render_template, flash, redirect, url_for, request, g
+from flask import render_template, flash, redirect, url_for, request, g, send_from_directory
 from app import db
 from app.ranking.forms import RankingForm
 from flask_login import current_user, login_required
 from app.models import Company, Indicator, Financial, Financial_per_month            
 from datetime import datetime
+from flask import send_from_directory
 from app.ranking import bp
 from app.universal_routes import before_request_u, required_roles_u, save_to_log, \
-                            get_months, is_id_in_arr, get_hint
+                            get_months, is_id_in_arr, get_hint, save_to_excel
 
 
 @bp.before_request
@@ -115,19 +116,22 @@ def get_ranking(b,e):#вспомогательная функция - получ
             else:
                 el['share'] = share    
     ##############################################################################
+    solvency_margin = list()
     try:
         solvency_margin_id = Indicator.query.filter(Indicator.name == 'solvency_margin').first()
     except:
         solvency_margin_id = None
     #query solvency margins
     if solvency_margin_id is not None and e is not None:
-        solvency_margin = Financial.query.join(Company) \
+        solvency_margin_q = Financial.query.join(Company) \
                             .with_entities(Financial.value,Company.alias,Company.id) \
                             .filter(Financial.indicator_id == solvency_margin_id.id) \
                             .filter(Financial.report_date == e) \
                             .filter(Company.nonlife == True) \
                             .order_by(Financial.value.desc()).all()
-    solvency_margin_av = round(sum(i.value for i in solvency_margin) / float(len(solvency_margin)),2)
+    solvency_margin_av = round(sum(i.value for i in solvency_margin_q) / float(len(solvency_margin_q)),2)
+    for s in solvency_margin_q:
+        solvency_margin.append({'id':s.id,'alias':s.alias,'value':s.value})
     #################################################################################
     try:
         net_claim_id = Indicator.query.filter(Indicator.name == 'net_claims').first()
@@ -211,15 +215,17 @@ def ranking():
     lr_av_l_y = None
     b_l_y = None
     e_l_y = None
+    show_info = False
+
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
+
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
         e = form.end_d.data        
-        save_to_log('ranking',current_user.id)
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -242,10 +248,61 @@ def ranking():
         netincome_len = len(netincome)
         solvency_margin_len = len(solvency_margin)
         lr_list_len = len(lr_list)
+        if form.show_info_submit.data:#show data
+            save_to_log('ranking',current_user.id)
+            show_info = True
+        elif form.save_to_file_submit.data:
+            save_to_log('ranking_file',current_user.id)
+            sheets = list()
+            sheets_names = list()
+            col_names = list()
+            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets.append(net_premiums)
+            sheets.append(equity)
+            sheets.append(netincome)
+            sheets.append(solvency_margin)
+            sheets.append(lr_list)
+            sheets_names.append(period_str + ' чист. премии')
+            sheets_names.append(period_str + ' капитал')
+            sheets_names.append(period_str + ' прибыль')
+            sheets_names.append(period_str + ' ФМП')
+            sheets_names.append(period_str + ' коэф. выплат')
+            net_premiums_col_names = ['ID','Компания','Чистые премии, тыс.тг.','Доля, %']
+            equity_col_names = ['ID','Собственный капитал, тыс.тг.','Компания','Доля, %']
+            solvency_margin_col_names = ['ID','Компания','Норматив ФМП']
+            lr_list_col_names = ['ID','Компания','Коэффициент выплат, %']
+            col_names.append(net_premiums_col_names)
+            col_names.append(equity_col_names)
+            col_names.append(net_premiums_col_names)
+            col_names.append(solvency_margin_col_names)
+            col_names.append(lr_list_col_names)
+            if show_last_year == True:
+                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')                
+                sheets.append(net_premiums_l_y)
+                sheets.append(equity_l_y)
+                sheets.append(netincome_l_y)
+                sheets.append(solvency_margin_l_y)
+                sheets.append(lr_list_l_y)
+                sheets_names.append(period_l_y_str + ' чист. премии')
+                sheets_names.append(period_l_y_str + ' капитал')
+                sheets_names.append(period_l_y_str + ' прибыль')
+                sheets_names.append(period_l_y_str + ' ФМП')
+                sheets_names.append(period_l_y_str + ' коэф. выплат')
+                col_names.append(net_premiums_col_names)
+                col_names.append(equity_col_names)
+                col_names.append(net_premiums_col_names)
+                col_names.append(solvency_margin_col_names)
+                col_names.append(lr_list_col_names)
+            wb_name = 'ranking_' + period_str
+            path, wb_name_f = save_to_excel('ranking',period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            if path is not None:                
+                return send_from_directory(path, filename=wb_name_f, as_attachment=True)
+            else:
+                flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('ranking/ranking.html', \
                     net_premiums=net_premiums,net_premiums_len=net_premiums_len, \
                     equity=equity, equity_len=equity_len, b=b, e=e, show_last_year=show_last_year, \
-                    netincome=netincome, netincome_len=netincome_len, \
+                    netincome=netincome, netincome_len=netincome_len, show_info=show_info, \
                     solvency_margin=solvency_margin, solvency_margin_len=solvency_margin_len, \
                     lr_list=lr_list, lr_list_len=lr_list_len,form=form, \
                     net_premiums_total=net_premiums_total,equity_total=equity_total, \

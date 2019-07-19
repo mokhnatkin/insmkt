@@ -20,7 +20,7 @@ import random
 from sqlalchemy import func
 from app.admin import bp
 from app.universal_routes import before_request_u, required_roles_u, \
-                        get_view_name, send_email
+                        get_view_name, send_email, allowed_file, add_str_timestamp
 
 
 @bp.before_request
@@ -103,16 +103,6 @@ def downloadFile(fname = None):
     return send_file(p, as_attachment=True)
 
 
-def allowed_file(filename):#проверка файла - расширение должно быть разрешено
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']        
-
-
-def add_str_timestamp(filename):#adds string timestamp to filename in order to make in unique
-    dt = datetime.utcnow()
-    stamp = round(dt.timestamp())
-    uId = str(stamp)
-    u_filename = uId+'_'+filename
-    return u_filename
 
 
 def process_file(file_type,file_subtype,wb,report_date,frst_row,others_col_1,others_col_2,others_col_3):#обработаем загруженный excel файл
@@ -394,7 +384,7 @@ def check_file_name_ext(request,file_data,future_action):
     _file = request.files['file']
     if _file.filename == '':# if user does not select file, browser also submit an empty part without filename
         return res, msg, filename
-    if _file and allowed_file(_file.filename):        
+    if _file and allowed_file(_file.filename):
         filename = secure_filename(file_data.filename)
         filename = add_str_timestamp(filename) #adds string timestamp to filename in order to make in unique
         try:

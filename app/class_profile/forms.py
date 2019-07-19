@@ -13,7 +13,8 @@ class ClassProfileForm(FlaskForm):#информация по продукту
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
     show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
-    submit = SubmitField('Показать информацию')
+    show_info_submit = SubmitField('Показать информацию')
+    save_to_file_submit = SubmitField('Сохранить в файл')
 
     def __init__(self, *args, **kwargs):
         super(ClassProfileForm, self).__init__(*args, **kwargs)

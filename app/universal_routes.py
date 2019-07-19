@@ -9,6 +9,10 @@ from functools import wraps
 import random
 from exchangelib import Account, Credentials, Configuration, DELEGATE, Message
 from threading import Thread
+import random
+import xlwt
+from werkzeug.utils import secure_filename
+import os
 
 
 
@@ -156,3 +160,54 @@ def get_view_name(_id):#получаем название запрошенной
 def get_hint(name):#получаем текст и url подсказки по её имени
     hint = Hint.query.filter(Hint.name == name).first()
     return hint
+
+
+def allowed_file(filename):#проверка файла - расширение должно быть разрешено
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']        
+
+
+def add_str_timestamp(filename):#adds string timestamp to filename in order to make in unique
+    dt = datetime.utcnow()
+    stamp = round(dt.timestamp())
+    uId = str(stamp)
+    rand_n = str(random.randrange(100, 1000, 1))#add random number
+    u_filename = uId+'_'+rand_n+'_'+filename
+    return u_filename
+
+
+def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names,col_names):#save to excel
+    workbook = xlwt.Workbook()
+    i = 0
+    path = None
+    #descriptive sheet
+    sh = workbook.add_sheet('total')
+    sh.write(0,0,item_name)
+    sh.write(1,0,period_str)
+    for sheet in sheets:
+        sh = workbook.add_sheet(sheets_names[i])
+        cur_col_name = col_names[i]
+        rows = len(sheet)
+        for row in range(rows):
+            row_array = sheet[row]            
+            col = 0
+            for k, v in row_array.items():
+                try:                    
+                    if row == 0:                    
+                        sh.write(row, col, cur_col_name[col])#first row - column names
+                        sh.write(row+1, col, v)                    
+                    else:                    
+                        sh.write(row+1, col, v)
+                except:
+                    continue
+                col+=1
+        i+=1
+    #save wb
+    wb_name = secure_filename(wb_name)
+    wb_name = add_str_timestamp(wb_name) + '.xls'    
+    try:        
+        workbook.save(os.path.join(current_app.config['TMP_STATIC_FOLDER'], wb_name))
+        path = os.path.join(os.path.dirname(os.path.abspath(current_app.config['TMP_STATIC_FOLDER'])),current_app.config['TMP_STATIC_FOLDER'])        
+    except:
+        pass
+    return path, wb_name#returns path to saved file and its name
+

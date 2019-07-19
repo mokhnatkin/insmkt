@@ -1,4 +1,5 @@
-from flask import render_template, flash, redirect, url_for, request, g, Response
+from flask import render_template, flash, redirect, url_for, request, g, \
+                    Response, current_app, send_from_directory
 from app import db
 from app.class_profile.forms import ClassProfileForm
 from flask_login import current_user, login_required
@@ -11,7 +12,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import io
 from app.class_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
-                    get_months, save_to_log, get_hint
+                    get_months, save_to_log, get_hint, add_str_timestamp, save_to_excel
 
 
 @bp.before_request
@@ -182,6 +183,7 @@ def class_profile():#инфо по классу
     class_totals_l_y = None
     b_l_y = None
     e_l_y = None
+    show_info = False
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -189,8 +191,7 @@ def class_profile():#инфо по классу
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
-        e = form.end_d.data
-        save_to_log('class_profile',current_user.id)
+        e = form.end_d.data        
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -216,11 +217,48 @@ def class_profile():#инфо по классу
         base_img_path = "/chart_for_class.png/" + form.insclass.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')
         img_path_prem = base_img_path + "/prem"
         img_path_claim = base_img_path + "/claim"
-    return render_template('class_profile/class_profile.html',title='Информация по продукту',form=form,descr=descr, \
+
+        if form.show_info_submit.data:#show data
+            save_to_log('class_profile',current_user.id)
+            show_info = True
+        elif form.save_to_file_submit.data:
+            save_to_log('class_profile_file',current_user.id)
+            sheets = list()
+            sheets_names = list()
+            col_names = list()
+            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets.append(class_companies)
+            sheets.append(class_info)
+            sheets_names.append(period_str + ' по компаниям')
+            sheets_names.append(period_str + ' по месяцам')
+            class_companies_col_names = ['ID','Название компании','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %','Доля рынка по премиям, %']
+            class_info_col_names = ['Год-Месяц','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %']
+            col_names.append(class_companies_col_names)
+            col_names.append(class_info_col_names)
+            if show_last_year == True:
+                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')
+                sheets.append(class_companies_l_y)
+                sheets.append(class_info_l_y)
+                sheets_names.append(period_l_y_str + '_по компаниям')                
+                sheets_names.append(period_l_y_str + '_по месяцам')
+                col_names.append(class_companies_col_names)
+                col_names.append(class_info_col_names)
+            wb_name = class_name + '_' + period_str
+            path, wb_name_f = save_to_excel(class_name,period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            if path is not None:                
+                return send_from_directory(path, filename=wb_name_f, as_attachment=True)
+            else:
+                flash('Не могу сформировать файл, либо сохранить на сервер')
+    return render_template('class_profile/class_profile.html',title='Информация по продукту', \
+                form=form,descr=descr, \
                 b=b,e=e,class_companies=class_companies,class_name=class_name, \
                 class_companies_len=class_companies_len,img_path_prem=img_path_prem, \
                 img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
                 show_last_year=show_last_year,class_companies_l_y=class_companies_l_y, \
-                class_totals_l_y=class_totals_l_y,b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint)
+                class_totals_l_y=class_totals_l_y,b_l_y=b_l_y,e_l_y=e_l_y, \
+                get_hint=get_hint,show_info=show_info)
 
 
+
+
+    

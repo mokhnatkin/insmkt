@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, g, Response
+from flask import render_template, flash, redirect, url_for, request, g, Response, send_from_directory
 from app import db
 from app.company_peers_profile.forms import CompanyProfileForm, PeersForm
 from flask_login import current_user, login_required
@@ -14,7 +14,7 @@ import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_num_companies_at_date, get_months, is_id_in_arr, \
-                    get_num_companies_per_period, get_hint
+                    get_num_companies_per_period, get_hint, save_to_excel
 
 
 @bp.before_request
@@ -114,7 +114,7 @@ def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competi
                 flow_indicators_per_month_per_c.append(ind)
             if show_competitors:
                 for el in main_indicators_flow:
-                    peers_flow_indicators.append({'peer_id':company[0],'indicator_id':el.id,'peer_value':el.value})
+                    peers_flow_indicators.append({'peer_id':company[0],'peer_name':cur_company_name,'indicator_id':el.id,'peer_value':el.value})
     c_N = get_num_companies_per_period(begin_d,end_d,N_companies)#number of non-life companies
     for ind in flow_indicators:
         peers_flow_ind = list()
@@ -395,7 +395,8 @@ def company_profile():#портрет компании
     b = g.min_report_date
     e = g.last_report_date
     b_l_y = None
-    e_l_y = None    
+    e_l_y = None
+    show_info = False
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -403,8 +404,7 @@ def company_profile():#портрет компании
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
-        e = form.end_d.data
-        save_to_log('company_profile',current_user.id)
+        e = form.end_d.data        
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -447,6 +447,52 @@ def company_profile():#портрет компании
             show_income_statement = True
         if len(premiums) > 0:
             show_premiums = True
+
+        if form.show_info_submit.data:#show data
+            save_to_log('company_profile',current_user.id)
+            show_info = True
+        elif form.save_to_file_submit.data:
+            save_to_log('company_profile_file',current_user.id)
+            sheets = list()
+            sheets_names = list()
+            col_names = list()
+            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets.append(balance_indicators)
+            sheets.append(flow_indicators)
+            sheets.append(other_financial_indicators)
+            sheets.append(premiums)            
+            sheets_names.append(period_str + ' баланс')
+            sheets_names.append(period_str + ' ОПУ')
+            sheets_names.append(period_str + ' другие фин.')
+            sheets_names.append(period_str + ' страх.портфель')
+            balance_indicators_col_names = ['ID','Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Среднее значение по рынку, тыс.тг.','Всего по рынку, тыс.тг.','Доля выбранной СК','']
+            flow_indicators_col_names = ['ID','Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Всего по рынку, тыс.тг.','Среднее значение по рынку, тыс.тг.','Доля выбранной СК','']
+            other_financial_indicators_col_names = ['Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Среднее значение по рынку, тыс.тг.','']
+            premiums_col_names = ['ID','Класс','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %','Средние премии по рынку, тыс.тг.','Средние выплаты по рынку, тыс.тг.','Средний коэффициент выплат по рынку, %']
+            col_names.append(balance_indicators_col_names)
+            col_names.append(flow_indicators_col_names)
+            col_names.append(other_financial_indicators_col_names)
+            col_names.append(premiums_col_names)
+            if show_last_year == True:
+                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')
+                sheets.append(balance_indicators_l_y)
+                sheets.append(flow_indicators_l_y)
+                sheets.append(other_financial_indicators_l_y)
+                sheets.append(premiums_l_y)                
+                sheets_names.append(period_l_y_str + ' баланс')
+                sheets_names.append(period_l_y_str + ' ОПУ')
+                sheets_names.append(period_l_y_str + ' другие фин.')
+                sheets_names.append(period_l_y_str + ' страх.портфель')
+                col_names.append(balance_indicators_col_names)
+                col_names.append(flow_indicators_col_names)
+                col_names.append(other_financial_indicators_col_names)
+                col_names.append(premiums_col_names)
+            wb_name = company_name + '_' + period_str
+            path, wb_name_f = save_to_excel(company_name,period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            if path is not None:                
+                return send_from_directory(path, filename=wb_name_f, as_attachment=True)
+            else:
+                flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('company_peers_profile/company_profile.html',title='Портрет компании',form=form,descr=descr,company_name=company_name, \
                 balance_indicators=balance_indicators, flow_indicators=flow_indicators, \
                 show_charts=show_charts,img_path_premiums_by_LoB_pie=img_path_premiums_by_LoB_pie, \
@@ -458,7 +504,7 @@ def company_profile():#портрет компании
                 show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
                 balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
                 premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr, \
-                b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint)
+                b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint,show_info=show_info)
 
 
 
@@ -712,6 +758,7 @@ def get_peers_names(peers):#получаем имена конкурентов �
             res_str = res_str + c.alias + ' | '
     return res_str
 
+
 @bp.route('/peers_review',methods=['GET','POST'])
 @login_required
 def peers_review():#сравнение с конкурентами
@@ -731,11 +778,12 @@ def peers_review():#сравнение с конкурентами
     show_premiums = False
     b = g.min_report_date
     e = g.last_report_date
+    show_info = False
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
-    if form.validate_on_submit():
+    if form.validate_on_submit():        
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
         e = form.end_d.data
@@ -743,8 +791,7 @@ def peers_review():#сравнение с конкурентами
         peers_str = form.peers.data#выбранные конкуренты
         peers = list()
         for c in peers_str:#convert id to int
-            peers.append((int(c),))        
-        save_to_log('peers_review',current_user.id)        
+            peers.append((int(c),))                
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         #подготовим данные для таблиц
@@ -769,10 +816,91 @@ def peers_review():#сравнение с конкурентами
             show_income_statement = True
         if len(premiums) > 0:            
             show_premiums = True
+
+        if form.show_info_submit.data:#show data
+            save_to_log('peers_review',current_user.id)
+            show_info = True
+        elif form.save_to_file_submit.data:
+            save_to_log('peers_review_file',current_user.id)
+            sheets = list()
+            sheets_names = list()
+            col_names = list()
+            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets.append(balance_indicators)
+            sheets.append(flow_indicators)
+            sheets.append(other_financial_indicators)
+            sheets.append(premiums)            
+            sheets_names.append(period_str + ' баланс')
+            sheets_names.append(period_str + ' ОПУ')
+            sheets_names.append(period_str + ' другие фин.')
+            sheets_names.append(period_str + ' страх.портфель')
+            balance_indicators_col_names = ['ID','Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Среднее значение по рынку, тыс.тг.','Всего по рынку, тыс.тг.','Доля выбранной СК','']
+            flow_indicators_col_names = ['ID','Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Всего по рынку, тыс.тг.','Среднее значение по рынку, тыс.тг.','Доля выбранной СК','']
+            other_financial_indicators_col_names = ['Системное название показателя','Название показателя','Значение по выбранной СК, тыс.тг.','Среднее значение по рынку, тыс.тг.','']
+            premiums_col_names = ['ID','Класс','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %','Средние премии по рынку, тыс.тг.','Средние выплаты по рынку, тыс.тг.','Средний коэффициент выплат по рынку, %']
+            col_names.append(balance_indicators_col_names)
+            col_names.append(flow_indicators_col_names)
+            col_names.append(other_financial_indicators_col_names)
+            col_names.append(premiums_col_names)
+            if show_competitors == True:#показывать конкурентов
+                peer_count = 0
+                peer_balance_flow_indicators_col_names = ['Название компании','Название показателя','Значение, тыс.тг.']
+                peer_other_financial_indicators_col_names = ['Название компании','Название показателя','Значение']
+                peer_premiums_col_names = ['Название компании', 'Класс', 'Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %']
+                for peer in peers_names_arr:#по каждой компании
+                    peer_name_obj = peers_names_arr[peer_count]
+                    peer_name = peer_name_obj['peer_name']
+                    balance_indicators_peer,flow_indicators_peer,other_financial_indicators_peer,premiums_peer = prepare_peer_info_for_excel(peer_count,peer_name,balance_indicators,flow_indicators,other_financial_indicators,premiums)
+                    sheets.append(balance_indicators_peer)
+                    sheets.append(flow_indicators_peer)
+                    sheets.append(other_financial_indicators_peer)
+                    sheets.append(premiums_peer)
+                    sheets_names.append(str(peer_count) + ' баланс')
+                    sheets_names.append(str(peer_count) + ' ОПУ')
+                    sheets_names.append(str(peer_count) + ' другие фин.')
+                    sheets_names.append(str(peer_count) + ' страх.портфель')
+                    col_names.append(peer_balance_flow_indicators_col_names)
+                    col_names.append(peer_balance_flow_indicators_col_names)
+                    col_names.append(peer_other_financial_indicators_col_names)
+                    col_names.append(peer_premiums_col_names)
+                    peer_count += 1                    
+            wb_name = company_name + '_' + period_str
+            path, wb_name_f = save_to_excel(company_name,period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            if path is not None:                
+                return send_from_directory(path, filename=wb_name_f, as_attachment=True)
+            else:
+                flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('company_peers_profile/peers_review.html',title='Сравнение с конкурентами',form=form,descr=descr, \
                         show_balance=show_balance,show_income_statement=show_income_statement, \
                         show_other_financial_indicators=show_other_financial_indicators,b=b,e=e, \
                         company_name=company_name,balance_indicators=balance_indicators, \
                         flow_indicators=flow_indicators,other_financial_indicators=other_financial_indicators, \
                         peers_names=peers_names,show_competitors=show_competitors,show_premiums=show_premiums, \
-                        peers_names_arr=peers_names_arr,get_hint=get_hint,premiums=premiums)
+                        peers_names_arr=peers_names_arr,get_hint=get_hint,premiums=premiums,show_info=show_info)
+
+
+def prepare_peer_info_for_excel(peer_count,peer_name,balance_indicators,flow_indicators,other_financial_indicators,premiums):
+    #вспомогательная функция - получаем показатели по каждому конкуренту
+    balance_indicators_peer = list()
+    flow_indicators_peer = list()
+    other_financial_indicators_peer = list()
+    premiums_peer = list()
+    for ind in balance_indicators:
+        peers_ind = ind['peers_balance_ind']
+        peer_ind = peers_ind[peer_count]
+        balance_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind['peer_value']})
+    for ind in flow_indicators:
+        peers_ind = ind['peers_flow_ind']
+        peer_ind = peers_ind[peer_count]
+        flow_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind['peer_value']})
+    for ind in other_financial_indicators:
+        peers_ind = ind['peers_other_fin_ind']
+        peer_ind = peers_ind[peer_count]
+        other_financial_indicators_peer.append({'peer_name':peer_name,'fullname':ind['name'],'value':peer_ind['peer_value']})
+    for ind in premiums:
+        class_name = ind['name']
+        peers_ind = ind['peers_prem_claim_LR']
+        peer_ind = peers_ind[peer_count]
+        premiums_peer.append({'peer_name':peer_name,'class_name':class_name,'peer_premium':peer_ind['peer_premium'],'peer_claim':peer_ind['peer_claim'],'peer_LR':peer_ind['peer_LR']})
+    return balance_indicators_peer,flow_indicators_peer,other_financial_indicators_peer,premiums_peer
+

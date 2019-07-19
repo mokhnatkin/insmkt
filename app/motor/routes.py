@@ -1,13 +1,14 @@
-from flask import render_template, flash, redirect, url_for, request, g
+from flask import render_template, flash, redirect, url_for, request, g, send_from_directory
 from app import db
 from app.motor.forms import MotorForm
 from flask_login import current_user, login_required
 from app.models import Company, Financial_per_month, Premium_per_month, \
                         Claim_per_month, Indicator, Insclass
 from datetime import datetime
+from flask import send_from_directory
 from app.motor import bp
 from app.universal_routes import before_request_u, required_roles_u, get_months, \
-                                get_months, save_to_log, get_hint
+                                get_months, save_to_log, get_hint, save_to_excel
 
 
 @bp.before_request
@@ -328,8 +329,7 @@ def motor():#инфо по автострахованию
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
         b = form.begin_d.data
-        e = form.end_d.data
-        save_to_log('motor',current_user.id)
+        e = form.end_d.data        
         b = datetime(b.year,b.month,1)
         e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
@@ -337,12 +337,8 @@ def motor():#инфо по автострахованию
         #аналогичный период прошлого года
         b_l_y = datetime(b.year-1,b.month,1)
         e_l_y = datetime(e.year-1,e.month,1)
-        #general_info, totals = get_general_info(b,e)#общая информация
-        #general_info_l_y, totals_l_y = get_general_info(b_l_y,e_l_y)
-        #delta_info, total_deltas = compare_to_l_y(general_info,general_info_l_y,totals,totals_l_y)        
         try:
-            general_info, totals = get_general_info(b,e)#общая информация
-            show_info = True            
+            general_info, totals = get_general_info(b,e)#общая информация                      
             if show_last_year == True:               
                 try:
                     general_info_l_y, totals_l_y = get_general_info(b_l_y,e_l_y)
@@ -353,6 +349,39 @@ def motor():#инфо по автострахованию
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные за заданный период отсутствуют. Попробуйте задать другой период.')
             return redirect(url_for('motor.motor'))
+
+        if form.show_info_submit.data:#show data
+            save_to_log('motor',current_user.id)
+            show_info = True
+        elif form.save_to_file_submit.data:
+            save_to_log('motor_file',current_user.id)
+            sheets = list()
+            sheets_names = list()
+            col_names = list()
+            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets.append(general_info)
+            sheets_names.append(period_str + ' общ. и авто')
+            _col_names = ['ID','Компания','Валовые премии, тыс.тг.',
+                            'Чистые премии, тыс.тг.','Выплаты, тыс.тг.','Чистые выплаты, тыс.тг.',
+                            'Нетто коэффициент выплат, %','Доля перестрахования в премиях, %',
+                            'Премии по ОС ГПО ВТС, тыс.тг.','Выплаты по ОС ГПО ВТС, тыс.тг.',
+                            'Премии по каско, тыс.тг.','Выплаты по каско, тыс.тг.',
+                            'Доля ОС ГПО ВТС в валовых премиях, %','Доля каско в валовых премиях, %',
+                            'Всего премий по автострахованию, тыс.тг.','Всего выплат по автострахованию, тыс.тг.',
+                            'Доля ОС ГПО ВТС в премиях по автострахованию, тыс.тг.',
+                            'Доля каско в премиях по автострахованию, тыс.тг.']
+            col_names.append(_col_names)
+            if show_last_year == True:
+                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')                
+                sheets.append(general_info_l_y)               
+                sheets_names.append(period_l_y_str + ' общ. и авто')
+                col_names.append(_col_names)
+            wb_name = 'motor_general_' + period_str
+            path, wb_name_f = save_to_excel('motor_general',period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            if path is not None:                
+                return send_from_directory(path, filename=wb_name_f, as_attachment=True)
+            else:
+                flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('motor/motor.html',title=title,form=form,descr=descr, \
                 b=b,e=e,show_last_year=show_last_year,b_l_y=b_l_y,e_l_y=e_l_y, \
                 general_info=general_info, len=len, show_info=show_info, \

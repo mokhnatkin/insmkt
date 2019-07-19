@@ -10,191 +10,193 @@
     </p>
     {% include 'just_form.html' %}
 
-    {% if show_balance %}
-        <h1>Компания: {{ company_name }}</h1>
-        <h3>Выбранные конкуренты: {{ peers_names }}</h3>
-        <div align="center">
-            <h2>Основные балансовые показатели</h2>
-            <p><b>на {{ moment(e).format('LL') }}</b></p>
-            <p><i>* все показатели, кроме норматива маржи платежеспособности, приведены <b>в тыс.тг.</b></i></p>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <tr>
-                        <th>Показатель</th>
-                        <th align="right">{{ company_name }}</th>                        
-                        <th align="right">Среднее по конкурентам</th>
-                        {% if show_competitors %}
-                            {% for c in peers_names_arr %}
-                                <th align="right">{{ c.peer_name }}</th>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                    {% for ind in balance_indicators %}
-                    <tr>
-                        {% if get_hint('solvency_margin') and ind.name == 'solvency_margin' %}
-                            <td><a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">{{ ind.fullname }}</a></td>
-                        {% elif get_hint('reserves') and ind.name == 'reserves'  %}
-                            <td><a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">{{ ind.fullname }}</a></td>
-                        {% else %}
-                            <td>{{ ind.fullname }}</td>
-                        {% endif %}
-                        {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
-                            <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>                            
-                            <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>                            
-                        {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
-                            <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                            
-                            <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                            
-                        {% endif %}
-                        {% if show_competitors %}
-                            {% for p in ind.peers_balance_ind %}
-                                {% if ind.name == 'solvency_margin' %}
-                                    <td align="right">{{ "{:,.2f}".format(p.peer_value) }}</td>
-                                {% else %}
+    {% if show_info %}
+        {% if show_balance %}
+            <h1>Компания: {{ company_name }}</h1>
+            <h3>Выбранные конкуренты: {{ peers_names }}</h3>
+            <div align="center">
+                <h2>Основные балансовые показатели</h2>
+                <p><b>на {{ moment(e).format('LL') }}</b></p>
+                <p><i>* все показатели, кроме норматива маржи платежеспособности, приведены <b>в тыс.тг.</b></i></p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>Показатель</th>
+                            <th align="right">{{ company_name }}</th>                        
+                            <th align="right">Среднее по конкурентам</th>
+                            {% if show_competitors %}
+                                {% for c in peers_names_arr %}
+                                    <th align="right">{{ c.peer_name }}</th>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% for ind in balance_indicators %}
+                        <tr>
+                            {% if get_hint('solvency_margin') and ind.name == 'solvency_margin' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">{{ ind.fullname }}</a></td>
+                            {% elif get_hint('reserves') and ind.name == 'reserves'  %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">{{ ind.fullname }}</a></td>
+                            {% else %}
+                                <td>{{ ind.fullname }}</td>
+                            {% endif %}
+                            {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
+                                <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>                            
+                                <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>                            
+                            {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
+                                <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>                            
+                                <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>                            
+                            {% endif %}
+                            {% if show_competitors %}
+                                {% for p in ind.peers_balance_ind %}
+                                    {% if ind.name == 'solvency_margin' %}
+                                        <td align="right">{{ "{:,.2f}".format(p.peer_value) }}</td>
+                                    {% else %}
+                                        <td align="right">{{ "{:,.0f}".format(p.peer_value) }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if show_income_statement %}
+            <div align="center">
+                <h2>Основные показатели ОПУ</h2>
+                <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                <p><i>* все показатели приведены <b>в тыс.тг.</b></i></p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>Показатель</th>
+                            <th align="right">{{ company_name }}</th>                        
+                            <th align="right">Среднее по конкурентам</th>
+                            {% if show_competitors %}
+                                {% for c in peers_names_arr %}
+                                    <th align="right">{{ c.peer_name }}</th>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% for ind in flow_indicators %}
+                        <tr>
+                            {% if get_hint('net_premium') and ind.name == 'net_premiums' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">{{ ind.fullname }}</a></td>
+                            {% elif get_hint('net_claim') and ind.name == 'net_claims' %}
+                                <td><a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">{{ ind.fullname }}</a></td>
+                            {% else %}
+                                <td>{{ ind.fullname }}</td>
+                            {% endif %}
+                            <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
+                            <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
+                            {% if show_competitors %}
+                                {% for p in ind.peers_flow_ind %}
                                     <td align="right">{{ "{:,.0f}".format(p.peer_value) }}</td>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if show_other_financial_indicators %}        
+            <div align="center">
+                <h2>Другие финансовые показатели</h2>
+                <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <tr>
+                            <th>Показатель</th>
+                            <th align="right">{{ company_name }}</th>
+                            <th align="right">Среднее по конкурентам</th>
+                            {% if show_competitors %}
+                                {% for c in peers_names_arr %}
+                                    <th align="right">{{ c.peer_name }}</th>
+                                {% endfor %}
+                            {% endif %}
+                        </tr>
+                        {% for ind in other_financial_indicators %}
+                            <tr>
+                                {% if get_hint('roe') and ind.ind_id == 'roe' %}
+                                    <td><a href="#" data-toggle="popover" title="{{ get_hint('roe').title }}" data-trigger="hover" data-content="{{ get_hint('roe').text }}">{{ ind.name }}</a></td>
+                                {% elif get_hint('equity_usage') and ind.ind_id == 'equity_usage' %}
+                                    <td><a href="#" data-toggle="popover" title="{{ get_hint('equity_usage').title }}" data-trigger="hover" data-content="{{ get_hint('equity_usage').text }}">{{ ind.name }}</a></td>
+                                {% elif get_hint('LR_coef_net') and ind.ind_id == 'LR_coef_net' %}
+                                    <td><a href="#" data-toggle="popover" title="{{ get_hint('LR_coef_net').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef_net').text }}">{{ ind.name }}</a></td>                            
+                                {% else %}
+                                    <td>{{ ind.name }}</td>
                                 {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-        </div>
-    {% endif %}
+                                <td>{{ ind.value_c }}</td>
+                                <td>{{ ind.value_m }}</td>
+                                {% if show_competitors %}
+                                    {% for p in ind.peers_other_fin_ind %}
+                                        <td align="right">{{ p.peer_value }}</td>
+                                    {% endfor %}
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+        {% endif %}
 
-    {% if show_income_statement %}
+        {% if show_premiums %}
         <div align="center">
-            <h2>Основные показатели ОПУ</h2>
+            <h2>Страховой портфель</h2>
             <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-            <p><i>* все показатели приведены <b>в тыс.тг.</b></i></p>
-            <div class="table-responsive">
+            <p><i>* в списке отображаются только те классы, по которым были премии или выплаты за выбранный период</i></p>
+            <p><i>** премии и выплаты приведены <b>в тыс.тг.</b></i></p>
+            <div class="table-responsive tableFixHead">
                 <table class="table table-hover">
-                    <tr>
-                        <th>Показатель</th>
-                        <th align="right">{{ company_name }}</th>                        
-                        <th align="right">Среднее по конкурентам</th>
-                        {% if show_competitors %}
-                            {% for c in peers_names_arr %}
-                                <th align="right">{{ c.peer_name }}</th>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                    {% for ind in flow_indicators %}
-                    <tr>
-                        {% if get_hint('net_premium') and ind.name == 'net_premiums' %}
-                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">{{ ind.fullname }}</a></td>
-                        {% elif get_hint('net_claim') and ind.name == 'net_claims' %}
-                            <td><a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">{{ ind.fullname }}</a></td>
-                        {% else %}
-                            <td>{{ ind.fullname }}</td>
-                        {% endif %}
-                        <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
-                        <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
-                        {% if show_competitors %}
-                            {% for p in ind.peers_flow_ind %}
-                                <td align="right">{{ "{:,.0f}".format(p.peer_value) }}</td>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-        </div>
-    {% endif %}
-
-    {% if show_other_financial_indicators %}        
-        <div align="center">
-            <h2>Другие финансовые показатели</h2>
-            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <tr>
-                        <th>Показатель</th>
-                        <th align="right">{{ company_name }}</th>
-                        <th align="right">Среднее по конкурентам</th>
-                        {% if show_competitors %}
-                            {% for c in peers_names_arr %}
-                                <th align="right">{{ c.peer_name }}</th>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                    {% for ind in other_financial_indicators %}
+                    <thead>
                         <tr>
-                            {% if get_hint('roe') and ind.ind_id == 'roe' %}
-                                <td><a href="#" data-toggle="popover" title="{{ get_hint('roe').title }}" data-trigger="hover" data-content="{{ get_hint('roe').text }}">{{ ind.name }}</a></td>
-                            {% elif get_hint('equity_usage') and ind.ind_id == 'equity_usage' %}
-                                <td><a href="#" data-toggle="popover" title="{{ get_hint('equity_usage').title }}" data-trigger="hover" data-content="{{ get_hint('equity_usage').text }}">{{ ind.name }}</a></td>
-                            {% elif get_hint('LR_coef_net') and ind.ind_id == 'LR_coef_net' %}
-                                <td><a href="#" data-toggle="popover" title="{{ get_hint('LR_coef_net').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef_net').text }}">{{ ind.name }}</a></td>                            
-                            {% else %}
-                                <td>{{ ind.name }}</td>
-                            {% endif %}
-                            <td>{{ ind.value_c }}</td>
-                            <td>{{ ind.value_m }}</td>
+                            <th>Класс</th>
+                            <th align="right">{{ company_name }} премии</th>
+                            <th align="right">{{ company_name }} выплаты</th>
+                            <th align="right">
+                                {% if get_hint('LR_coef') %}
+                                    <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">{{ company_name }} коэффициент выплат, %</a>
+                                {% else %}
+                                    {{ company_name }} коэффициент выплат, %
+                                {% endif %}                            
+                            </th>
+                            <th align="right">Премии, среднее по конкурентам</th>
+                            <th align="right">Выплаты, среднее по конкурентам</th>
+                            <th align="right">Коэффициент выплат, %, среднее по конкурентам</th>                      
                             {% if show_competitors %}
-                                {% for p in ind.peers_other_fin_ind %}
-                                    <td align="right">{{ p.peer_value }}</td>
+                                {% for c in peers_names_arr %}
+                                    <th align="right">{{ c.peer_name }} премии</th>
+                                    <th align="right">{{ c.peer_name }} выплаты</th>
+                                    <th align="right">{{ c.peer_name }} коэффициент выплат, %</th>
                                 {% endfor %}
                             {% endif %}
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                        {% for p in premiums %}
+                            <tr>
+                                <th>{{ p.name }}</th>
+                                <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
+                                <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
+                                <td align="right">{{ p.LR }}</td>
+                                <td align="right">{{ "{:,.0f}".format(p.av_premium_mkt) }}</td>
+                                <td align="right">{{ "{:,.0f}".format(p.av_claim_mkt) }}</td>
+                                <td align="right">{{ p.av_LR_mkt }}</td>                            
+                                {% if show_competitors %}
+                                    {% for c in p.peers_prem_claim_LR %}
+                                        <td align="right"> {{ "{:,.0f}".format(c.peer_premium) }}</td>
+                                        <td align="right"> {{ "{:,.0f}".format(c.peer_claim) }}</td>
+                                        <td align="right"> {{ c.peer_LR }}</td>
+                                    {% endfor %}
+                                {% endif %}                            
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
+        {% endif %}
     {% endif %}
-
-    {% if show_premiums %}
-    <div align="center">
-        <h2>Страховой портфель</h2>
-        <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-        <p><i>* в списке отображаются только те классы, по которым были премии или выплаты за выбранный период</i></p>
-        <p><i>** премии и выплаты приведены <b>в тыс.тг.</b></i></p>
-        <div class="table-responsive tableFixHead">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Класс</th>
-                        <th align="right">{{ company_name }} премии</th>
-                        <th align="right">{{ company_name }} выплаты</th>
-                        <th align="right">
-                            {% if get_hint('LR_coef') %}
-                                <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">{{ company_name }} коэффициент выплат, %</a>
-                            {% else %}
-                                {{ company_name }} коэффициент выплат, %
-                            {% endif %}                            
-                        </th>
-                        <th align="right">Премии, среднее по конкурентам</th>
-                        <th align="right">Выплаты, среднее по конкурентам</th>
-                        <th align="right">Коэффициент выплат, %, среднее по конкурентам</th>                      
-                        {% if show_competitors %}
-                            {% for c in peers_names_arr %}
-                                <th align="right">{{ c.peer_name }} премии</th>
-                                <th align="right">{{ c.peer_name }} выплаты</th>
-                                <th align="right">{{ c.peer_name }} коэффициент выплат, %</th>
-                            {% endfor %}
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in premiums %}
-                        <tr>
-                            <th>{{ p.name }}</th>
-                            <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
-                            <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
-                            <td align="right">{{ p.LR }}</td>
-                            <td align="right">{{ "{:,.0f}".format(p.av_premium_mkt) }}</td>
-                            <td align="right">{{ "{:,.0f}".format(p.av_claim_mkt) }}</td>
-                            <td align="right">{{ p.av_LR_mkt }}</td>                            
-                            {% if show_competitors %}
-                                {% for c in p.peers_prem_claim_LR %}
-                                    <td align="right"> {{ "{:,.0f}".format(c.peer_premium) }}</td>
-                                    <td align="right"> {{ "{:,.0f}".format(c.peer_claim) }}</td>
-                                    <td align="right"> {{ c.peer_LR }}</td>
-                                {% endfor %}
-                            {% endif %}                            
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}    
 
 {% endblock %}

@@ -10,7 +10,8 @@ class RankingForm(FlaskForm):#ранкинг
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
     show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
-    submit = SubmitField('Показать')
+    show_info_submit = SubmitField('Показать информацию')
+    save_to_file_submit = SubmitField('Сохранить в файл')
     
     def validate(self):#дата окончания должна быть больше даты начала
         d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)

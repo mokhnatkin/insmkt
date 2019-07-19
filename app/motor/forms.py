@@ -11,7 +11,8 @@ class MotorForm(FlaskForm):#информация автострахованию
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
     show_general_info = BooleanField('Показать данные по портфелю в целом')
     show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
-    submit = SubmitField('Показать информацию')
+    show_info_submit = SubmitField('Показать информацию')
+    save_to_file_submit = SubmitField('Сохранить в файл')
 
     def validate(self):#дата окончания должна быть больше даты начала
         d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
