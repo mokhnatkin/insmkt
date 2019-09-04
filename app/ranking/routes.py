@@ -254,8 +254,7 @@ def ranking():
         elif form.save_to_file_submit.data:
             save_to_log('ranking_file',current_user.id)
             sheets = list()
-            sheets_names = list()
-            col_names = list()
+            sheets_names = list()            
             period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
             sheets.append(net_premiums)
             sheets.append(equity)
@@ -267,15 +266,6 @@ def ranking():
             sheets_names.append(period_str + ' прибыль')
             sheets_names.append(period_str + ' ФМП')
             sheets_names.append(period_str + ' коэф. выплат')
-            net_premiums_col_names = ['ID','Компания','Чистые премии, тыс.тг.','Доля, %']
-            equity_col_names = ['ID','Собственный капитал, тыс.тг.','Компания','Доля, %']
-            solvency_margin_col_names = ['ID','Компания','Норматив ФМП']
-            lr_list_col_names = ['ID','Компания','Коэффициент выплат, %']
-            col_names.append(net_premiums_col_names)
-            col_names.append(equity_col_names)
-            col_names.append(net_premiums_col_names)
-            col_names.append(solvency_margin_col_names)
-            col_names.append(lr_list_col_names)
             if show_last_year == True:
                 period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')                
                 sheets.append(net_premiums_l_y)
@@ -288,13 +278,8 @@ def ranking():
                 sheets_names.append(period_l_y_str + ' прибыль')
                 sheets_names.append(period_l_y_str + ' ФМП')
                 sheets_names.append(period_l_y_str + ' коэф. выплат')
-                col_names.append(net_premiums_col_names)
-                col_names.append(equity_col_names)
-                col_names.append(net_premiums_col_names)
-                col_names.append(solvency_margin_col_names)
-                col_names.append(lr_list_col_names)
             wb_name = 'ranking_' + period_str
-            path, wb_name_f = save_to_excel('ranking',period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            path, wb_name_f = save_to_excel('ranking',period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
                 return send_from_directory(path, filename=wb_name_f, as_attachment=True)
             else:

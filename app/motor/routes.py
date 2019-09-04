@@ -356,28 +356,16 @@ def motor():#инфо по автострахованию
         elif form.save_to_file_submit.data:
             save_to_log('motor_file',current_user.id)
             sheets = list()
-            sheets_names = list()
-            col_names = list()
+            sheets_names = list()            
             period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
             sheets.append(general_info)
-            sheets_names.append(period_str + ' общ. и авто')
-            _col_names = ['ID','Компания','Валовые премии, тыс.тг.',
-                            'Чистые премии, тыс.тг.','Выплаты, тыс.тг.','Чистые выплаты, тыс.тг.',
-                            'Нетто коэффициент выплат, %','Доля перестрахования в премиях, %',
-                            'Премии по ОС ГПО ВТС, тыс.тг.','Выплаты по ОС ГПО ВТС, тыс.тг.',
-                            'Премии по каско, тыс.тг.','Выплаты по каско, тыс.тг.',
-                            'Доля ОС ГПО ВТС в валовых премиях, %','Доля каско в валовых премиях, %',
-                            'Всего премий по автострахованию, тыс.тг.','Всего выплат по автострахованию, тыс.тг.',
-                            'Доля ОС ГПО ВТС в премиях по автострахованию, тыс.тг.',
-                            'Доля каско в премиях по автострахованию, тыс.тг.']
-            col_names.append(_col_names)
+            sheets_names.append(period_str + ' общ. и авто')            
             if show_last_year == True:
                 period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')                
                 sheets.append(general_info_l_y)               
-                sheets_names.append(period_l_y_str + ' общ. и авто')
-                col_names.append(_col_names)
+                sheets_names.append(period_l_y_str + ' общ. и авто')                
             wb_name = 'motor_general_' + period_str
-            path, wb_name_f = save_to_excel('motor_general',period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            path, wb_name_f = save_to_excel('motor_general',period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
                 return send_from_directory(path, filename=wb_name_f, as_attachment=True)
             else:

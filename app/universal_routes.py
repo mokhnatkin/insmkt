@@ -175,7 +175,7 @@ def add_str_timestamp(filename):#adds string timestamp to filename in order to m
     return u_filename
 
 
-def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names,col_names):#save to excel
+def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to excel
     workbook = xlwt.Workbook()
     i = 0
     path = None
@@ -185,15 +185,18 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names,col_names):#s
     sh.write(1,0,period_str)
     for sheet in sheets:
         sh = workbook.add_sheet(sheets_names[i])
-        cur_col_name = col_names[i]
+        
         rows = len(sheet)
         for row in range(rows):
             row_array = sheet[row]            
             col = 0
             for k, v in row_array.items():
-                try:                    
-                    if row == 0:                    
-                        sh.write(row, col, cur_col_name[col])#first row - column names
+                try:                   
+                    if row == 0:                        
+                        if k in column_names_ver:
+                            sh.write(row, col, column_names_ver[k])
+                        else:
+                            sh.write(row, col, k)                        
                         sh.write(row+1, col, v)                    
                     else:                    
                         sh.write(row+1, col, v)
@@ -210,4 +213,47 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names,col_names):#s
     except:
         pass
     return path, wb_name#returns path to saved file and its name
+
+#list of system col. names and their meanings
+column_names_ver = dict()
+column_names_ver['id'] = 'Системный ID'
+column_names_ver['ind_id'] = 'Системный ID'
+column_names_ver['name'] = 'Наименование'
+column_names_ver['fullname'] = 'Полное наименование'
+column_names_ver['mkt_av'] = 'Среднее по рынку (выбранным конкурентам)'
+column_names_ver['total'] = 'Всего'
+column_names_ver['share'] = 'Доля %'
+column_names_ver['value'] = 'Значение'
+column_names_ver['value_c'] = 'Значение по компании'
+column_names_ver['value_m'] = 'Значение по рынку (выбранным конкурентам)'
+column_names_ver['premium'] = 'Премии'
+column_names_ver['claim'] = 'Выплаты'
+column_names_ver['LR'] = 'Коэф. убыточности %'
+column_names_ver['av_premium_mkt'] = 'Сред. премии рынок (выбранные конкуренты)'
+column_names_ver['av_claim_mkt'] = 'Сред. выплаты рынок (выбранные конкуренты)'
+column_names_ver['av_LR_mkt'] = 'Сред. коэф. убыточности рынок (выбранные конкуренты)'
+column_names_ver['peers_balance_ind'] = ''
+column_names_ver['peers_flow_ind'] = ''
+column_names_ver['peers_other_fin_ind'] = ''
+column_names_ver['lr'] = 'Коэф. убыточности %'
+column_names_ver['month_name'] = 'Год-Месяц'
+column_names_ver['alias'] = 'Компания'
+column_names_ver['premiums'] = 'Премии'
+column_names_ver['net_premiums'] = 'Чистые премии'
+column_names_ver['claims'] = 'Выплаты'
+column_names_ver['net_claims'] = 'Чистые выплаты'
+column_names_ver['net_LR'] = 'Чистый коэф. выплат'
+column_names_ver['re_share'] = 'Доля перестрахования в премиях %'
+column_names_ver['motor_TPL_premiums'] = 'Премии ОС ГПО ВТС'
+column_names_ver['motor_TPL_claims'] = 'Выплаты ОС ГПО ВТС'
+column_names_ver['casco_premiums'] = 'Премии каско'
+column_names_ver['casco_claims'] = 'Выплаты каско'
+column_names_ver['motor_TPL_prem_share'] = 'Доля ОС ГПО ВТС в валовых премиях %'
+column_names_ver['casco_prem_share'] = 'Доля каско в валовых премиях %'
+column_names_ver['motor_premiums'] = 'Премии по автострахованию'
+column_names_ver['motor_claims'] = 'Выплаты по автострахованию'
+column_names_ver['motor_TPL_prem_share_in_motor'] = 'Доля ОС ГПО ВТС в премиях по автострахованию'
+column_names_ver['casco_prem_share_in_motor'] = 'Доля каско в премиях по автострахованию'
+
+
 

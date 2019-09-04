@@ -225,26 +225,19 @@ def class_profile():#инфо по классу
             save_to_log('class_profile_file',current_user.id)
             sheets = list()
             sheets_names = list()
-            col_names = list()
             period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
             sheets.append(class_companies)
             sheets.append(class_info)
             sheets_names.append(period_str + ' по компаниям')
-            sheets_names.append(period_str + ' по месяцам')
-            class_companies_col_names = ['ID','Название компании','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %','Доля рынка по премиям, %']
-            class_info_col_names = ['Год-Месяц','Премии, тыс.тг.','Выплаты, тыс.тг.','Коэффициент выплат, %']
-            col_names.append(class_companies_col_names)
-            col_names.append(class_info_col_names)
+            sheets_names.append(period_str + ' по месяцам')           
             if show_last_year == True:
                 period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')
                 sheets.append(class_companies_l_y)
                 sheets.append(class_info_l_y)
                 sheets_names.append(period_l_y_str + '_по компаниям')                
                 sheets_names.append(period_l_y_str + '_по месяцам')
-                col_names.append(class_companies_col_names)
-                col_names.append(class_info_col_names)
             wb_name = class_name + '_' + period_str
-            path, wb_name_f = save_to_excel(class_name,period_str,wb_name,sheets,sheets_names,col_names)#save file and get path
+            path, wb_name_f = save_to_excel(class_name,period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
                 return send_from_directory(path, filename=wb_name_f, as_attachment=True)
             else:
