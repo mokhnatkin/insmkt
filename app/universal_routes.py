@@ -13,7 +13,99 @@ import random
 import xlwt
 from werkzeug.utils import secure_filename
 import os
+import pandas as pd
 
+
+def get_df_financial_per_period(ind_name,b,e):#get pandas data frame for given indicator (_id) and period    
+    ind_id = Indicator.query.filter(Indicator.name == ind_name).first()
+    _id = ind_id.id
+    months = get_months(b,e)
+    df_items = pd.DataFrame()
+    for month in months:
+        begin = month['begin']
+        end = month['end']
+        df_item_per_month = pd.read_sql(db.session.query(Financial_per_month)
+                    .join(Company)
+                    .with_entities(Company.id,Company.alias,Financial_per_month.value)
+                    .filter(Financial_per_month.indicator_id == _id)
+                    .filter(Financial_per_month.beg_date == begin)
+                    .filter(Financial_per_month.end_date == end)
+                    .filter(Company.nonlife == True)
+                .statement,db.session.bind)
+        df_items = pd.concat([df_items, df_item_per_month])#append all months
+    df_items = df_items.groupby(['id','alias'], as_index=False).sum()#values by companies
+    df_items = df_items.sort_values(by='value',ascending=False)#sort desc
+    total_value = df_items['value'].sum()
+    df_items['share'] = round(df_items['value']/total_value*100,2)
+    return df_items,total_value
+
+
+def get_df_financial_at_date(ind_name,e):#get pandas data frame for given indicator (_id) and date
+    ind_id = Indicator.query.filter(Indicator.name == ind_name).first()
+    _id = ind_id.id    
+    df_items = pd.read_sql(db.session.query(Financial)
+                    .join(Company)
+                    .with_entities(Company.id,Company.alias,Financial.value)
+                    .filter(Financial.indicator_id == _id)
+                    .filter(Financial.report_date == e)                    
+                    .filter(Company.nonlife == True)
+                .statement,db.session.bind)    
+    df_items = df_items.sort_values(by='value',ascending=False)#sort desc
+    total_value = df_items['value'].sum()
+    df_items['share'] = round(df_items['value']/total_value*100,2)
+    return df_items,total_value
+
+
+def convert_df_to_list(df_items):#convert data frame to list; data frame should be sorted to get correct row_index
+    output_list = list()
+    i = 0
+    for row_index,row in df_items.iterrows():
+        output_list.append({'row_index':i,'alias':row.alias,'value':row.value,'share':row.share})
+        i += 1
+    return output_list
+
+
+def merge_two_df_convert_to_list(df_items_x,df_items_y,relative=False):#merge two data frames on 'id' and convert to list (e.g. merged w/ last year if show_last_year)
+    output_list = list()
+    df_merged = pd.merge(df_items_x,df_items_y,on='id')
+    if relative:
+        df_merged['change'] = round(df_merged['value_x']-df_merged['value_y'],2)
+    else:
+        df_merged['change'] = round((df_merged['value_x']-df_merged['value_y'])/df_merged['value_y']*100,2)
+    i = 0
+    for row_index,row in df_merged.iterrows():
+        output_list.append({'row_index':i,'alias':row.alias_x,'value':row.value_x,'share':row.share_x,
+                        'value_l_y':row.value_y,'share_l_y':row.share_y,'change':row.change})
+        i += 1
+    return output_list
+
+
+def merge_claims_prems_compute_LR(df_items_x,df_items_y):#merge claims and premiums data frames on 'id', compute LR and convert to list (e.g. merged w/ last year if show_last_year)
+    df_merged = pd.merge(df_items_x,df_items_y,on='id')
+    df_merged['value'] = round(df_merged['value_x']/df_merged['value_y']*100,2)
+    lr_av = round(df_items_x['value'].sum() / df_items_y['value'].sum() * 100,2)
+    return df_merged, lr_av
+
+
+def LR_to_list(df_items):#LR data frame to list
+    output_list = list()
+    i = 0
+    for row_index,row in df_items.iterrows():
+        output_list.append({'row_index':i,'alias':row.alias_x,'value':row.value})
+        i += 1    
+    return output_list
+
+
+def LR_two_df_to_list(df_items_x,df_items_y):#merge two LR data frames and convert to list; first df for current period, second - for the last year
+    output_list = list()
+    df_merged = pd.merge(df_items_x,df_items_y,on='id')
+    df_merged['change'] = round(df_merged['value_x']-df_merged['value_y'],2)
+    i = 0
+    for row_index,row in df_merged.iterrows():
+        output_list.append({'row_index':i,'alias':row.alias_x_x,'value':row.value_x,
+                        'value_l_y':row.value_y,'change':row.change})
+        i += 1
+    return output_list    
 
 
 def before_request_u():
@@ -176,6 +268,51 @@ def add_str_timestamp(filename):#adds string timestamp to filename in order to m
 
 
 def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to excel
+    #list of system col. names and their meanings
+    column_names_ver = dict()
+    column_names_ver['id'] = 'Системный ID'
+    column_names_ver['ind_id'] = 'Системный ID'
+    column_names_ver['name'] = 'Наименование'
+    column_names_ver['fullname'] = 'Полное наименование'
+    column_names_ver['mkt_av'] = 'Среднее по рынку (выбранным конкурентам)'
+    column_names_ver['total'] = 'Всего'
+    column_names_ver['share'] = 'Доля %'
+    column_names_ver['value'] = 'Значение'
+    column_names_ver['value_c'] = 'Значение по компании'
+    column_names_ver['value_m'] = 'Значение по рынку (выбранным конкурентам)'
+    column_names_ver['premium'] = 'Премии'
+    column_names_ver['claim'] = 'Выплаты'
+    column_names_ver['LR'] = 'Коэф. убыточности %'
+    column_names_ver['av_premium_mkt'] = 'Сред. премии рынок (выбранные конкуренты)'
+    column_names_ver['av_claim_mkt'] = 'Сред. выплаты рынок (выбранные конкуренты)'
+    column_names_ver['av_LR_mkt'] = 'Сред. коэф. убыточности рынок (выбранные конкуренты)'
+    column_names_ver['peers_balance_ind'] = ''
+    column_names_ver['peers_flow_ind'] = ''
+    column_names_ver['peers_other_fin_ind'] = ''
+    column_names_ver['lr'] = 'Коэф. убыточности %'
+    column_names_ver['month_name'] = 'Год-Месяц'
+    column_names_ver['alias'] = 'Компания'
+    column_names_ver['premiums'] = 'Премии'
+    column_names_ver['net_premiums'] = 'Чистые премии'
+    column_names_ver['claims'] = 'Выплаты'
+    column_names_ver['net_claims'] = 'Чистые выплаты'
+    column_names_ver['net_LR'] = 'Чистый коэф. выплат'
+    column_names_ver['re_share'] = 'Доля перестрахования в премиях %'
+    column_names_ver['motor_TPL_premiums'] = 'Премии ОС ГПО ВТС'
+    column_names_ver['motor_TPL_claims'] = 'Выплаты ОС ГПО ВТС'
+    column_names_ver['casco_premiums'] = 'Премии каско'
+    column_names_ver['casco_claims'] = 'Выплаты каско'
+    column_names_ver['motor_TPL_prem_share'] = 'Доля ОС ГПО ВТС в валовых премиях %'
+    column_names_ver['casco_prem_share'] = 'Доля каско в валовых премиях %'
+    column_names_ver['motor_premiums'] = 'Премии по автострахованию'
+    column_names_ver['motor_claims'] = 'Выплаты по автострахованию'
+    column_names_ver['motor_TPL_prem_share_in_motor'] = 'Доля ОС ГПО ВТС в премиях по автострахованию'
+    column_names_ver['casco_prem_share_in_motor'] = 'Доля каско в премиях по автострахованию'
+    column_names_ver['row_index'] = 'N'
+    column_names_ver['value_l_y'] = 'Значение за аналогичный период прошлого года'
+    column_names_ver['share_l_y'] = 'Доля за аналогичный период прошлого года %'
+    column_names_ver['change'] = 'Изменение %'
+    #############################################################################
     workbook = xlwt.Workbook()
     i = 0
     path = None
@@ -185,7 +322,6 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to exc
     sh.write(1,0,period_str)
     for sheet in sheets:
         sh = workbook.add_sheet(sheets_names[i])
-        
         rows = len(sheet)
         for row in range(rows):
             row_array = sheet[row]            
@@ -196,9 +332,9 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to exc
                         if k in column_names_ver:
                             sh.write(row, col, column_names_ver[k])
                         else:
-                            sh.write(row, col, k)                        
-                        sh.write(row+1, col, v)                    
-                    else:                    
+                            sh.write(row, col, k)
+                        sh.write(row+1, col, v)
+                    else:
                         sh.write(row+1, col, v)
                 except:
                     continue
@@ -214,46 +350,7 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to exc
         pass
     return path, wb_name#returns path to saved file and its name
 
-#list of system col. names and their meanings
-column_names_ver = dict()
-column_names_ver['id'] = 'Системный ID'
-column_names_ver['ind_id'] = 'Системный ID'
-column_names_ver['name'] = 'Наименование'
-column_names_ver['fullname'] = 'Полное наименование'
-column_names_ver['mkt_av'] = 'Среднее по рынку (выбранным конкурентам)'
-column_names_ver['total'] = 'Всего'
-column_names_ver['share'] = 'Доля %'
-column_names_ver['value'] = 'Значение'
-column_names_ver['value_c'] = 'Значение по компании'
-column_names_ver['value_m'] = 'Значение по рынку (выбранным конкурентам)'
-column_names_ver['premium'] = 'Премии'
-column_names_ver['claim'] = 'Выплаты'
-column_names_ver['LR'] = 'Коэф. убыточности %'
-column_names_ver['av_premium_mkt'] = 'Сред. премии рынок (выбранные конкуренты)'
-column_names_ver['av_claim_mkt'] = 'Сред. выплаты рынок (выбранные конкуренты)'
-column_names_ver['av_LR_mkt'] = 'Сред. коэф. убыточности рынок (выбранные конкуренты)'
-column_names_ver['peers_balance_ind'] = ''
-column_names_ver['peers_flow_ind'] = ''
-column_names_ver['peers_other_fin_ind'] = ''
-column_names_ver['lr'] = 'Коэф. убыточности %'
-column_names_ver['month_name'] = 'Год-Месяц'
-column_names_ver['alias'] = 'Компания'
-column_names_ver['premiums'] = 'Премии'
-column_names_ver['net_premiums'] = 'Чистые премии'
-column_names_ver['claims'] = 'Выплаты'
-column_names_ver['net_claims'] = 'Чистые выплаты'
-column_names_ver['net_LR'] = 'Чистый коэф. выплат'
-column_names_ver['re_share'] = 'Доля перестрахования в премиях %'
-column_names_ver['motor_TPL_premiums'] = 'Премии ОС ГПО ВТС'
-column_names_ver['motor_TPL_claims'] = 'Выплаты ОС ГПО ВТС'
-column_names_ver['casco_premiums'] = 'Премии каско'
-column_names_ver['casco_claims'] = 'Выплаты каско'
-column_names_ver['motor_TPL_prem_share'] = 'Доля ОС ГПО ВТС в валовых премиях %'
-column_names_ver['casco_prem_share'] = 'Доля каско в валовых премиях %'
-column_names_ver['motor_premiums'] = 'Премии по автострахованию'
-column_names_ver['motor_claims'] = 'Выплаты по автострахованию'
-column_names_ver['motor_TPL_prem_share_in_motor'] = 'Доля ОС ГПО ВТС в премиях по автострахованию'
-column_names_ver['casco_prem_share_in_motor'] = 'Доля каско в премиях по автострахованию'
+
 
 
 

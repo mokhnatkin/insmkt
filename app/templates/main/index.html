@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
@@ -32,52 +32,60 @@
     <p>На вкладке <a href="{{ url_for('ranking.ranking') }}">Рэнкинг</a>
         можно посмотреть позицию компаний по основным показателям.
     </p>
+    <p>На вкладке <a href="{{ url_for('motor.motor') }}">Автострахование</a>
+        можно посмотреть данные по автострахованию и страховому портфелю в целом.
+    </p>    
     <p>Также вы можете оставлять посты, чтобы другие пользователи смогли увидеть
         ваши интересные находки и заключения. Посты будут видны всем пользователям.
     </p>
     <p>Если у вас есть вопросы и предложения - пишите на <a href="mailto:{{ admin_email }}">{{ admin_email }} </a></p>
-    {% if show_net_prem %}
-    <div>
-        <h2>Чистые премии на {{ moment(g.last_report_date).format('LL') }}</h2>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <tr>
-                    <th>N</th>
-                    <th>Компания (ТОП-10)</th>
-                    <th align="right">Чистые премии, тыс.тг.</th>
-                </tr>
-                {% for rownum in range(net_premiums_len) %}
-                    <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ net_premiums[rownum].alias }}</td>
-                        <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-    {% endif %}
-    {% if show_motor_TPL %}
+
+    {% if motor_TPL_premium %}
     <div>
         <h2>Премии ОС ГПО ВТС на {{ moment(g.last_report_date).format('LL') }}</h2>
         <div class="table-responsive">
             <table class="table table-hover">
                 <tr>
                     <th>N</th>
-                    <th>Компания (ТОП-10)</th>
+                    <th>Компания</th>
                     <th align="right">Премии ОС ГПО ВТС, тыс.тг.</th>
+                    <th align="right">Доля рынка, %</th>
                 </tr>
-                {% for rownum in range(motor_TPL_premium_len) %}
+                {% for item in motor_TPL_premium %}
                     <tr>
-                        <td>{{ rownum + 1 }}</td>
-                        <td>{{ motor_TPL_premium[rownum].alias }}</td>
-                        <td align="right">{{ "{:,.0f}".format(motor_TPL_premium[rownum].value) }}</td>
+                        <td>{{ item.row_index+1 }}</td>
+                        <td>{{ item.alias }}</td>
+                        <td align="right">{{ "{:,.0f}".format(item.value) }}</td>
+                        <td align="right">{{ item.share }}</td>
                     </tr>
                 {% endfor %}
             </table>
         </div>
     </div>
     {% endif %}
+    {% if net_premiums %}
+    <div>
+        <h2>Чистые премии на {{ moment(g.last_report_date).format('LL') }}</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <tr>
+                    <th>N</th>
+                    <th>Компания</th>
+                    <th align="right">Чистые премии, тыс.тг.</th>
+                    <th align="right">Доля рынка, %</th>
+                </tr>
+                {% for item in net_premiums %}
+                    <tr>
+                        <td>{{ item.row_index+1 }}</td>
+                        <td>{{ item.alias }}</td>
+                        <td align="right">{{ "{:,.0f}".format(item.value) }}</td>
+                        <td align="right">{{ item.share }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    {% endif %}    
     {% if form %}
         <h2>Написать пост</h2>
         {{ wtf.quick_form(form) }}

@@ -47,32 +47,22 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for rownum in range(net_premiums_len) %}
+                                        {% for item in net_premiums %}
                                             <tr>
-                                                <th>{{ net_premiums[rownum].alias }}</th>
-                                                <td>{{ rownum + 1 }}</td>                                            
-                                                <td align="right">{{ "{:,.0f}".format(net_premiums[rownum].value) }}</td>
-                                                <td align="right">{{ net_premiums[rownum].share }}</td>
-                                                {% if show_last_year %}
-                                                    {% for ind_l_y in net_premiums_l_y %}
-                                                        {% if ind_l_y.id == net_premiums[rownum].id %}
-                                                            <td align="right">                                                
-                                                                {% if ind_l_y.value > 0 %}
-                                                                    {{ "{:,.0f}".format(ind_l_y.value) }}
-                                                                {% else %}
-                                                                    N.A.
-                                                                {% endif %}
-                                                            </td>
-                                                            <td align="right">{{ ind_l_y.share }}</td>
-                                                            <td align="right">
-                                                                {% if ind_l_y.value > 0 %}
-                                                                    {{ round((net_premiums[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
-                                                                {% else %}
-                                                                    N.A.
-                                                                {% endif %}
-                                                            </td>
+                                                <th>{{ item.alias }}</th>
+                                                <td>{{ item.row_index+1 }}</td>                                            
+                                                <td align="right">{{ "{:,.0f}".format(item.value) }}</td>
+                                                <td align="right">
+                                                        {% if item.share>=0 %}
+                                                            {{ item.share }}
+                                                        {% else %}
+                                                            nan
                                                         {% endif %}
-                                                    {% endfor %}
+                                                </td>
+                                                {% if show_last_year %}
+                                                    <td align="right">{{ "{:,.0f}".format(item.value_l_y) }}</td>
+                                                    <td align="right">{{ item.share_l_y }}</td>
+                                                    <td align="right">{{ item.change }}</td>
                                                 {% endif %}
                                             </tr>
                                         {% endfor %}
@@ -102,7 +92,7 @@
                 {% endif %}
 
                     {% if lr_list %}
-                            <div align="center">
+                        <div align="center">
                             <h2>
                                 {% if get_hint('LR_coef') %}
                                     <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат</a>
@@ -126,24 +116,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for rownum in range(lr_list_len) %}
+                                        {% for item in lr_list %}
                                             <tr>
-                                                <th>{{ lr_list[rownum].company_name }}</th>
-                                                <td>{{ rownum + 1 }}</td>
-                                                <td align="right">{{ lr_list[rownum].lr }}</td>
-                                                {% if show_last_year %}
-                                                    {% for ind_l_y in lr_list_l_y %}
-                                                        {% if ind_l_y.id == lr_list[rownum].id %}
-                                                            <td align="right">{{ ind_l_y.lr }}</td>                                                    
-                                                            <td align="right">
-                                                                {% if ind_l_y.lr != 'N.A.' and lr_list[rownum].lr != 'N.A.' %}
-                                                                    {{ round(lr_list[rownum].lr-ind_l_y.lr,1) }}
-                                                                {% else %}
-                                                                    N.A.
-                                                                {% endif %}
-                                                            </td>
-                                                        {% endif %}
-                                                    {% endfor %}
+                                                <th>{{ item.alias }}</th>
+                                                <td>{{ item.row_index + 1 }}</td>
+                                                <td align="right">{{ item.value }}</td>
+                                                {% if show_last_year %}                                                  
+                                                    <td align="right">{{ item.value_l_y }}</td>                                                    
+                                                    <td align="right">{{ item.change }}</td>                                               
                                                 {% endif %}
                                             </tr>
                                         {% endfor %}
@@ -193,30 +173,27 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for rownum in range(netincome_len) %}
+                                        {% for item in netincome %}
                                         <tr>
-                                            <th>{{ netincome[rownum].alias }}</th>
-                                            <td>{{ rownum + 1 }}</td>                                        
-                                            <td align="right">{{ "{:,.0f}".format(netincome[rownum].value) }}</td>
-                                            <td align="right">{{ netincome[rownum].share }}</td>
-                                            {% if show_last_year %}
-                                                {% if is_id_in_arr(netincome[rownum].id, netincome_l_y) %}
-                                                    {% for ind_l_y in netincome_l_y %}
-                                                        {% if ind_l_y.id == netincome[rownum].id %}
-                                                            <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>                                                    
-                                                            <td align="right">
-                                                                {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
-                                                                    {{ round((netincome[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
-                                                                {% else %}
-                                                                    N.A.
-                                                                {% endif %}
-                                                            </td>
-                                                        {% endif %}
-                                                    {% endfor %}
+                                            <th>{{ item.alias }}</th>
+                                            <td>{{ item.row_index + 1 }}</td>                                        
+                                            <td align="right">{{ "{:,.0f}".format(item.value) }}</td>
+                                            <td align="right">
+                                                {% if item.share>=0 %}
+                                                    {{ item.share }}
                                                 {% else %}
-                                                    <td align="right">N.A.</td>
-                                                    <td align="right">N.A.</td>
+                                                    nan
                                                 {% endif %}
+                                            </td>
+                                            {% if show_last_year %}
+                                                <td align="right">{{ "{:,.0f}".format(item.value_l_y) }}</td>
+                                                <td align="right">
+                                                {% if item.value > 0 and item.value_l_y>0 %}
+                                                    {{ item.change }}
+                                                {% else %}
+                                                    nan
+                                                {% endif %}
+                                                </td>
                                             {% endif %}
                                         </tr>
                                         {% endfor %}
@@ -225,11 +202,11 @@
                                         <tr>
                                             <th>ИТОГО</th>
                                             <td></td>
-                                            <td align="right"><b>{{ "{:,.0f}".format(netincome_total) }}</b></td>
+                                            <td align="right"><b>{{ "{:,.0f}".format(net_income_total) }}</b></td>
                                             <td></td>
                                             {% if show_last_year %}
-                                                <td align="right"><b>{{ "{:,.0f}".format(netincome_total_l_y) }}</b></td>
-                                                <td align="right"><b>{{ round((netincome_total-netincome_total_l_y)/netincome_total_l_y*100,1) }}</b></td>
+                                                <td align="right"><b>{{ "{:,.0f}".format(net_income_total_l_y) }}</b></td>
+                                                <td align="right"><b>{{ round((net_income_total-net_income_total_l_y)/net_income_total_l_y*100,1) }}</b></td>
                                             {% endif %}
                                         </tr>
                                     </tfoot>
@@ -265,37 +242,22 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for rownum in range(equity_len) %}
+                                        {% for item in equity %}
                                             <tr>
-                                                <th>{{ equity[rownum].alias }}</th>
-                                                <td>{{ rownum + 1 }}</td>
-                                                <td align="right">{{ "{:,.0f}".format(equity[rownum].value) }}</td>
-                                                <td>{{ equity[rownum].share }}</td>
-                                                {% if show_last_year %}
-                                                    {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
-                                                        {% for ind_l_y in equity_l_y %}
-                                                            {% if ind_l_y.id == equity[rownum].id %}
-                                                                <td align="right">
-                                                                    {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
-                                                                        {{ "{:,.0f}".format(ind_l_y.value) }}
-                                                                    {% else %}
-                                                                        N.A.
-                                                                    {% endif %}
-                                                                </td>                                                    
-                                                                <td align="right">
-                                                                    {% if ind_l_y.value != 'N.A.' and netincome[rownum].value != 'N.A.' and ind_l_y.value>0 and netincome[rownum].value>0 %}
-                                                                        {{ round((equity[rownum].value-ind_l_y.value)/ind_l_y.value*100,1) }}
-                                                                    {% else %}
-                                                                        N.A.
-                                                                    {% endif %}
-                                                                </td>
-                                                            {% endif %}
-                                                        {% endfor %}
+                                                <th>{{ item.alias }}</th>
+                                                <td>{{ item.row_index + 1 }}</td>
+                                                <td align="right">{{ "{:,.0f}".format(item.value) }}</td>
+                                                <td align="right">
+                                                    {% if item.share>=0 %}
+                                                        {{ item.share }}
                                                     {% else %}
-                                                        <td align="right">N.A.</td>
-                                                        <td align="right">N.A.</td>
+                                                        nan
                                                     {% endif %}
-                                                {% endif %}
+                                                </td>
+                                                {% if show_last_year %}
+                                                        <td align="right">{{ "{:,.0f}".format(item.value_l_y) }}</td>                                                    
+                                                        <td align="right">{{ item.change}}</td>
+                                                {% endif %}                                                        
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -349,30 +311,15 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for rownum in range(solvency_margin_len) %}
+                                        {% for item in solvency_margin %}
                                             <tr>
-                                                <th>{{ solvency_margin[rownum].alias }}</th>
-                                                <td>{{ rownum + 1 }}</td>
-                                                <td align="right">{{ "{:,.2f}".format(solvency_margin[rownum].value) }}</td>
-                                                {% if show_last_year %}
-                                                    {% if is_id_in_arr(equity[rownum].id, equity_l_y) %}
-                                                        {% for ind_l_y in solvency_margin_l_y %}
-                                                            {% if ind_l_y.id == solvency_margin[rownum].id %}
-                                                                <td align="right">{{ ind_l_y.value }}</td>
-                                                                <td align="right">
-                                                                    {% if ind_l_y.value != 'N.A.' and lr_list[rownum].value != 'N.A.' %}
-                                                                        {{ round(solvency_margin[rownum].value-ind_l_y.value,1) }}
-                                                                    {% else %}
-                                                                        N.A.
-                                                                    {% endif %}
-                                                                </td>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% else %}
-                                                        <td align="right">N.A.</td>
-                                                        <td align="right">N.A.</td>
-                                                    {% endif %}                                                
-                                                {% endif %}
+                                                <th>{{ item.alias }}</th>
+                                                <td>{{ item.row_index + 1 }}</td>
+                                                <td align="right">{{ item.value }}</td>
+                                                {% if show_last_year %}                                                   
+                                                    <td align="right">{{ item.value_l_y }}</td>
+                                                    <td align="right">{{ item.change }}</td>
+                                                {% endif %}                                                       
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -383,7 +330,7 @@
                                             <td align="right"><b>{{ solvency_margin_av }}</b></td>
                                             {% if show_last_year %}
                                                 <td align="right"><b>{{ solvency_margin_av_l_y }}</b></td>
-                                                <td align="right"><b>{{ round(solvency_margin_av-solvency_margin_av_l_y,1) }}</b></td>
+                                                <td align="right"><b>{{ solvency_margin_av_change }}</b></td>
                                             {% endif %}                                    
                                         </tr>
                                     </tfoot>

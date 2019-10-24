@@ -8,6 +8,7 @@ from app.models import User, Post, Upload, Company, Insclass, Indicator, Financi
             Compute, Company_all_names, Insclass_all_names, View_log
 from app.main import bp
 from app.universal_routes import before_request_u, required_roles_u, save_to_log
+import pandas as pd
                     
 
 @bp.before_request
@@ -17,6 +18,7 @@ def before_request():
 
 def required_roles(*roles):
     return required_roles_u(*roles)
+
 
 
 @bp.route('/',methods=['GET','POST'])
@@ -31,56 +33,68 @@ def index():#домашняя страница
         db.session.commit()
         flash('Ваш пост опубликован!')
         return redirect(url_for('main.index'))
+    admin_email = current_app.config['ADMIN_EMAIL']
     posts = Post.query.order_by(Post.timestamp.desc()).limit(5).all()#query 5 last posts
+
+    
     #get id of motor TPL class
     try:
         motor_TPL_class_id = Insclass.query.filter(Insclass.name == 'obligatory_motor_TPL').first()
+        _id = motor_TPL_class_id.id
     except:
-        motor_TPL_class_id = None
-    #query top 10 motor TPL premium for last report_date togegher w/ company names
-    show_motor_TPL = False
-    motor_TPL_premium = None
-    motor_TPL_premium_len = None
-    if motor_TPL_class_id is not None and g.last_report_date is not None:
-        motor_TPL_premium = Premium.query.join(Company) \
-                            .with_entities(Premium.value,Company.alias) \
-                            .filter(Premium.insclass_id == motor_TPL_class_id.id) \
-                            .filter(Premium.report_date == g.last_report_date) \
-                            .filter(Company.nonlife == True) \
-                            .order_by(Premium.value.desc()).limit(10).all()
-    try:
-        motor_TPL_premium_len = len(motor_TPL_premium)
-    except:
-        pass
-    if motor_TPL_premium is not None and motor_TPL_premium_len > 0:
-        show_motor_TPL = True
+        _id = None
+
+    motor_TPL_premium = list()
+    if _id is not None:
+        df_premium = pd.read_sql(db.session.query(Premium)
+            .join(Company)
+            .with_entities(Premium.value,Company.alias)
+            .filter(Premium.insclass_id == _id)
+            .filter(Premium.report_date == g.last_report_date)
+            .filter(Company.nonlife == True)
+            .filter(Premium.value > 0)            
+        .statement,db.session.bind)#motor TPL premiums data frame (last report date)
+
+        prem_sum = df_premium['value'].sum()
+        df_premium['share'] = round(df_premium['value'] / prem_sum * 100,2)
+        df_premium = df_premium.sort_values(by='value',ascending=False)
+
+        i = 0
+        for row_index,row in df_premium.iterrows():
+            motor_TPL_premium.append({'row_index':i,'alias':row.alias,'value':row.value,'share':row.share})
+            i += 1
+    
+
     #get id of net premium indicator
     try:
         net_premium_id = Indicator.query.filter(Indicator.name == 'net_premiums').first()
+        _id = net_premium_id.id
     except:
-        net_premium_id = None
-    show_net_prem = False
-    #query top 10 companies by net premium
-    net_premiums = None
-    net_premiums_len = None
-    if net_premium_id is not None and g.last_report_date is not None:
-        net_premiums = Financial.query.join(Company) \
-                        .with_entities(Financial.value,Company.alias) \
-                        .filter(Financial.indicator_id == net_premium_id.id) \
-                        .filter(Financial.report_date == g.last_report_date) \
-                        .filter(Company.nonlife == True) \
-                        .order_by(Financial.value.desc()).limit(10).all()
-    try:
-        net_premiums_len = len(net_premiums)
-    except:
-        pass                        
-    if net_premiums is not None and net_premiums_len>0:
-        show_net_prem = True
-    admin_email = current_app.config['ADMIN_EMAIL']
+        _id = None
+
+    net_premiums = list()
+    if _id is not None:
+        df_net_prem = pd.read_sql(db.session.query(Financial)
+            .join(Company)
+            .with_entities(Financial.value,Company.alias)
+            .filter(Financial.indicator_id == _id)
+            .filter(Financial.report_date == g.last_report_date)
+            .filter(Company.nonlife == True)
+            .filter(Financial.value > 0)
+        .statement,db.session.bind)
+    
+        net_prem_sum = df_net_prem['value'].sum()
+        df_net_prem['share'] = round(df_net_prem['value'] / net_prem_sum * 100,2)
+        df_net_prem = df_net_prem.sort_values(by='value',ascending=False)
+    
+        i = 0
+        for row_index,row in df_net_prem.iterrows():
+            net_premiums.append({'row_index':i,'alias':row.alias,'value':row.value,'share':row.share})
+            i += 1
+    
     return render_template('main/index.html',title='Домашняя страница', form=form, posts=posts, \
-                    motor_TPL_premium=motor_TPL_premium, motor_TPL_premium_len=motor_TPL_premium_len, \
-                    show_motor_TPL=show_motor_TPL, show_net_prem=show_net_prem, \
-                    net_premiums=net_premiums, net_premiums_len=net_premiums_len, admin_email=admin_email)
+                    admin_email=admin_email, motor_TPL_premium=motor_TPL_premium, net_premiums=net_premiums)
+                   
 
 
 @bp.route('/user/<username>')#профиль пользователя
