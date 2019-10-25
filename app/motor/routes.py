@@ -8,7 +8,7 @@ from datetime import datetime
 from flask import send_from_directory
 from app.motor import bp
 from app.universal_routes import before_request_u, required_roles_u, get_months, \
-                                get_months, save_to_log, get_hint, save_to_excel
+                                get_months, save_to_log, get_hint, save_to_excel, transform_check_dates
 
 
 @bp.before_request
@@ -327,16 +327,14 @@ def motor():#инфо по автострахованию
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
-        #преобразуем даты выборки (сбросим на 1-е число)
-        b = form.begin_d.data
-        e = form.end_d.data        
-        b = datetime(b.year,b.month,1)
-        e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
+        #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
+        b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,show_last_year)
+        if not check_res:
+            flash(err_txt)
+            return redirect(url_for('motor.motor'))
+        
         show_general_info = form.show_general_info.data
-        #аналогичный период прошлого года
-        b_l_y = datetime(b.year-1,b.month,1)
-        e_l_y = datetime(e.year-1,e.month,1)
         try:
             general_info, totals = get_general_info(b,e)#общая информация                      
             if show_last_year == True:               
@@ -357,7 +355,6 @@ def motor():#инфо по автострахованию
             save_to_log('motor_file',current_user.id)
             sheets = list()
             sheets_names = list()            
-            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
             sheets.append(general_info)
             sheets_names.append(period_str + ' общ. и авто')            
             if show_last_year == True:

@@ -16,22 +16,6 @@ class CompanyProfileForm(FlaskForm):#портрет компании - выбо�
     show_info_submit = SubmitField('Показать информацию')
     save_to_file_submit = SubmitField('Сохранить в файл')
 
-    def validate(self):#дата окончания должна быть больше даты начала
-        d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
-        d_end = datetime(self.end_d.data.year,self.end_d.data.month,self.end_d.data.day)
-        if self.begin_d.data > self.end_d.data:
-            flash('Дата окончания должна быть больше даты начала')
-            return False
-        elif d_beg < g.min_report_date or d_end > g.last_report_date:
-            #b.strftime('%m-%d-%Y')
-            err_txt='Данные за запрошенный период отсутствуют. Выберите любой период в диапазоне с ' \
-                + g.min_report_date.strftime('%d.%m.%Y') + ' по ' \
-                    + g.last_report_date.strftime('%d.%m.%Y')
-            flash(err_txt)
-            return False
-        else:
-            return True
-
     def __init__(self, *args, **kwargs):
         super(CompanyProfileForm, self).__init__(*args, **kwargs)
         companies = Company.query.with_entities(Company.id,Company.alias) \
@@ -48,21 +32,6 @@ class PeersForm(FlaskForm):#обзор конкурентов
     show_competitors = BooleanField('Показать детали по каждому конкуренту')
     show_info_submit = SubmitField('Показать информацию')
     save_to_file_submit = SubmitField('Сохранить в файл')
-
-    def validate(self):#дата окончания должна быть больше даты начала
-        d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
-        d_end = datetime(self.end_d.data.year,self.end_d.data.month,self.end_d.data.day)
-        if self.begin_d.data > self.end_d.data:
-            flash('Дата окончания должна быть больше даты начала')
-            return False
-        elif d_beg < g.min_report_date or d_end > g.last_report_date:            
-            err_txt='Данные за запрошенный период отсутствуют. Выберите любой период в диапазоне с ' \
-                + g.min_report_date.strftime('%d.%m.%Y') + ' по ' \
-                    + g.last_report_date.strftime('%d.%m.%Y')
-            flash(err_txt)
-            return False
-        else:
-            return True
 
     def __init__(self, *args, **kwargs):
         super(PeersForm, self).__init__(*args, **kwargs)

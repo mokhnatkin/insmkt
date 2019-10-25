@@ -14,7 +14,7 @@ import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_num_companies_at_date, get_months, is_id_in_arr, \
-                    get_num_companies_per_period, get_hint, save_to_excel
+                    get_num_companies_per_period, get_hint, save_to_excel, transform_check_dates
 
 
 @bp.before_request
@@ -403,14 +403,12 @@ def company_profile():#портрет компании
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
-        b = form.begin_d.data
-        e = form.end_d.data        
-        b = datetime(b.year,b.month,1)
-        e = datetime(e.year,e.month,1)
         show_last_year = form.show_last_year.data
-        #аналогичный период прошлого года
-        b_l_y = datetime(b.year-1,b.month,1)
-        e_l_y = datetime(e.year-1,e.month,1)
+        #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
+        b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,show_last_year)
+        if not check_res:
+            flash(err_txt)
+            return redirect(url_for('company_peers_profile.company_profile'))
         #зададим пути к диаграммам
         base_img_path = "/chart.png/" + form.company.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')
         img_path_premiums_by_LoB_pie = base_img_path + "/premiums_lob"
@@ -451,15 +449,15 @@ def company_profile():#портрет компании
         if form.show_info_submit.data:#show data
             save_to_log('company_profile',current_user.id)
             show_info = True
+
         elif form.save_to_file_submit.data:#save to excel file
             save_to_log('company_profile_file',current_user.id)
             sheets = list()
-            sheets_names = list()            
-            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
-            sheets.append(balance_indicators)            
+            sheets_names = list()
+            sheets.append(balance_indicators)
             sheets.append(flow_indicators)
             sheets.append(other_financial_indicators)
-            sheets.append(premiums)            
+            sheets.append(premiums)
             sheets_names.append(period_str + ' баланс')
             sheets_names.append(period_str + ' ОПУ')
             sheets_names.append(period_str + ' другие фин.')
@@ -771,16 +769,17 @@ def peers_review():#сравнение с конкурентами
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
     if form.validate_on_submit():        
-        #преобразуем даты выборки (сбросим на 1-е число)
-        b = form.begin_d.data
-        e = form.end_d.data
+        #show_last_year = form.show_last_year.data
+        #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
+        b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,False)
+        if not check_res:
+            flash(err_txt)
+            return redirect(url_for('company_peers_profile.peers_review'))
         c_id = int(form.company.data)#компания
         peers_str = form.peers.data#выбранные конкуренты
         peers = list()
         for c in peers_str:#convert id to int
-            peers.append((int(c),))                
-        b = datetime(b.year,b.month,1)
-        e = datetime(e.year,e.month,1)
+            peers.append((int(c),))
         #подготовим данные для таблиц
         if form.company.data in peers_str:
             flash('''Вы выбрали Вашу компанию в списке конкурентов. 
@@ -810,8 +809,7 @@ def peers_review():#сравнение с конкурентами
         elif form.save_to_file_submit.data:
             save_to_log('peers_review_file',current_user.id)
             sheets = list()
-            sheets_names = list()            
-            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
+            sheets_names = list()
             sheets.append(balance_indicators)
             sheets.append(flow_indicators)
             sheets.append(other_financial_indicators)

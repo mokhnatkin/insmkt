@@ -120,9 +120,9 @@
                                             <tr>
                                                 <th>{{ item.alias }}</th>
                                                 <td>{{ item.row_index + 1 }}</td>
-                                                <td align="right">{{ item.value }}</td>
+                                                <td align="right">{{ item.lr }}</td>
                                                 {% if show_last_year %}                                                  
-                                                    <td align="right">{{ item.value_l_y }}</td>                                                    
+                                                    <td align="right">{{ item.lr_l_y }}</td>
                                                     <td align="right">{{ item.change }}</td>                                               
                                                 {% endif %}
                                             </tr>
@@ -135,7 +135,7 @@
                                             <td align="right"><b>{{ lr_av }}</b></td>
                                             {% if show_last_year %}
                                                 <td align="right"><b>{{ lr_av_l_y }}</b></td>
-                                                <td align="right"><b>{{ round(lr_av-lr_av_l_y,1) }}</b></td>
+                                                <td align="right"><b>{{ round(lr_av-lr_av_l_y,2) }}</b></td>
                                             {% endif %}
                                         </tr>
                                     </tfoot>

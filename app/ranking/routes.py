@@ -10,7 +10,7 @@ from app.universal_routes import before_request_u, required_roles_u, save_to_log
                             get_months, is_id_in_arr, get_hint, save_to_excel, \
                             get_df_financial_per_period, get_df_financial_at_date, \
                             convert_df_to_list, merge_two_df_convert_to_list, \
-                            merge_claims_prems_compute_LR, LR_to_list, LR_two_df_to_list
+                            merge_claims_prems_compute_LR, transform_check_dates
 
 
 @bp.before_request
@@ -37,9 +37,9 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     df_net_premiums,net_premiums_total=get_df_financial_per_period(ind_name,b,e)
     if show_last_year:
         df_net_premiums_l_y,net_premiums_total_l_y=get_df_financial_per_period(ind_name,b_l_y,e_l_y)
-        net_premiums = merge_two_df_convert_to_list(df_net_premiums,df_net_premiums_l_y)
+        net_premiums = merge_two_df_convert_to_list(df_net_premiums,df_net_premiums_l_y,False,False,False,False)
     else:
-        net_premiums = convert_df_to_list(df_net_premiums)
+        net_premiums = convert_df_to_list(df_net_premiums,False,False,False)
 
     ##########################################################################
     #equity at date
@@ -48,9 +48,9 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     df_equity,equity_total = get_df_financial_at_date(ind_name,e)
     if show_last_year:
         df_equity_l_y,equity_total_l_y=get_df_financial_at_date(ind_name,e_l_y)
-        equity = merge_two_df_convert_to_list(df_equity,df_equity_l_y)
+        equity = merge_two_df_convert_to_list(df_equity,df_equity_l_y,False,False,False,False)
     else:
-        equity = convert_df_to_list(df_equity)
+        equity = convert_df_to_list(df_equity,False,False,False)
         
     #########################################################################
     #net income per period
@@ -59,9 +59,9 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     df_net_income,net_income_total=get_df_financial_per_period(ind_name,b,e)
     if show_last_year:
         df_net_income_l_y,net_income_total_l_y=get_df_financial_per_period(ind_name,b_l_y,e_l_y)
-        netincome = merge_two_df_convert_to_list(df_net_income,df_net_income_l_y)
+        netincome = merge_two_df_convert_to_list(df_net_income,df_net_income_l_y,False,False,False,False)
     else:
-        netincome = convert_df_to_list(df_net_income)
+        netincome = convert_df_to_list(df_net_income,False,False,False)
 
     ##############################################################################
     #solvency margin at date
@@ -72,9 +72,9 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     if show_last_year:
         df_sm_l_y,sm_total_l_y=get_df_financial_at_date(ind_name,e_l_y)
         solvency_margin_av_l_y = round(sm_total_l_y / df_sm_l_y.shape[0] ,2)
-        solvency_margin = merge_two_df_convert_to_list(df_sm,df_sm_l_y,True)
+        solvency_margin = merge_two_df_convert_to_list(df_sm,df_sm_l_y,True,False,False,False)
     else:
-        solvency_margin = convert_df_to_list(df_sm)
+        solvency_margin = convert_df_to_list(df_sm,False,False,False)
     
     #################################################################################
     #net claims per period
@@ -83,9 +83,9 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     df_net_claims,net_claims_total=get_df_financial_per_period(ind_name,b,e)
     if show_last_year:
         df_net_claims_l_y,net_claims_total_l_y=get_df_financial_per_period(ind_name,b_l_y,e_l_y)
-        net_claims = merge_two_df_convert_to_list(df_net_claims,df_net_claims_l_y)
+        net_claims = merge_two_df_convert_to_list(df_net_claims,df_net_claims_l_y,False,False,False,False)
     else:
-        net_claims = convert_df_to_list(df_net_claims)
+        net_claims = convert_df_to_list(df_net_claims,False,False,False)
 
     ###########################################################################
     #net Loss Ratio per period
@@ -95,15 +95,15 @@ def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная 
     ind_name_premiums = 'net_premiums'
     df_net_claims,net_claims_total=get_df_financial_per_period(ind_name_claims,b,e)
     df_net_premiums,net_premiums_total=get_df_financial_per_period(ind_name_premiums,b,e)    
-    df_lr,lr_av = merge_claims_prems_compute_LR(df_net_claims,df_net_premiums)   
+    df_lr,lr_av = merge_claims_prems_compute_LR(df_net_claims,df_net_premiums,False,False)   
     
     if show_last_year:
         df_net_claims_l_y,net_claims_total_l_y=get_df_financial_per_period(ind_name_claims,b_l_y,e_l_y)
         df_net_premiums_l_y,net_premiums_total_l_y=get_df_financial_per_period(ind_name_premiums,b_l_y,e_l_y)
-        df_lr_l_y,lr_av_l_y = merge_claims_prems_compute_LR(df_net_claims_l_y,df_net_premiums_l_y)        
-        lr_list = LR_two_df_to_list(df_lr,df_lr_l_y)        
+        df_lr_l_y,lr_av_l_y = merge_claims_prems_compute_LR(df_net_claims_l_y,df_net_premiums_l_y,False,False)        
+        lr_list = merge_two_df_convert_to_list(df_lr,df_lr_l_y,True,True,False,False)
     else:
-        lr_list = LR_to_list(df_lr)        
+        lr_list = convert_df_to_list(df_lr,True,False,False)
 
     return net_premiums, equity, netincome, solvency_margin, net_claims, lr_list, \
         net_premiums_total, equity_total, net_income_total, solvency_margin_av, net_claims_total, lr_av, \
@@ -148,13 +148,12 @@ def ranking():
 
     if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число)
-        b = form.begin_d.data
-        e = form.end_d.data        
-        b = datetime(b.year,b.month,1)
-        e = datetime(e.year,e.month,1)
-        b_l_y = datetime(b.year-1,b.month,1)
-        e_l_y = datetime(e.year-1,e.month,1)
-        show_last_year = form.show_last_year.data#аналогичный период прошлого года
+        show_last_year = form.show_last_year.data
+        #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
+        b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,show_last_year)
+        if not check_res:
+            flash(err_txt)
+            return redirect(url_for('ranking.ranking'))
         try:
             net_premiums, equity, netincome, solvency_margin, net_claims, lr_list, \
                 net_premiums_total, equity_total, net_income_total, solvency_margin_av, net_claims_total, lr_av, \
@@ -175,7 +174,6 @@ def ranking():
             save_to_log('ranking_file',current_user.id)
             sheets = list()
             sheets_names = list()            
-            period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
             sheets.append(net_premiums)
             sheets.append(equity)
             sheets.append(netincome)
@@ -188,7 +186,7 @@ def ranking():
             sheets_names.append(period_str + ' коэф. выплат')
             wb_name = 'ranking_' + period_str
             path, wb_name_f = save_to_excel('ranking',period_str,wb_name,sheets,sheets_names)#save file and get path
-            if path is not None:                
+            if path is not None:
                 return send_from_directory(path, filename=wb_name_f, as_attachment=True)
             else:
                 flash('Не могу сформировать файл, либо сохранить на сервер')

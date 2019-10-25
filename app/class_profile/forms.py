@@ -27,17 +27,3 @@ class ClassProfileForm(FlaskForm):#информация по продукту
         sources_db = [(str(a.id), a.alias) for a in insclasses]
         self.insclass.choices = sources_db
 
-    def validate(self):#дата окончания должна быть больше даты начала
-        d_beg = datetime(self.begin_d.data.year,self.begin_d.data.month,self.begin_d.data.day)
-        d_end = datetime(self.end_d.data.year,self.end_d.data.month,self.end_d.data.day)
-        if self.begin_d.data > self.end_d.data:
-            flash('Дата окончания должна быть больше даты начала')
-            return False
-        elif d_beg < g.min_report_date or d_end > g.last_report_date:            
-            err_txt='Данные за запрошенный период отсутствуют. Выберите любой период в диапазоне с ' \
-                + g.min_report_date.strftime('%d.%m.%Y') + ' по ' \
-                    + g.last_report_date.strftime('%d.%m.%Y')
-            flash(err_txt)
-            return False
-        else:
-            return True

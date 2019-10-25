@@ -25,8 +25,9 @@
                                 <th>Компания</th>
                                 <th>N</th>                            
                                 <th align="right">Премии</th>
-                                <th align="right">Доля рынка, %</th>
+                                <th align="right">Доля рынка по премиям, %</th>
                                 <th align="right">Выплаты</th>
+                                <th align="right">Доля рынка по выплатам, %</th>
                                 <th align="right">
                                     {% if get_hint('LR_coef') %}
                                         <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
@@ -35,8 +36,13 @@
                                     {% endif %}
                                 </th>
                                 {% if show_last_year %}
+                                    <th align="right">Изменение премий по сравнению с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }},%</th>
+                                    <th align="right">Изменение выплат по сравнению с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }},%</th>
+                                    <th align="right">Изменение коэффициента выплат по сравнению с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }},%</th>                                
                                     <th align="right">Премии с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                                    <th align="right">Доля рынка по премиям, {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
                                     <th align="right">Выплаты с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}</th>
+                                    <th align="right">Доля рынка по выплатам, {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</th>
                                     <th align="right">
                                         {% if get_hint('LR_coef') %}
                                             <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат с {{ moment(b_l_y).format('LL') }} по {{ moment(e_l_y).format('LL') }}, %</a>
@@ -48,34 +54,24 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for rownum in range(class_companies_len) %}
+                            {% for item in class_companies %}
                                 <tr>
-                                    <th>{{ class_companies[rownum].name }}</th>
-                                    <td>{{ rownum + 1 }}</td>
-                                    <td align="right">{{ "{:,.0f}".format(class_companies[rownum].premium) }}</td>
-                                    <td align="right">{{ class_companies[rownum].share }}</td>
-                                    <td align="right">{{ "{:,.0f}".format(class_companies[rownum].claim) }}</td>
-                                    <td align="right">{{ class_companies[rownum].lr }}</td>
+                                    <th>{{ item.alias }}</th>
+                                    <td>{{ item.row_index + 1 }}</td>
+                                    <td align="right">{{ "{:,.0f}".format(item.premium) }}</td>
+                                    <td align="right">{{ item.prem_share }}</td>
+                                    <td align="right">{{ "{:,.0f}".format(item.claim) }}</td>
+                                    <td align="right">{{ item.claim_share }}</td>
+                                    <td align="right">{{ item.lr }}</td>
                                     {% if show_last_year %}
-                                        {% for c_l_y in class_companies_l_y %}
-                                            {% if c_l_y.id == class_companies[rownum].id %}
-                                                <td align="right">                                                
-                                                    {% if c_l_y.premium > 0 %}
-                                                        {{ "{:,.0f}".format(c_l_y.premium) }}
-                                                    {% else %}
-                                                        N.A.
-                                                    {% endif %}
-                                                </td>
-                                                <td align="right">
-                                                    {% if c_l_y.claim > 0 %}
-                                                        {{ "{:,.0f}".format(c_l_y.claim) }}
-                                                    {% else %}
-                                                        N.A.
-                                                    {% endif %}
-                                                </td>
-                                                <td align="right">{{ c_l_y.lr }}</td>
-                                            {% endif %}
-                                        {% endfor %}
+                                        <td align="right">{{ item.prem_change }}</td>
+                                        <td align="right">{{ item.claim_change }}</td>
+                                        <td align="right">{{ item.lr_change }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(item.premium_l_y) }}</td>
+                                        <td align="right">{{ item.prem_share_l_y }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(item.claim_l_y) }}</td>
+                                        <td align="right">{{ item.claim_share_l_y }}</td>
+                                        <td align="right">{{ item.lr_l_y }}</td>
                                     {% endif %}
                                 </tr>
                             {% endfor %}
@@ -84,14 +80,20 @@
                             <tr>
                                 <th>ИТОГО</th>
                                 <td></td>                            
-                                <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_p) }}</b></td>
+                                <td align="right"><b>{{ "{:,.0f}".format(premiums_total) }}</b></td>
                                 <td></td>
-                                <td align="right"><b>{{ "{:,.0f}".format(class_totals.total_c) }}</b></td>
-                                <td align="right"><b>{{ class_totals.total_lr }}</b></td>
+                                <td align="right"><b>{{ "{:,.0f}".format(claims_total) }}</b></td>
+                                <td></td>
+                                <td align="right"><b>{{ lr_av }}</b></td>
                                 {% if show_last_year %}
-                                    <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_p) }}</b></td>
-                                    <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_c) }}</b></td>
-                                    <td align="right"><b>{{ "{:,.0f}".format(class_totals_l_y.total_lr) }}</b></td>
+                                    <td align="right"><b>{{ delta_prem_total }}</b></td>
+                                    <td align="right"><b>{{ delta_claim_total }}</b></td>
+                                    <td align="right"><b>{{ delta_lr_total }}</b></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(premiums_total_l_y) }}</b></td>
+                                    <td></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(claims_total_l_y) }}</b></td>
+                                    <td></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(lr_av_l_y) }}</b></td>
                                 {% endif %}
                             </tr>
                         </tfoot>
@@ -107,38 +109,88 @@
                 <p><i> * информация приведена по всем компаниям</i></p>
                 <div class="container">
                     <div class="row">
-                        <div class="col-md-6 col-sm-12 col-xs-12">
+                        {% if show_last_year %}
+                            <div class="col-md-12 col-sm-12 col-xs-12">
+                        {% else %}
+                            <div class="col-md-6 col-sm-12 col-xs-12">
+                        {% endif %}
                             <div align="center"><h2>Премии по месяцам</h2>
                                 <img src="{{ img_path_prem }}" style="max-width:100%" alt="premium plot">
                             </div>
-                        </div>
-                        <div class="col-md-6 col-sm-12 col-xs-12">
+                        </div>                        
+                        {% if show_last_year %}
+                            <div class="col-md-12 col-sm-12 col-xs-12">
+                        {% else %}
+                            <div class="col-md-6 col-sm-12 col-xs-12">
+                        {% endif %}
                             <div align="center"><h2>Выплаты по месяцам</h2>
                                 <img src="{{ img_path_claim }}" style="max-width:100%" alt="claim plot">
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <div align="center">
                 <h2>Коэффициент выплат по месяцам</h2>
-                <div class="table-responsive">
+                <div class="table-responsive tableFixHead">
                     <table class="table table-hover">
-                        <tr>
-                            <th>Месяц</th>
-                            <th>
-                                {% if get_hint('LR_coef') %}
-                                    <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
-                                {% else %}
-                                    Коэффициент выплат, %
+                        <thead>
+                            <tr>
+                                <th>Месяц</th>
+                                <th>Премии</th>
+                                <th>Выплаты</th>
+                                <th>
+                                    {% if get_hint('LR_coef') %}
+                                        <a href="#" data-toggle="popover" title="{{ get_hint('LR_coef').title }}" data-trigger="hover" data-content="{{ get_hint('LR_coef').text }}">Коэффициент выплат, %</a>
+                                    {% else %}
+                                        Коэффициент выплат, %
+                                    {% endif %}
+                                </th>
+                                {% if show_last_year %}                                    
+                                    <th>Премии за тот же месяц прошлого года</th>
+                                    <th>Выплаты за тот же месяц прошлого года</th>
+                                    <th>Коэффициент выплат за тот же месяц прошлого года %</th>
+                                    <th>Изменение премий %</th>
+                                    <th>Изменение выплат %</th>
+                                    <th>Изменение коэффициента выплат %</th>                                    
                                 {% endif %}
-                            </th>
-                        </tr>
+                            </tr>
+                        </thead>
+                        <tbody>
                             {% for m in class_info %}
-                                <tr>                                
-                                    <td>{{ m.month_name }}</td>                                
-                                    <td>{{ m.lr }}</td>
+                                <tr>
+                                    <th>{{ m.month_name }}</th>
+                                    <td align="right">{{ "{:,.0f}".format(m.premium) }}</td>
+                                    <td align="right">{{ "{:,.0f}".format(m.claim) }}</td>
+                                    <td align="right">{{ m.lr }}</td>
+                                    {% if show_last_year %}
+                                        <td align="right">{{ "{:,.0f}".format(m.premium_l_y) }}</td>
+                                        <td align="right">{{ "{:,.0f}".format(m.claim_l_y) }}</td>
+                                        <td align="right">{{ m.lr_l_y }}</td>
+                                        <td align="right">{{ m.prem_change }}</td>
+                                        <td align="right">{{ m.claim_change }}</td>
+                                        <td align="right">{{ m.lr_change }}</td>                                        
+                                    {% endif %}                                    
                                 </tr>
                             {% endfor %}
+                        </tbody>
+                        <tfoot>
+                                <tr>
+                                    <th>ИТОГО</th>
+                                    <td align="right"><b>{{ "{:,.0f}".format(premiums_total) }}</b></td>
+                                    <td align="right"><b>{{ "{:,.0f}".format(claims_total) }}</b></td>
+                                    <td align="right"><b>{{ lr_av }}</b></td>
+                                    {% if show_last_year %}
+                                        <td align="right"><b>{{ "{:,.0f}".format(premiums_total_l_y) }}</b></td>                                        
+                                        <td align="right"><b>{{ "{:,.0f}".format(claims_total_l_y) }}</b></td>
+                                        <td align="right"><b>{{ "{:,.0f}".format(lr_av_l_y) }}</b></td>
+                                        <td align="right"><b>{{ delta_prem_total }}</b></td>
+                                        <td align="right"><b>{{ delta_claim_total }}</b></td>
+                                        <td align="right"><b>{{ delta_lr_total }}</b></td>                                        
+                                    {% endif %}
+                                </tr>
+                            </tfoot>
                     </table>
                 </div>
             </div>
