@@ -85,41 +85,40 @@ def create_plot_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,chart_type):#p
         show_last_year = False
     class_info, class_totals, class_totals_l_y = get_class_info(c_id,b,e,show_last_year,b_l_y,e_l_y)#динамика развития по классу
     labels = list()
-    values_prem = list()
-    values_claim = list()
-    values_prem_l_y = list()
-    values_claim_l_y = list()    
+    values = list()
+    values_l_y = list()
     for el in class_info:
         labels.append(el['month_name'])
-        values_prem.append(round(el['premium']/1000))
-        values_claim.append(round(el['claim']/1000))
-        if show_last_year:
-            values_prem_l_y.append(round(el['premium_l_y']/1000))
-            values_claim_l_y.append(round(el['claim_l_y']/1000))
-    #plot chart depending on chart_type
-    if chart_type == 'prem':
-        values = values_prem
-        fig, ax = plt.subplots()
-        ax.plot(labels, values_prem,label='текущий период')
-        ax.set_title('Помесячная динамика премий, млн.тг.')
-        for i,j in zip(labels,values_prem):
+        if chart_type == 'prem':
+            values.append(round(el['premium']/1000))
+            if show_last_year:
+                values_l_y.append(round(el['premium_l_y']/1000))
+        elif chart_type == 'claim':
+            values.append(round(el['claim']/1000))
+            if show_last_year:
+                values_l_y.append(round(el['claim_l_y']/1000))
+        elif chart_type == 'lr':
+            values.append(el['lr'])
+            if show_last_year:
+                values_l_y.append(el['lr_l_y'])
+    #plot chart, set title depending on chart_type
+    fig, ax = plt.subplots()
+    ax.plot(labels, values, label='текущий период')
+    if chart_type != 'lr':
+        for i,j in zip(labels,values):
             ax.annotate(str(j),xy=(i,j))
-        if show_last_year:
-            ax.plot(labels, values_prem_l_y,label='прошлый год')
-            ax.legend(loc='upper left')
-            for i,j in zip(labels,values_prem_l_y):
-                ax.annotate(str(j),xy=(i,j))
-    elif chart_type == 'claim':        
-        fig, ax = plt.subplots()
-        ax.plot(labels, values_claim,label='текущий период')
+    if chart_type == 'prem':
+        ax.set_title('Помесячная динамика премий, млн.тг.')
+    elif chart_type == 'claim':
         ax.set_title('Помесячная динамика выплат, млн.тг.')
-        for i,j in zip(labels,values_claim):
-            ax.annotate(str(round(j)),xy=(i,j))
-        if show_last_year:
-            ax.plot(labels, values_claim_l_y,label='прошлый год')
-            ax.legend(loc='upper left')
-            for i,j in zip(labels,values_claim_l_y):
-                ax.annotate(str(round(j)),xy=(i,j))
+    elif chart_type == 'lr':
+        ax.set_title('Помесячная динамика коэффициента выплат, %')
+    if show_last_year:
+        ax.plot(labels, values_l_y, label='прошлый год')
+        ax.legend(loc='upper left')
+        if chart_type != 'lr':
+            for i,j in zip(labels,values_l_y):
+                ax.annotate(str(j),xy=(i,j))
     fig.autofmt_xdate()
     return fig
 
@@ -147,6 +146,7 @@ def class_profile():#инфо по классу
     class_totals_l_y = None
     img_path_prem = None
     img_path_claim = None
+    img_path_lr = None
     show_last_year = False
     class_companies_l_y = None    
     b_l_y = None
@@ -179,6 +179,7 @@ def class_profile():#инфо по классу
         base_img_path = "/chart_for_class.png/" + form.insclass.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year)
         img_path_prem = base_img_path + "/prem"
         img_path_claim = base_img_path + "/claim"
+        img_path_lr = base_img_path + "/lr"
 
         if form.show_info_submit.data:#show data
             save_to_log('class_profile',current_user.id)
@@ -201,7 +202,7 @@ def class_profile():#инфо по классу
     return render_template('class_profile/class_profile.html',title='Информация по продукту', \
                 form=form,descr=descr, \
                 b=b,e=e,class_companies=class_companies,class_name=class_name, \
-                img_path_prem=img_path_prem, \
+                img_path_prem=img_path_prem, img_path_lr=img_path_lr, \
                 img_path_claim=img_path_claim,class_info=class_info,class_totals=class_totals ,\
                 show_last_year=show_last_year,class_companies_l_y=class_companies_l_y, \
                 b_l_y=b_l_y,e_l_y=e_l_y, \

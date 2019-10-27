@@ -109,30 +109,27 @@
                 <p><i> * информация приведена по всем компаниям</i></p>
                 <div class="container">
                     <div class="row">
-                        {% if show_last_year %}
-                            <div class="col-md-12 col-sm-12 col-xs-12">
-                        {% else %}
-                            <div class="col-md-6 col-sm-12 col-xs-12">
-                        {% endif %}
+                        <div class="col-md-12 col-sm-12 col-xs-12">                        
                             <div align="center"><h2>Премии по месяцам</h2>
                                 <img src="{{ img_path_prem }}" style="max-width:100%" alt="premium plot">
                             </div>
                         </div>                        
-                        {% if show_last_year %}
-                            <div class="col-md-12 col-sm-12 col-xs-12">
-                        {% else %}
-                            <div class="col-md-6 col-sm-12 col-xs-12">
-                        {% endif %}
+                        <div class="col-md-12 col-sm-12 col-xs-12">
                             <div align="center"><h2>Выплаты по месяцам</h2>
                                 <img src="{{ img_path_claim }}" style="max-width:100%" alt="claim plot">
                             </div>
                         </div>
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div align="center"><h2>Коэффициент выплат по месяцам</h2>
+                                <img src="{{ img_path_lr }}" style="max-width:100%" alt="claim plot">
+                            </div>
+                        </div>                        
                     </div>
                 </div>
             </div>
 
             <div align="center">
-                <h2>Коэффициент выплат по месяцам</h2>
+                <h2>Премии, выплаты, коэффициент выплат по месяцам</h2>
                 <div class="table-responsive tableFixHead">
                     <table class="table table-hover">
                         <thead>

@@ -68,7 +68,7 @@ def get_df_prem_or_claim_per_period(class_id,b,e,prem,by_month=False):#get panda
     total_value = df_items['value'].sum()
     if by_month:
         df_items = df_items.groupby(['month_name','month_name_p_1y'], as_index=False).sum()#values by months
-        df_items = df_items.sort_values(by='month_name',ascending=True)#sort asc        
+        df_items = df_items.sort_values(by='month_name',ascending=True)#sort asc
     else:
         df_items = df_items.groupby(['id','alias'], as_index=False).sum()#values by companies
         df_items = df_items.sort_values(by='value',ascending=False)#sort desc
@@ -79,13 +79,15 @@ def get_df_prem_or_claim_per_period(class_id,b,e,prem,by_month=False):#get panda
 
 def merge_claims_prems_compute_LR(df_items_x,df_items_y,by_month=False,l_y=False):#merge claims and premiums data frames on 'id', compute LR and convert to list (e.g. merged w/ last year if show_last_year)
     if by_month:
-        df_merged = pd.merge(df_items_x,df_items_y,on='month_name')        
+        df_merged = pd.merge(df_items_x,df_items_y,on='month_name')
+        df_merged = df_merged.sort_values(by='month_name',ascending=True)#sort asc
         if l_y:
             df_merged['month_name_join'] = df_merged['month_name_p_1y_y']
         else:
             df_merged['month_name_join'] = df_merged['month_name']
     else:
         df_merged = pd.merge(df_items_x,df_items_y,on='id')
+        df_merged = df_merged.sort_values(by='value_y',ascending=False)#sort by prems
     df_merged['lr'] = round(df_merged['value_x']/df_merged['value_y']*100,2)
     lr_av = round(df_items_x['value'].sum() / df_items_y['value'].sum() * 100,2)
     return df_merged, lr_av
@@ -447,7 +449,7 @@ def transform_check_dates(b,e,show_last_year):#get dates from input form and tra
     e = datetime(e.year,e.month,1)
     period_str = b.strftime('%Y-%m') + '_' + e.strftime('%Y-%m')
     period_str_full = 'с '+ b.strftime('%d.%m.%Y') + ' по '+ e.strftime('%d.%m.%Y')
-    base_err_txt = 'Вы запросили аналитику за период ' + period_str_full + '. Выгрузка невозможна, т.к. '    
+    base_err_txt = 'Вы запросили аналитику за период ' + period_str_full + '. Выгрузка невозможна, т.к. '
     if e <= b:
         check_res = False
         err_txt = base_err_txt + 'дата окончания должна быть больше даты начала'
