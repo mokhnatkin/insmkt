@@ -7,8 +7,10 @@ from app.models import Company, Financial_per_month, Premium_per_month, \
 from datetime import datetime
 from flask import send_from_directory
 from app.motor import bp
+import pandas as pd
 from app.universal_routes import before_request_u, required_roles_u, get_months, \
-                                get_months, save_to_log, get_hint, save_to_excel, transform_check_dates
+                                get_months, save_to_log, get_hint, save_to_excel, transform_check_dates, \
+                                get_df_financial_per_period, merge_claims_prems_compute_LR, get_df_prem_or_claim_per_period
 
 
 @bp.before_request
@@ -20,287 +22,164 @@ def required_roles(*roles):
     return required_roles_u(*roles)
 
 
-def get_flow_data(company_id,b,e,flow_type):#данные по показателю
-    months = get_months(b,e)#какие месяцы относятся к заданному периоду
-    ind_value = 0.0
-    indicator = Indicator.query.filter(Indicator.name == flow_type).first()        
-    ind_id = indicator.id#id нужного индикатора    
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        ind_v_m = Financial_per_month.query.join(Indicator) \
-                        .with_entities(Financial_per_month.value) \
-                        .filter(Financial_per_month.company_id == company_id) \
-                        .filter(Indicator.id == ind_id) \
-                        .filter(Financial_per_month.beg_date == begin) \
-                        .filter(Financial_per_month.end_date == end).first()
-        if ind_v_m is not None:
-            ind_value += ind_v_m.value
-    return ind_value
-
-
-def get_premiums_claims_data(company_id,b,e,data_type,class_name):
-    months = get_months(b,e)#какие месяцы относятся к заданному периоду
-    ind_value = 0.0
-    ins_class = Insclass.query.filter(Insclass.name == class_name).first()
+def get_class_id(class_name):#ins class id
+    ins_class = Insclass.query.filter(Insclass.name == class_name).first()#casco id
     class_id = ins_class.id
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        if data_type == 'premiums':
-            ind_v_m = Premium_per_month.query.join(Insclass) \
-                        .with_entities(Premium_per_month.value) \
-                        .filter(Premium_per_month.company_id == company_id) \
-                        .filter(Insclass.id == class_id) \
-                        .filter(Premium_per_month.beg_date == begin) \
-                        .filter(Premium_per_month.end_date == end).first()
-        elif data_type == 'claims':
-            ind_v_m = Claim_per_month.query.join(Insclass) \
-                        .with_entities(Claim_per_month.value) \
-                        .filter(Claim_per_month.company_id == company_id) \
-                        .filter(Insclass.id == class_id) \
-                        .filter(Claim_per_month.beg_date == begin) \
-                        .filter(Claim_per_month.end_date == end).first()
-        if ind_v_m is not None:
-            ind_value += ind_v_m.value
-    return ind_value
+    return class_id
+
+def get_info_per_period(b,e,show_last_year):#вспомогат. ф-ция - получаем инфо по периоду
+    general_info = list()    
+    totals = None
+    #list of names for columns of final data frame
+    column_names = dict()
+    column_names['net_claims'] = 'net_claims'
+    column_names['net_premiums'] = 'net_premiums'
+    column_names['net_LR'] = 'net_LR'
+    column_names['premiums'] = 'premiums'
+    column_names['claims'] = 'claims'
+    column_names['gross_LR'] = 'gross_LR'
+    column_names['re_share'] = 're_share'
+    column_names['casco_claims'] = 'casco_claims'
+    column_names['casco_premiums'] = 'casco_premiums'
+    column_names['casco_LR'] = 'casco_LR'
+    column_names['motor_TPL_claims'] = 'motor_TPL_claims'
+    column_names['motor_TPL_premiums'] = 'motor_TPL_premiums'
+    column_names['motor_TPL_LR'] = 'motor_TPL_LR'
+    column_names['motor_premiums'] = 'motor_premiums'
+    column_names['motor_claims'] = 'motor_claims'
+    column_names['motor_LR'] = 'motor_LR'
+    column_names['motor_TPL_prem_share'] = 'motor_TPL_prem_share'
+    column_names['casco_prem_share'] = 'casco_prem_share'
+    column_names['motor_TPL_prem_share_in_motor'] = 'motor_TPL_prem_share_in_motor'
+    column_names['casco_prem_share_in_motor'] = 'casco_prem_share_in_motor'
+    
+    if show_last_year:#names of columns w/ _l_y
+        for k,v in column_names.items():
+            column_names[k] = v + '_l_y'#add _l_y for last year data
+        
+    df_net_premiums,net_premiums_total=get_df_financial_per_period('net_premiums',b,e)#net premiums per period
+    df_net_claims,net_claims_total=get_df_financial_per_period('net_claims',b,e)#net claims per period
+    df_net_lr,net_lr_av = merge_claims_prems_compute_LR(df_net_claims,df_net_premiums,False,False)#net Loss Ratio per period
+    df_net_lr = df_net_lr.drop(['share_x', 'alias_y', 'share_y'], axis=1)#drop columns
+    df_net_lr.rename(columns = {'alias_x':'alias', 'value_x':column_names['net_claims'],'value_y':column_names['net_premiums'],'lr':column_names['net_LR']}, inplace = True)#rename columns
+    
+    df_premiums,premiums_total=get_df_financial_per_period('premiums',b,e)#premiums
+    df_merged = pd.merge(df_net_lr,df_premiums,on='id')#merge 2 df
+    df_merged = df_merged.drop(['share', 'alias_y'], axis=1)#drop columns
+    df_merged.rename(columns = {'alias_x':'alias', 'value':column_names['premiums']}, inplace = True)#rename
+    df_claims,claims_total=get_df_financial_per_period('claims',b,e)#claims
+    df_merged = pd.merge(df_merged,df_claims,on='id')#merge 2 df
+    df_merged = df_merged.drop(['share', 'alias_y'], axis=1)#drop columns
+    df_merged.rename(columns = {'alias_x':'alias', 'value':column_names['claims']}, inplace = True)#rename
+    df_lr,gross_lr_av = merge_claims_prems_compute_LR(df_claims,df_premiums,False,False)#Loss Ratio per period
+    df_merged = pd.merge(df_merged,df_lr,on='id')#merge 2 df
+    df_merged = df_merged.drop(['alias_x','alias_y','share_x','share_y','value_x','value_y'], axis=1)#drop columns
+    df_merged.rename(columns = {'lr':column_names['gross_LR']}, inplace = True)#rename columns
+    df_merged[column_names['re_share']] = round((df_merged[column_names['premiums']]-df_merged[column_names['net_premiums']])/df_merged[column_names['premiums']]*100,2)
+    total_re_share = round((premiums_total-net_premiums_total)/premiums_total*100,2)
+
+    class_id = get_class_id('motor_hull')#casco id    
+    df_premiums_casco,premiums_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False)
+    df_claims_casco,claims_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False)
+    df_lr_casco,lr_casco_av=merge_claims_prems_compute_LR(df_claims_casco,df_premiums_casco,False,False)
+    df_lr_casco = df_lr_casco.drop(['alias_x','alias_y','share_x','share_y'], axis=1)#drop columns
+    df_lr_casco.rename(columns = {'value_x':column_names['casco_claims'], 'value_y': column_names['casco_premiums'], 'lr':column_names['casco_LR']}, inplace = True)#rename columns
+    df_merged = pd.merge(df_merged,df_lr_casco,on='id')#merge 2 df
+
+    class_id = get_class_id('obligatory_motor_TPL')#motor TPL id    
+    df_premiums_motor_TPL,premiums_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False)
+    df_claims_motor_TPL,claims_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False)
+    df_lr_motor_TPL,lr_motor_TPL_av=merge_claims_prems_compute_LR(df_claims_motor_TPL,df_premiums_motor_TPL,False,False)
+    df_lr_motor_TPL = df_lr_motor_TPL.drop(['alias_x','alias_y','share_x','share_y'], axis=1)#drop columns
+    df_lr_motor_TPL.rename(columns = {'value_x':column_names['motor_TPL_claims'], 'value_y': column_names['motor_TPL_premiums'], 'lr':column_names['motor_TPL_LR']}, inplace = True)#rename columns
+    df_merged = pd.merge(df_merged,df_lr_motor_TPL,on='id')#merge 2 df
+
+    df_merged[column_names['motor_premiums']] = df_merged[column_names['casco_premiums']] + df_merged[column_names['motor_TPL_premiums']]#total motor premiums
+    motor_premiums_total = premiums_motor_TPL_total + premiums_casco_total
+    df_merged[column_names['motor_claims']] = df_merged[column_names['casco_claims']] + df_merged[column_names['motor_TPL_claims']]#total motor claims
+    motor_claims_total = claims_motor_TPL_total + claims_casco_total
+    df_merged[column_names['motor_LR']] = round(df_merged[column_names['motor_claims']] / df_merged[column_names['motor_premiums']]*100,2)#total motor claims ratio
+    motor_lr_av = round(motor_claims_total / motor_premiums_total * 100,2)
+    df_merged[column_names['motor_TPL_prem_share']] = round(df_merged[column_names['motor_TPL_premiums']] / df_merged[column_names['premiums']]*100,2)
+    motor_TPL_prem_share_av = round(premiums_motor_TPL_total / premiums_total*100,2)
+    df_merged[column_names['casco_prem_share']] = round(df_merged[column_names['casco_premiums']] / df_merged[column_names['premiums']]*100,2)
+    casco_prem_share_av = round(premiums_casco_total / premiums_total*100,2)
+    df_merged[column_names['motor_TPL_prem_share_in_motor']] = round(df_merged[column_names['motor_TPL_premiums']] / df_merged[column_names['motor_premiums']]*100,2)
+    motor_TPL_prem_share_in_motor_av = round(premiums_motor_TPL_total / motor_premiums_total*100,2)
+    df_merged[column_names['casco_prem_share_in_motor']] = round(df_merged[column_names['casco_premiums']] / df_merged[column_names['motor_premiums']]*100,2)
+    casco_prem_share_in_motor_av = round(premiums_casco_total / motor_premiums_total*100,2)
+    df_merged = df_merged.sort_values(by=column_names['motor_premiums'],ascending=False)#sort by motor premiums
+    
+    if not show_last_year:
+        i = 0
+        for row_index,row in df_merged.iterrows():
+            general_info.append({'row_index':i,'alias':row.alias,'premiums':row.premiums,'claims':row.claims,'gross_LR':row.gross_LR,
+                                'net_premiums':row.net_premiums,'net_claims':row.net_claims,'net_LR':row.net_LR,
+                                're_share':row.re_share,
+                                'motor_TPL_premiums':row.motor_TPL_premiums,'motor_TPL_claims':row.motor_TPL_claims,'motor_TPL_LR':row.motor_TPL_LR,
+                                'casco_premiums':row.casco_premiums,'casco_claims':row.casco_claims,'casco_LR':row.casco_LR,
+                                'motor_premiums':row.motor_premiums,'motor_claims':row.motor_claims,'motor_LR':row.motor_LR,
+                                'motor_TPL_prem_share':row.motor_TPL_prem_share,'casco_prem_share':row.casco_prem_share,
+                                'motor_TPL_prem_share_in_motor':row.motor_TPL_prem_share_in_motor,'casco_prem_share_in_motor':row.casco_prem_share_in_motor})
+            i += 1
+
+    totals = {'premiums_total':premiums_total,'claims_total':claims_total,'gross_lr_av':gross_lr_av,
+                'net_premiums_total':net_premiums_total,'net_claims_total':net_claims_total,'net_lr_av':net_lr_av,
+                'total_re_share':total_re_share,
+                'premiums_motor_TPL_total':premiums_motor_TPL_total,'claims_motor_TPL_total':claims_motor_TPL_total,'lr_motor_TPL_av':lr_motor_TPL_av,
+                'premiums_casco_total':premiums_casco_total,'claims_casco_total':claims_casco_total,'lr_casco_av':lr_casco_av,
+                'motor_premiums_total':motor_premiums_total,'motor_claims_total':motor_claims_total,'motor_lr_av':motor_lr_av,
+                'motor_TPL_prem_share_av':motor_TPL_prem_share_av,'casco_prem_share_av':casco_prem_share_av,
+                'motor_TPL_prem_share_in_motor_av':motor_TPL_prem_share_in_motor_av,'casco_prem_share_in_motor_av':casco_prem_share_in_motor_av}
+
+    return df_merged,general_info,totals
 
 
-def get_general_info(b,e):#общая инфо по компаниям
-    general_info = list()
-    companies = Company.query.with_entities(Company.id,Company.alias) \
-                .filter(Company.nonlife==True).all()
-    totals = {}
-    total_premiums = 0
-    total_net_premiums = 0
-    total_claims = 0
-    total_net_claims = 0
-    total_motor_TPL_premiums = 0
-    total_motor_TPL_claims = 0
-    total_casco_premiums = 0
-    total_casco_claims = 0
-    total_motor_premiums = 0
-    total_motor_claims = 0
-    for company in companies:
-        premiums = get_flow_data(company.id,b,e,'premiums')
-        net_premiums = get_flow_data(company.id,b,e,'net_premiums')
-        claims = get_flow_data(company.id,b,e,'claims')
-        net_claims = get_flow_data(company.id,b,e,'net_claims')
-        motor_TPL_premiums = get_premiums_claims_data(company.id,b,e,'premiums','obligatory_motor_TPL')
-        motor_TPL_claims = get_premiums_claims_data(company.id,b,e,'claims','obligatory_motor_TPL')
-        casco_premiums = get_premiums_claims_data(company.id,b,e,'premiums','motor_hull')
-        casco_claims = get_premiums_claims_data(company.id,b,e,'claims','motor_hull')
-        if premiums > 0:
-            #вычисляемые        
-            if net_premiums > 0:
-                net_LR = round(net_claims / net_premiums * 100,2)
-            else:
-                net_LR = 'N.A.'
-            if premiums > 0:
-                re_share = round((premiums-net_premiums)/premiums*100,2)
-                motor_TPL_prem_share = round(motor_TPL_premiums / premiums *100,2)
-                casco_prem_share = round(casco_premiums / premiums *100,2)
-            else:
-                re_share = 'N.A.'
-                motor_TPL_prem_share = 'N.A.'
-                casco_prem_share = 'N.A.'
-            motor_premiums = motor_TPL_premiums + casco_premiums
-            motor_claims = motor_TPL_claims + casco_claims
-            if motor_premiums > 0:
-                motor_TPL_prem_share_in_motor = round(motor_TPL_premiums / motor_premiums *100,2)
-                casco_prem_share_in_motor = round(casco_premiums / motor_premiums *100,2)
-            else:
-                motor_TPL_prem_share_in_motor = 'N.A.'
-                casco_prem_share_in_motor = 'N.A.'
-            obj = {'company_id': company.id, 'alias':company.alias,'premiums':premiums,'net_premiums':net_premiums,
-                    'claims':claims,'net_claims':net_claims, 'net_LR':net_LR,'re_share':re_share,
-                    'motor_TPL_premiums':motor_TPL_premiums,'motor_TPL_claims':motor_TPL_claims,
-                    'casco_premiums':casco_premiums,'casco_claims':casco_claims,
-                    'motor_TPL_prem_share':motor_TPL_prem_share,'casco_prem_share':casco_prem_share,
-                    'motor_premiums':motor_premiums,'motor_claims':motor_claims,
-                    'motor_TPL_prem_share_in_motor':motor_TPL_prem_share_in_motor,
-                    'casco_prem_share_in_motor':casco_prem_share_in_motor}
-            general_info.append(obj)
-            total_premiums += premiums
-            total_net_premiums += net_premiums
-            total_claims += claims
-            total_net_claims += net_claims
-            total_motor_TPL_premiums += motor_TPL_premiums
-            total_motor_TPL_claims += motor_TPL_claims
-            total_casco_premiums += casco_premiums
-            total_casco_claims += casco_claims
-            total_motor_premiums += motor_premiums
-            total_motor_claims += motor_claims            
-    general_info.sort(key=lambda x: x['motor_premiums'], reverse=True)#сортируем по убыванию
-    if total_net_premiums > 0:
-        total_net_LR = round(total_net_claims / total_net_premiums * 100,2)
-    else:
-        total_net_LR = 'N.A.'
-    if total_premiums > 0:
-        total_re_share = round((total_premiums-total_net_premiums)/total_premiums*100,2)
-        total_motor_TPL_prem_share = round(total_motor_TPL_premiums / total_premiums *100,2)
-        total_casco_prem_share = round(total_casco_premiums / total_premiums *100,2)
-    else:
-        total_re_share = 'N.A.'
-        total_motor_TPL_prem_share = 'N.A.'
-        total_casco_prem_share = 'N.A.'
-    if total_motor_premiums > 0:
-        total_motor_TPL_prem_share_in_motor = round(total_motor_TPL_premiums / total_motor_premiums *100,2)
-        total_casco_prem_share_in_motor = round(total_casco_premiums / total_motor_premiums *100,2)
-    else:
-        total_motor_TPL_prem_share_in_motor = 'N.A.'
-        total_casco_prem_share_in_motor = 'N.A.'        
-    totals = {'total_premiums':total_premiums, 'total_net_premiums':total_net_premiums,
-               'total_claims':total_claims, 'total_net_claims':total_net_claims,
-               'total_motor_TPL_premiums':total_motor_TPL_premiums,
-               'total_motor_TPL_claims':total_motor_TPL_claims,
-               'total_casco_premiums':total_casco_premiums,'total_casco_claims':total_casco_claims,
-               'total_motor_premiums':total_motor_premiums,'total_motor_claims':total_motor_claims,
-               'total_net_LR':total_net_LR,'total_re_share':total_re_share,
-               'total_motor_TPL_prem_share':total_motor_TPL_prem_share,
-               'total_casco_prem_share':total_casco_prem_share,
-               'total_motor_TPL_prem_share_in_motor':total_motor_TPL_prem_share_in_motor,
-               'total_casco_prem_share_in_motor':total_casco_prem_share_in_motor}
-    return general_info, totals
+def compute_percent_change(value,value_l_y):#вспомогат. - изменение величины в %
+    return round((value / value_l_y - 1) * 100,2)
 
 
-def compare_to_l_y(general_info,general_info_l_y,totals,totals_l_y):#динамика по сравнению с прошлым годом
-    deltas = list()
-    total_deltas = {}
-    companies = list()
-    for c in general_info:
-        company = {'id':c['company_id'],'alias':c['alias']}
-        companies.append(company)
-    for company in companies:        
-        for el in general_info:
-            if el['company_id'] == company['id']:
-                premiums = el['premiums']
-                net_premiums = el['net_premiums']
-                claims = el['claims']
-                net_claims = el['net_claims']
-                motor_TPL_premiums = el['motor_TPL_premiums']
-                motor_TPL_claims = el['motor_TPL_claims']
-                casco_premiums = el['casco_premiums']
-                casco_claims = el['casco_claims']
-                motor_premiums = el['motor_premiums']
-                motor_claims = el['motor_claims']
-                break
-            else:
-                continue
-        for el in general_info_l_y:
-            if el['company_id'] == company['id']:
-                premiums_l_y = el['premiums']
-                net_premiums_l_y = el['net_premiums']
-                claims_l_y = el['claims']
-                net_claims_l_y = el['net_claims']
-                motor_TPL_premiums_l_y = el['motor_TPL_premiums']
-                motor_TPL_claims_l_y = el['motor_TPL_claims']
-                casco_premiums_l_y = el['casco_premiums']
-                casco_claims_l_y = el['casco_claims']
-                motor_premiums_l_y = el['motor_premiums']
-                motor_claims_l_y = el['motor_claims']                
-                break
-            else:
-                continue
-        if premiums > 0:
-            if premiums_l_y > 0:
-                premiums_delta = round((premiums / premiums_l_y-1)*100,2)
-            else:
-                premiums_delta = 'N.A.'
-            if net_premiums_l_y > 0:
-                net_premiums_delta = round((net_premiums / net_premiums_l_y-1)*100,2)
-            else:
-                net_premiums_delta = 'N.A.'
-            if claims_l_y > 0:
-                claims_delta = round((claims / claims_l_y-1)*100,2)
-            else:
-                claims_delta = 'N.A.'
-            if net_claims_l_y > 0:
-                net_claims_delta = round((net_claims / net_claims_l_y-1)*100,2)
-            else:
-                net_claims_delta = 'N.A.'
-            if motor_TPL_premiums_l_y > 0:
-                motor_TPL_premiums_delta = round((motor_TPL_premiums / motor_TPL_premiums_l_y-1)*100,2)
-            else:
-                motor_TPL_premiums_delta = 'N.A.'
-            if motor_TPL_claims_l_y > 0:
-                motor_TPL_claims_delta = round((motor_TPL_claims / motor_TPL_claims_l_y -1)*100,2)
-            else:
-                motor_TPL_claims_delta = 'N.A.'
-            if casco_premiums_l_y > 0:
-                casco_premiums_delta = round((casco_premiums / casco_premiums_l_y -1)*100,2)
-            else:
-                casco_premiums_delta = 'N.A.'
-            if casco_claims_l_y > 0:
-                casco_claims_delta = round(( casco_claims / casco_claims_l_y -1)*100,2)
-            else:
-                casco_claims_delta = 'N.A.'
-            if motor_premiums_l_y > 0:
-                motor_premiums_delta = round(( motor_premiums / motor_premiums_l_y -1)*100,2)
-            else:
-                motor_premiums_delta = 'N.A.'
-            if motor_claims_l_y > 0:
-                motor_claims_delta = round(( motor_claims / motor_claims_l_y -1)*100,2)
-            else:
-                motor_claims_delta = 'N.A.'
-            obj = {'company_id':company['id'], 'alias':company['alias'], 'motor_premiums':motor_premiums,
-                        'premiums_delta':premiums_delta, 'net_premiums_delta':net_premiums_delta,
-                        'claims_delta':claims_delta,'net_claims_delta':net_claims_delta,
-                        'motor_TPL_premiums_delta':motor_TPL_premiums_delta,'motor_TPL_claims_delta':motor_TPL_claims_delta,
-                        'casco_premiums_delta':casco_premiums_delta,'casco_claims_delta':casco_claims_delta,
-                        'motor_premiums_delta':motor_premiums_delta,'motor_claims_delta':motor_claims_delta}
-            deltas.append(obj)
-    deltas.sort(key=lambda x: x['motor_premiums'], reverse=True)#сортируем по убыванию
-    #итоговые изменения
-    if totals_l_y['total_premiums'] > 0:
-        total_premiums_delta = round((totals['total_premiums'] / totals_l_y['total_premiums']-1)*100,2)
-    else:
-        total_premiums_delta = 'N.A.'
-    if totals_l_y['total_net_premiums'] > 0:
-        total_net_premiums_delta = round((totals['total_net_premiums'] / totals_l_y['total_net_premiums']-1)*100,2)
-    else:
-        total_net_premiums_delta = 'N.A.'
-    if totals_l_y['total_claims'] > 0:
-        total_claims_delta = round((totals['total_claims'] / totals_l_y['total_claims']-1)*100,2)
-    else:
-        total_claims_delta = 'N.A.'
-    if totals_l_y['total_net_claims'] > 0:
-        total_net_claims_delta = round((totals['total_net_claims'] / totals_l_y['total_net_claims']-1)*100,2)
-    else:
-        total_net_claims_delta = 'N.A.'
-    if totals_l_y['total_motor_TPL_premiums'] > 0:
-        total_motor_TPL_premiums_delta = round((totals['total_motor_TPL_premiums'] / totals_l_y['total_motor_TPL_premiums']-1)*100,2)
-    else:
-        total_motor_TPL_premiums_delta = 'N.A.'
-    if totals_l_y['total_motor_TPL_claims'] > 0:
-        total_motor_TPL_claims_delta = round((totals['total_motor_TPL_claims'] / totals_l_y['total_motor_TPL_claims'] -1)*100,2)
-    else:
-        total_motor_TPL_claims_delta = 'N.A.'
-    if totals_l_y['total_casco_premiums'] > 0:
-        total_casco_premiums_delta = round((totals['total_casco_premiums'] / totals_l_y['total_casco_premiums'] -1)*100,2)
-    else:
-        total_casco_premiums_delta = 'N.A.'
-    if totals_l_y['total_casco_claims'] > 0:
-        total_casco_claims_delta = round((totals['total_casco_claims'] / totals_l_y['total_casco_claims'] -1)*100,2)
-    else:
-        total_casco_claims_delta = 'N.A.'
-    if totals_l_y['total_motor_premiums'] > 0:
-        total_motor_premiums_delta = round(( totals['total_motor_premiums'] / totals_l_y['total_motor_premiums'] -1)*100,2)
-    else:
-        total_motor_premiums_delta = 'N.A.'
-    if totals_l_y['total_motor_claims'] > 0:
-        total_motor_claims_delta = round(( totals['total_motor_claims'] / totals_l_y['total_motor_claims'] -1)*100,2)
-    else:
-        total_motor_claims_delta = 'N.A.'
-    total_deltas = {'total_premiums_delta':total_premiums_delta,'total_net_premiums_delta':total_net_premiums_delta,
-                    'total_claims_delta':total_claims_delta,'total_net_claims_delta':total_net_claims_delta,
-                    'total_motor_TPL_premiums_delta':total_motor_TPL_premiums_delta,
-                    'total_motor_TPL_claims_delta':total_motor_TPL_claims_delta,
-                    'total_casco_premiums_delta':total_casco_premiums_delta,
-                    'total_casco_claims_delta':total_casco_claims_delta,
-                    'total_motor_premiums_delta':total_motor_premiums_delta,
-                    'total_motor_claims_delta':total_motor_claims_delta}
-    return deltas, total_deltas
+def get_general_motor_info(b,e,b_l_y,e_l_y,show_last_year):#инфа по авто и общая инфа в разрезе компаний
+    delta_info = list()
+    total_deltas = None
+
+    df_merged,general_info,totals = get_info_per_period(b,e,False)
+
+    if show_last_year:
+        df_merged_l_y,general_info_l_y,totals_l_y = get_info_per_period(b_l_y,e_l_y,True)
+        df_merged_tmp = pd.merge(df_merged,df_merged_l_y,on='id')#merge 2 df        
+        df_merged_tmp['premiums_delta'] = round((df_merged_tmp['premiums'] / df_merged_tmp['premiums_l_y'] - 1) * 100,2)
+        df_merged_tmp['net_premiums_delta'] = round((df_merged_tmp['net_premiums'] / df_merged_tmp['net_premiums_l_y'] - 1) * 100,2)
+        df_merged_tmp['claims_delta'] = round((df_merged_tmp['claims'] / df_merged_tmp['claims_l_y'] - 1) * 100,2)
+        df_merged_tmp['net_claims_delta'] = round((df_merged_tmp['net_claims'] / df_merged_tmp['net_claims_l_y'] - 1) * 100,2)
+        df_merged_tmp['casco_premiums_delta'] = round((df_merged_tmp['casco_premiums'] / df_merged_tmp['casco_premiums_l_y'] - 1) * 100,2)
+        df_merged_tmp['motor_TPL_premiums_delta'] = round((df_merged_tmp['motor_TPL_premiums'] / df_merged_tmp['motor_TPL_premiums_l_y'] - 1) * 100,2)
+        df_merged_tmp['motor_premiums_delta'] = round((df_merged_tmp['motor_premiums'] / df_merged_tmp['motor_premiums_l_y'] - 1) * 100,2)
+        df_merged_tmp['casco_claims_delta'] = round((df_merged_tmp['casco_claims'] / df_merged_tmp['casco_claims_l_y'] - 1) * 100,2)
+        df_merged_tmp['motor_TPL_claims_delta'] = round((df_merged_tmp['motor_TPL_claims'] / df_merged_tmp['motor_TPL_claims_l_y'] - 1) * 100,2)
+        df_merged_tmp['motor_claims_delta'] = round((df_merged_tmp['motor_claims'] / df_merged_tmp['motor_claims_l_y'] - 1) * 100,2)
+        
+        i = 0
+        for row_index,row in df_merged_tmp.iterrows():
+            delta_info.append({'row_index':i,'alias':row.alias_x,'premiums_delta':row.premiums_delta,'net_premiums_delta':row.net_premiums_delta,
+                                'claims_delta':row.claims_delta,'net_claims_delta':row.net_claims_delta,
+                                'casco_premiums_delta':row.casco_premiums_delta,'motor_TPL_premiums_delta':row.motor_TPL_premiums_delta,
+                                'motor_premiums_delta':row.motor_premiums_delta,'casco_claims_delta':row.casco_claims_delta,
+                                'motor_TPL_claims_delta':row.motor_TPL_claims_delta,'motor_claims_delta':row.motor_claims_delta})
+            i+=1
+        
+        total_deltas = {'total_premiums_delta':compute_percent_change(totals['premiums_total'],totals_l_y['premiums_total']),
+                        'total_net_premiums_delta':compute_percent_change(totals['net_premiums_total'],totals_l_y['net_premiums_total']),
+                        'total_claims_delta':compute_percent_change(totals['claims_total'],totals_l_y['claims_total']),
+                        'total_net_claims_delta':compute_percent_change(totals['net_claims_total'],totals_l_y['net_claims_total']),
+                        'total_casco_premiums_delta':compute_percent_change(totals['premiums_casco_total'],totals_l_y['premiums_casco_total']),
+                        'total_motor_TPL_premiums_delta':compute_percent_change(totals['premiums_motor_TPL_total'],totals_l_y['premiums_motor_TPL_total']),
+                        'total_motor_premiums_delta':compute_percent_change(totals['motor_premiums_total'],totals_l_y['motor_premiums_total']),
+                        'total_casco_claims_delta':compute_percent_change(totals['claims_casco_total'],totals_l_y['claims_casco_total']),
+                        'total_motor_TPL_claims_delta':compute_percent_change(totals['claims_motor_TPL_total'],totals_l_y['claims_motor_TPL_total']),
+                        'total_motor_claims_delta':compute_percent_change(totals['motor_claims_total'],totals_l_y['motor_claims_total'])}
+
+    return general_info, totals, delta_info, total_deltas
 
 
 @bp.route('/motor',methods=['GET','POST'])
@@ -314,36 +193,29 @@ def motor():#инфо по автострахованию
     b_l_y = None
     e_l_y = None
     general_info = None    
-    general_info_l_y = None
     delta_info = None
-    totals = None
-    totals_l_y = None
+    totals = None    
     total_deltas = None
     show_last_year = False
     show_general_info = False
     show_info = False
+
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
+
     if form.validate_on_submit():
         show_last_year = form.show_last_year.data
         #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
         b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,show_last_year)
         if not check_res:
             flash(err_txt)
-            return redirect(url_for('motor.motor'))
-        
+            return redirect(url_for('motor.motor'))        
         show_general_info = form.show_general_info.data
+        
         try:
-            general_info, totals = get_general_info(b,e)#общая информация                      
-            if show_last_year == True:               
-                try:
-                    general_info_l_y, totals_l_y = get_general_info(b_l_y,e_l_y)
-                    delta_info, total_deltas = compare_to_l_y(general_info,general_info_l_y,totals,totals_l_y)
-                except:
-                    flash('Не могу получить данные за прошлый год')
-                    return redirect(url_for('motor.motor'))            
+            general_info, totals, delta_info, total_deltas = get_general_motor_info(b,e,b_l_y,e_l_y,show_last_year)
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные за заданный период отсутствуют. Попробуйте задать другой период.')
             return redirect(url_for('motor.motor'))
@@ -351,16 +223,13 @@ def motor():#инфо по автострахованию
         if form.show_info_submit.data:#show data
             save_to_log('motor',current_user.id)
             show_info = True
+
         elif form.save_to_file_submit.data:
             save_to_log('motor_file',current_user.id)
             sheets = list()
             sheets_names = list()            
             sheets.append(general_info)
-            sheets_names.append(period_str + ' общ. и авто')            
-            if show_last_year == True:
-                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')                
-                sheets.append(general_info_l_y)               
-                sheets_names.append(period_l_y_str + ' общ. и авто')                
+            sheets_names.append(period_str + ' общ. и авто')
             wb_name = 'motor_general_' + period_str
             path, wb_name_f = save_to_excel('motor_general',period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
@@ -369,7 +238,7 @@ def motor():#инфо по автострахованию
                 flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('motor/motor.html',title=title,form=form,descr=descr, \
                 b=b,e=e,show_last_year=show_last_year,b_l_y=b_l_y,e_l_y=e_l_y, \
-                general_info=general_info, len=len, show_info=show_info, \
-                general_info_l_y=general_info_l_y,show_general_info=show_general_info, \
-                delta_info=delta_info, totals=totals, totals_l_y=totals_l_y, \
+                general_info=general_info, show_info=show_info, \
+                show_general_info=show_general_info, \
+                delta_info=delta_info, totals=totals, \
                 total_deltas=total_deltas, get_hint=get_hint)

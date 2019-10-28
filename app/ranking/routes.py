@@ -22,7 +22,7 @@ def required_roles(*roles):
     return required_roles_u(*roles)
 
 
-def get_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная функция - получаем данные для ранкинга    
+def get_info_for_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогательная функция - получаем данные для ранкинга    
     net_premiums_total_l_y=None
     equity_total_l_y=None
     net_income_total_l_y=None
@@ -158,7 +158,7 @@ def ranking():
             net_premiums, equity, netincome, solvency_margin, net_claims, lr_list, \
                 net_premiums_total, equity_total, net_income_total, solvency_margin_av, net_claims_total, lr_av, \
                 net_premiums_total_l_y, equity_total_l_y, net_income_total_l_y, solvency_margin_av_l_y, \
-                net_claims_total_l_y, lr_av_l_y = get_ranking(b,e,show_last_year,b_l_y,e_l_y)#рассчитаем показатели                
+                net_claims_total_l_y, lr_av_l_y = get_info_for_ranking(b,e,show_last_year,b_l_y,e_l_y)#рассчитаем показатели                
         except:
             flash('Не могу получить данные за текущий или прошлый период. Проверьте период.')
             return redirect(url_for('ranking.ranking'))

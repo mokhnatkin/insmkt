@@ -63,28 +63,28 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for rownum in range(len(general_info)) %}
+                        {% for item in general_info %}
                             <tr>
-                                <th>{{ general_info[rownum].alias }}</td>
-                                <td>{{ rownum + 1 }}</td>                                
+                                <th>{{ item.alias }}</td>
+                                <td>{{ item.row_index + 1 }}</td>                                
                                 {% if show_general_info %}
-                                    <td>{{ "{:,.0f}".format(general_info[rownum].premiums) }}</td>
-                                    <td>{{ "{:,.0f}".format(general_info[rownum].net_premiums) }}</td>
-                                    <td>{{ "{:,.0f}".format(general_info[rownum].claims) }}</td>
-                                    <td>{{ "{:,.0f}".format(general_info[rownum].net_claims) }}</td>
-                                    <td>{{ general_info[rownum].net_LR }}</td>
-                                    <td>{{ general_info[rownum].re_share }}</td>
+                                    <td>{{ "{:,.0f}".format(item.premiums) }}</td>
+                                    <td>{{ "{:,.0f}".format(item.net_premiums) }}</td>
+                                    <td>{{ "{:,.0f}".format(item.claims) }}</td>
+                                    <td>{{ "{:,.0f}".format(item.net_claims) }}</td>
+                                    <td>{{ item.net_LR }}</td>
+                                    <td>{{ item.re_share }}</td>
                                 {% endif %}
-                                <td>{{ "{:,.0f}".format(general_info[rownum].casco_premiums) }}</td>
-                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_TPL_premiums) }}</td>
-                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_premiums) }}</td>
-                                <td>{{ "{:,.0f}".format(general_info[rownum].casco_claims) }}</td>
-                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_TPL_claims) }}</td>
-                                <td>{{ "{:,.0f}".format(general_info[rownum].motor_claims) }}</td>
-                                <td>{{ general_info[rownum].motor_TPL_prem_share }}</td>
-                                <td>{{ general_info[rownum].casco_prem_share }}</td>
-                                <td>{{ general_info[rownum].motor_TPL_prem_share_in_motor }}</td>
-                                <td>{{ general_info[rownum].casco_prem_share_in_motor }}</td>
+                                <td>{{ "{:,.0f}".format(item.casco_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(item.motor_TPL_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(item.motor_premiums) }}</td>
+                                <td>{{ "{:,.0f}".format(item.casco_claims) }}</td>
+                                <td>{{ "{:,.0f}".format(item.motor_TPL_claims) }}</td>
+                                <td>{{ "{:,.0f}".format(item.motor_claims) }}</td>
+                                <td>{{ item.motor_TPL_prem_share }}</td>
+                                <td>{{ item.casco_prem_share }}</td>
+                                <td>{{ item.motor_TPL_prem_share_in_motor }}</td>
+                                <td>{{ item.casco_prem_share_in_motor }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -93,23 +93,23 @@
                             <th>ИТОГО</td>
                             <td></td>                            
                             {% if show_general_info %}
-                                <td><b>{{ "{:,.0f}".format(totals.total_premiums) }}</b></td>
-                                <td><b>{{ "{:,.0f}".format(totals.total_net_premiums) }}</b></td>
-                                <td><b>{{ "{:,.0f}".format(totals.total_claims) }}</b></td>
-                                <td><b>{{ "{:,.0f}".format(totals.total_net_claims) }}</b></td>
-                                <td><b>{{ "{:,.0f}".format(totals.total_net_LR) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.premiums_total) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.net_premiums_total) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.claims_total) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.net_claims_total) }}</b></td>
+                                <td><b>{{ "{:,.0f}".format(totals.net_lr_av) }}</b></td>
                                 <td><b>{{ "{:,.0f}".format(totals.total_re_share) }}</b></td>                                
                             {% endif %}
-                            <td><b>{{ "{:,.0f}".format(totals.total_casco_premiums) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_premiums) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_premiums) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_casco_claims) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_claims) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_claims) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_prem_share) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_casco_prem_share) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_motor_TPL_prem_share_in_motor) }}</b></td>
-                            <td><b>{{ "{:,.0f}".format(totals.total_casco_prem_share_in_motor) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.premiums_casco_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.premiums_motor_TPL_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.motor_premiums_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.claims_casco_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.claims_motor_TPL_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.motor_claims_total) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.motor_TPL_prem_share_av) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.casco_prem_share_av) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.motor_TPL_prem_share_in_motor_av) }}</b></td>
+                            <td><b>{{ "{:,.0f}".format(totals.casco_prem_share_in_motor_av) }}</b></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -154,22 +154,22 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for rownum in range(len(delta_info)) %}
+                            {% for item in delta_info %}
                                 <tr>                                    
-                                    <th>{{ delta_info[rownum].alias }}</th>
-                                    <td>{{ rownum + 1 }}</td>
+                                    <th>{{ item.alias }}</th>
+                                    <td>{{ item.row_index + 1 }}</td>
                                     {% if show_general_info %}
-                                        <td>{{ delta_info[rownum].premiums_delta }}</td>
-                                        <td>{{ delta_info[rownum].net_premiums_delta }}</td>
-                                        <td>{{ delta_info[rownum].claims_delta }}</td>
-                                        <td>{{ delta_info[rownum].net_claims_delta }}</td>
+                                        <td>{{ item.premiums_delta }}</td>
+                                        <td>{{ item.net_premiums_delta }}</td>
+                                        <td>{{ item.claims_delta }}</td>
+                                        <td>{{ item.net_claims_delta }}</td>
                                     {% endif %}
-                                    <td>{{ delta_info[rownum].casco_premiums_delta }}</td>
-                                    <td>{{ delta_info[rownum].motor_TPL_premiums_delta }}</td>
-                                    <td>{{ delta_info[rownum].motor_premiums_delta }}</td>
-                                    <td>{{ delta_info[rownum].casco_claims_delta }}</td>
-                                    <td>{{ delta_info[rownum].motor_TPL_claims_delta }}</td>
-                                    <td>{{ delta_info[rownum].motor_claims_delta }}</td>
+                                    <td>{{ item.casco_premiums_delta }}</td>
+                                    <td>{{ item.motor_TPL_premiums_delta }}</td>
+                                    <td>{{ item.motor_premiums_delta }}</td>
+                                    <td>{{ item.casco_claims_delta }}</td>
+                                    <td>{{ item.motor_TPL_claims_delta }}</td>
+                                    <td>{{ item.motor_claims_delta }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
