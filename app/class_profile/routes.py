@@ -1,20 +1,17 @@
 from flask import render_template, flash, redirect, url_for, request, g, \
-                    Response, current_app, send_from_directory
+                    current_app, send_from_directory
 from app import db
 from app.class_profile.forms import ClassProfileForm
 from flask_login import current_user, login_required
 from app.models import Company, Insclass, Premium_per_month, Claim_per_month
 from datetime import datetime
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import io
 from app.class_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
-                    get_months, save_to_log, get_hint, add_str_timestamp, save_to_excel, \
-                    merge_two_df_convert_to_list, convert_df_to_list, \
-                    get_df_prem_or_claim_per_period, merge_claims_prems_compute_LR, transform_check_dates
+                    save_to_log, get_hint, add_str_timestamp, save_to_excel, \
+                    transform_check_dates,str_to_date, str_to_bool
+from app.transform_data import merge_two_df_convert_to_list, convert_df_to_list, \
+                    get_df_prem_or_claim_per_period, merge_claims_prems_compute_LR
+from app.plot_graphs import plot_linear_graph                    
 
 
 @bp.before_request
@@ -66,28 +63,19 @@ def get_class_info(class_id,b,e,show_last_year,b_l_y,e_l_y):#инфо по ди�
     return class_info, class_totals, class_totals_l_y
     
 
-@bp.route('/chart_for_class.png/<c_id>/<begin>/<end>/<b_l_y>/<e_l_y>/<show_last_year>/<chart_type>')#plot chart for a given class
-def plot_png_for_class(c_id,begin,end,b_l_y,e_l_y,show_last_year,chart_type):
-    b = datetime.strptime(begin, '%m-%d-%Y')
-    e = datetime.strptime(end, '%m-%d-%Y')
-    b_l_y = datetime.strptime(b_l_y, '%m-%d-%Y')
-    e_l_y = datetime.strptime(e_l_y, '%m-%d-%Y')
-    fig = create_plot_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year,chart_type)
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
-
-
-def create_plot_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,chart_type):#plots pie chart for a given company
-    if show_last_year_str == 'True':
-        show_last_year = True
-    else:
-        show_last_year = False
+@bp.route('/chart_for_class.png/<c_id>/<b>/<e>/<b_l_y>/<e_l_y>/<show_last_year_str>/<annotate_param>/<chart_type>')#plot chart for a given class
+def plot_png_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,chart_type):
+    show_last_year = str_to_bool(show_last_year_str)
+    annotate = str_to_bool(annotate_param)
+    b = str_to_date(b)
+    e = str_to_date(e)
+    b_l_y = str_to_date(b_l_y)
+    e_l_y = str_to_date(e_l_y)
     class_info, class_totals, class_totals_l_y = get_class_info(c_id,b,e,show_last_year,b_l_y,e_l_y)#динамика развития по классу
     labels = list()
     values = list()
     values_l_y = list()
-    for el in class_info:
+    for el in class_info:#compute values and labels for graph
         labels.append(el['month_name'])
         if chart_type == 'prem':
             values.append(round(el['premium']/1000))
@@ -101,26 +89,20 @@ def create_plot_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,chart_type):#p
             values.append(el['lr'])
             if show_last_year:
                 values_l_y.append(el['lr_l_y'])
-    #plot chart, set title depending on chart_type
-    fig, ax = plt.subplots()
-    ax.plot(labels, values, label='текущий период')
-    if chart_type != 'lr':
-        for i,j in zip(labels,values):
-            ax.annotate(str(j),xy=(i,j))
+    label1 = 'текущий период'
+    label2 = 'прошлый год'
     if chart_type == 'prem':
-        ax.set_title('Помесячная динамика премий, млн.тг.')
+        title = 'Помесячная динамика премий, млн.тг.'
     elif chart_type == 'claim':
-        ax.set_title('Помесячная динамика выплат, млн.тг.')
+        title = 'Помесячная динамика выплат, млн.тг.'
     elif chart_type == 'lr':
-        ax.set_title('Помесячная динамика коэффициента выплат, %')
-    if show_last_year:
-        ax.plot(labels, values_l_y, label='прошлый год')
-        ax.legend(loc='upper left')
-        if chart_type != 'lr':
-            for i,j in zip(labels,values_l_y):
-                ax.annotate(str(j),xy=(i,j))
-    fig.autofmt_xdate()
-    return fig
+        title = 'Помесячная динамика коэффициента выплат, %'
+    return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)                
+
+
+def path_to_charts(base_img_path,class_id,b,e,b_l_y,e_l_y,show_last_year,annotate,chart_type):#путь к графику
+    path = "/" + base_img_path + "/" + class_id + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year) + "/" + str(annotate) + "/" + chart_type
+    return path
 
 
 @bp.route('/class_profile',methods=['GET','POST'])
@@ -175,11 +157,12 @@ def class_profile():#инфо по классу
             delta_prem_total = round((premiums_total - premiums_total_l_y) / premiums_total_l_y * 100,2)
             delta_claim_total = round((claims_total - claims_total_l_y) / claims_total_l_y * 100,2)
             delta_lr_total = round(lr_av - lr_av_l_y,2)
-        #базовый путь к графикам
-        base_img_path = "/chart_for_class.png/" + form.insclass.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year)
-        img_path_prem = base_img_path + "/prem"
-        img_path_claim = base_img_path + "/claim"
-        img_path_lr = base_img_path + "/lr"
+        
+        #пути к графикам
+        base_name = 'chart_for_class.png'
+        img_path_prem = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,True,'prem')
+        img_path_claim = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,True,'claim')
+        img_path_lr = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,False,'lr')
 
         if form.show_info_submit.data:#show data
             save_to_log('class_profile',current_user.id)

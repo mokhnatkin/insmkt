@@ -7,10 +7,11 @@ from datetime import datetime
 from flask import send_from_directory
 from app.ranking import bp
 from app.universal_routes import before_request_u, required_roles_u, save_to_log, \
-                            get_months, is_id_in_arr, get_hint, save_to_excel, \
-                            get_df_financial_per_period, get_df_financial_at_date, \
-                            convert_df_to_list, merge_two_df_convert_to_list, \
-                            merge_claims_prems_compute_LR, transform_check_dates
+                                is_id_in_arr, get_hint, save_to_excel, \
+                                transform_check_dates
+from app.transform_data import get_df_financial_per_period, get_df_financial_at_date, \
+                                convert_df_to_list, merge_two_df_convert_to_list, \
+                                merge_claims_prems_compute_LR
 
 
 @bp.before_request

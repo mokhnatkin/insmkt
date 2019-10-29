@@ -13,8 +13,9 @@ import io
 import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
-                    save_to_log, get_num_companies_at_date, get_months, is_id_in_arr, \
+                    save_to_log, get_num_companies_at_date, is_id_in_arr, \
                     get_num_companies_per_period, get_hint, save_to_excel, transform_check_dates
+from app.transform_data import get_months
 
 
 @bp.before_request

@@ -8,9 +8,9 @@ from datetime import datetime
 from flask import send_from_directory
 from app.motor import bp
 import pandas as pd
-from app.universal_routes import before_request_u, required_roles_u, get_months, \
-                                get_months, save_to_log, get_hint, save_to_excel, transform_check_dates, \
-                                get_df_financial_per_period, merge_claims_prems_compute_LR, get_df_prem_or_claim_per_period
+from app.universal_routes import before_request_u, required_roles_u, \
+                                save_to_log, get_hint, save_to_excel, transform_check_dates
+from app.transform_data import get_df_financial_per_period, merge_claims_prems_compute_LR, get_df_prem_or_claim_per_period
 
 
 @bp.before_request
