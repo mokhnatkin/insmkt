@@ -10,8 +10,7 @@
     </i></p>
     {% include 'just_form.html' %}
     
-    {% if show_info %}
-        {% if show_balance %}        
+    {% if show_info %}        
             <h1>Компания: {{ company_name }}</h1>
             <p><i>* данные по рынку включают в себя данные по компаниями по общему страхованию, без учёта компаний по страхованию жизни</i></p>
             <div align="center">
@@ -33,44 +32,30 @@
                         </tr>
                         {% for ind in balance_indicators %}
                         <tr>
-                            {% if get_hint('solvency_margin') and ind.name == 'solvency_margin' %}
+                            {% if get_hint('solvency_margin') and ind.system_name == 'solvency_margin' %}
                                 <td><a href="#" data-toggle="popover" title="{{ get_hint('solvency_margin').title }}" data-trigger="hover" data-content="{{ get_hint('solvency_margin').text }}">{{ ind.fullname }}</a></td>
-                            {% elif get_hint('reserves') and ind.name == 'reserves'  %}
+                            {% elif get_hint('reserves') and ind.system_name == 'reserves'  %}
                                 <td><a href="#" data-toggle="popover" title="{{ get_hint('reserves').title }}" data-trigger="hover" data-content="{{ get_hint('reserves').text }}">{{ ind.fullname }}</a></td>
                             {% else %}
                                 <td>{{ ind.fullname }}</td>
                             {% endif %}
-                            {% if ind.name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
+                            {% if ind.system_name == 'solvency_margin' %}<!--маржу покажем с 2 знаками после запятой-->
                                 <td align="right">{{ "{:,.2f}".format(ind.value) }}</td>
                                 <td align="right">N.A.</td>
                                 <td align="right">{{ "{:,.2f}".format(ind.mkt_av) }}</td>
                                 <td align="right">N.A.</td>
                                 {% if show_last_year %}
-                                    {% for ind_l_y in balance_indicators_l_y %}
-                                        {% if ind_l_y.id == ind.id %}
-                                            <td align="right">{{ "{:,.2f}".format(ind_l_y.value) }}</td>
-                                            <td align="right">{{ "{:,.2f}".format(ind.value-ind_l_y.value) }}</td>
-                                        {% endif %}
-                                    {% endfor %}
+                                        <td align="right">{{ "{:,.2f}".format(ind.value_l_y) }}</td>
+                                        <td align="right">{{ ind.value_delta_abs }}</td>
                                 {% endif %}
                             {% else %}<!--остальные показатели покажем с 0 знаками после запятой-->
                                 <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
                                 <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
                                 <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
-                                <td align="right">
-                                    {% if ind.share > 0 %}
-                                        {{ "{:,.2f}".format(ind.share) }}
-                                    {% else %}
-                                        N.A.
-                                    {% endif %}
-                                </td>
+                                <td align="right">{{ ind.share }}</td>
                                 {% if show_last_year %}
-                                    {% for ind_l_y in balance_indicators_l_y %}
-                                        {% if ind_l_y.id == ind.id %}
-                                            <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>
-                                            <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
-                                        {% endif %}
-                                    {% endfor %}
+                                    <td align="right">{{ "{:,.0f}".format(ind.value_l_y) }}</td>
+                                    <td align="right">{{ ind.value_delta }}</td>
                                 {% endif %}
                             {% endif %}
                         </tr>
@@ -78,9 +63,7 @@
                     </table>
                 </div>
             </div>
-        {% endif %}
-
-        {% if show_income_statement %}
+        
             <div align="center">
                 <h2>Основные показатели ОПУ</h2>
                 <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
@@ -100,9 +83,9 @@
                         </tr>
                         {% for ind in flow_indicators %}
                         <tr>
-                            {% if get_hint('net_premium') and ind.name == 'net_premiums' %}
+                            {% if get_hint('net_premium') and ind.system_name == 'net_premiums' %}
                                 <td><a href="#" data-toggle="popover" title="{{ get_hint('net_premium').title }}" data-trigger="hover" data-content="{{ get_hint('net_premium').text }}">{{ ind.fullname }}</a></td>
-                            {% elif get_hint('net_claim') and ind.name == 'net_claims' %}
+                            {% elif get_hint('net_claim') and ind.system_name == 'net_claims' %}
                                 <td><a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">{{ ind.fullname }}</a></td>
                             {% else %}
                                 <td>{{ ind.fullname }}</td>
@@ -110,33 +93,18 @@
                             <td align="right">{{ "{:,.0f}".format(ind.value) }}</td>
                             <td align="right">{{ "{:,.0f}".format(ind.total) }}</td>
                             <td align="right">{{ "{:,.0f}".format(ind.mkt_av) }}</td>
-                            <td align="right">
-                                {% if ind.share > 0 %}
-                                    {{ "{:,.2f}".format(ind.share) }}
-                                {% else %}
-                                    N.A.
-                                {% endif %}
-                            </td>
+                            <td align="right">{{ ind.share }}</td>
                             {% if show_last_year %}
-                                {% for ind_l_y in flow_indicators_l_y %}
-                                    {% if ind_l_y.id == ind.id %}
-                                        <td align="right">{{ "{:,.0f}".format(ind_l_y.value) }}</td>
-                                        {% if ind.value > 0 and ind_l_y.value > 0 %}
-                                            <td align="right">{{ round((ind.value-ind_l_y.value)/ind_l_y.value*100,1) }}</td>
-                                        {% else %}
-                                            <td align="right">N.A.</td>
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
+                                <td align="right">{{ "{:,.0f}".format(ind.value_l_y) }}</td>
+                                <td align="right">{{ ind.value_delta }}</td>
                             {% endif %}
                         </tr>
                         {% endfor %}
                     </table>
                 </div>
             </div>
-        {% endif %}
+        
 
-        {% if show_other_financial_indicators %}        
             <div align="center">
                 <h2>Другие финансовые показатели</h2>
                 <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
@@ -164,25 +132,16 @@
                                 {% endif %}
                                 <td>{{ ind.value_c }}</td>
                                 <td>{{ ind.value_m }}</td>
-                                {% if show_last_year %}
-                                    {% for ind_l_y in other_financial_indicators_l_y %}
-                                        {% if ind_l_y.name == ind.name %}
-                                            <td align="right">{{ ind_l_y.value_c }}</td>
-                                            {% if ind_l_y.value_c != 'N.A.' and ind.value_c != 'N.A.' %}
-                                                <td align="right">{{ round(ind.value_c-ind_l_y.value_c,2) }}</td>
-                                            {% else %}
-                                            <td align="right">N.A.</td>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% endfor %}
+                                {% if show_last_year %}         
+                                    <td align="right">{{ ind.value_c_l_y }}</td>
+                                    <td align="right">{{ ind.delta_c }}</td>
                                 {% endif %}
                             </tr>
                         {% endfor %}
                     </table>
                 </div>
-        {% endif %}
 
-        {% if show_premiums %}
+        
         <div align="center">
             <h2>Страховой портфель</h2>
             <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
@@ -215,68 +174,24 @@
                     <tbody>
                         {% for p in premiums %}
                             <tr>
-                                <th>{{ p.name }}</th>
-                                <td align="right">{{ "{:,.0f}".format(p.premium) }}</td>
-                                <td align="right">{{ "{:,.0f}".format(p.claim) }}</td>
-                                <td align="right">{{ p.LR }}</td>
+                                <th>{{ p.alias }}</th>
+                                <td align="right">{{ "{:,.0f}".format(p.premiums) }}</td>
+                                <td align="right">{{ "{:,.0f}".format(p.claims) }}</td>
+                                <td align="right">{{ p.lr }}</td>
                                 {% if show_last_year %}
-                                    {% if is_id_in_arr(p.id, premiums_l_y) %}
-                                        {% for p_l_y in premiums_l_y %}
-                                            {% if p_l_y.id == p.id %}
-                                                <td align="right">{{ "{:,.0f}".format(p_l_y.premium) }}</td>
-                                                <td align="right">{{ "{:,.0f}".format(p_l_y.claim) }}</td>
-                                                <td align="right">{{ p_l_y.LR }}</td>                                        
-                                                {% if p_l_y.premium != 'N.A.' and p.premium != 'N.A.' %}
-                                                    {% if p_l_y.premium > 0 %}
-                                                        <td align="right">{{ round((p.premium-p_l_y.premium)/p_l_y.premium*100,1) }}</td>
-                                                    {% else %}
-                                                        {% if p_l_y.premium==0 and p.premium==0 %}
-                                                            <td align="right">0</td>
-                                                        {% else %}
-                                                            <td align="right">N.A.</td>
-                                                        {% endif %}
-                                                    {% endif %}
-                                                {% else %}
-                                                    <td>N.A.</td>
-                                                {% endif %}
-                                                {% if p.claim != 'N.A.' and p_l_y.claim != 'N.A.' %}
-                                                    {% if p_l_y.claim > 0 %}
-                                                        <td align="right">{{ round((p.claim-p_l_y.claim)/p_l_y.claim*100,1) }}</td>
-                                                    {% else %}
-                                                        {% if p_l_y.claim==0 and p.claim==0 %}
-                                                            <td align="right">0</td>
-                                                        {% else %}
-                                                            <td align="right">N.A.</td>
-                                                        {% endif %}
-                                                    {% endif %}
-                                                {% else %}
-                                                    <td align="right">N.A.</td>
-                                                {% endif %}
-                                                {% if p.LR != 'N.A.' and p_l_y.LR != 'N.A.' %}
-                                                    <td align="right">{{ round(p.LR-p_l_y.LR,2) }}</td>
-                                                {% else %}
-                                                    <td align="right">N.A.</td>
-                                                {% endif %}
-                                                
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <td align="right">N.A.</td>
-                                        <td align="right">N.A.</td>
-                                        <td align="right">N.A.</td>
-                                        <td align="right">N.A.</td>
-                                        <td align="right">N.A.</td>
-                                        <td align="right">N.A.</td>                                
-                                    {% endif %}
+                                    <td align="right">{{ "{:,.0f}".format(p.premiums_l_y) }}</td>
+                                    <td align="right">{{ "{:,.0f}".format(p.claims_l_y) }}</td>
+                                    <td align="right">{{ p.lr_l_y }}</td>
+                                    <td align="right">{{ p.premiums_delta }}</td>
+                                    <td align="right">{{ p.claims_delta }}</td>
+                                    <td align="right">{{ p.lr_delta }}</td>
                                 {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        {% endif %}
-
-        {% if show_charts %}
+        
         <div class="container">
             <div class="row">
                 <div class="col-md-6 col-sm-12 col-xs-12">
@@ -355,8 +270,7 @@
                 </div>
             </div>
         </div>
-
-        {% endif %}
+        
     {% endif %}
     
 {% endblock %}

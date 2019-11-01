@@ -8,10 +8,10 @@ from datetime import datetime
 from app.class_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_hint, add_str_timestamp, save_to_excel, \
-                    transform_check_dates,str_to_date, str_to_bool
+                    transform_check_dates, str_to_date, str_to_bool
 from app.transform_data import merge_two_df_convert_to_list, convert_df_to_list, \
                     get_df_prem_or_claim_per_period, merge_claims_prems_compute_LR
-from app.plot_graphs import plot_linear_graph                    
+from app.plot_graphs import plot_linear_graph
 
 
 @bp.before_request
@@ -75,6 +75,9 @@ def plot_png_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,ch
     labels = list()
     values = list()
     values_l_y = list()
+    label1 = None
+    label2 = None
+    title = None
     for el in class_info:#compute values and labels for graph
         labels.append(el['month_name'])
         if chart_type == 'prem':

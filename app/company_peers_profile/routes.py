@@ -14,8 +14,13 @@ import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_num_companies_at_date, is_id_in_arr, \
-                    get_num_companies_per_period, get_hint, save_to_excel, transform_check_dates
-from app.transform_data import get_months
+                    get_num_companies_per_period, get_hint, save_to_excel, transform_check_dates, \
+                    str_to_date, str_to_bool
+from app.transform_data import get_months, get_df_indicators, get_df_prem_or_claim_per_period_for_company, \
+                                merge_claims_prems_compute_LR_for_company, compute_other_financial_indicators, \
+                                get_df_financial_per_period_for_company
+import pandas as pd
+from app.plot_graphs import plot_linear_graph, plot_barchart, plot_piechart
 
 
 @bp.before_request
@@ -27,344 +32,389 @@ def required_roles(*roles):
     return required_roles_u(*roles)
 
 
-def show_company_profile(company_id,peers,begin_d,end_d,N_companies,show_competitors):#вспомогательная функция - выдаем статистику по компании
-    _company_name = Company.query.with_entities(Company.alias).filter(Company.id == company_id).first()
-    company_name = _company_name[0]
-    ############################################################################
-    #balance financial indicators for given company
-    main_indicators_balance = Financial.query.join(Indicator) \
-                        .with_entities(Indicator.id,Indicator.name,Indicator.fullname,Financial.value) \
-                        .filter(Indicator.flow == False) \
-                        .filter(Financial.company_id == company_id) \
-                        .filter(Financial.report_date == end_d).all()
-    c_N_b = get_num_companies_at_date(end_d,N_companies)
-    mkt_balance_indicators = list()
+def df_row_peers_to_list(row,N_companies):
+    peers = list()
+    if N_companies < 1 or N_companies > 50:
+        return peers
+    for c in range(N_companies):
+        value_num = 'value'+str(c)
+        if c == 0:
+            value = row.value0
+        elif c == 1:
+            value = row.value1
+        elif c == 2:
+            value = row.value2
+        peers.append({value_num:value})
+    return peers
+
+
+def df_to_list(df,N_companies):#вспомогат. ф-ция
+    output = list()
+    peers = list()
+    
+    i = 0
+    for row_index,row in df.iterrows():
+        base = {'row_index':i,'system_name':row.system_name,'fullname':row.fullname,
+                'value':row.value,'total':row.total,'mkt_av':row.mkt_av,'share':row.share, 'peers':peers}
+        output.append(base)
+        i += 1
+    
+    if N_companies is not None and N_companies > 0:# peers given        
+        for c in range(N_companies):
+            df_c = df
+            if c > 0:
+                df_c = df_c.drop(['value_current'], axis=1)#drop columns
+            df_c.rename(columns = {'value'+str(c):'value_current'}, inplace = True)#rename columns
+
+            peers_current_column = list()
+            for row_index,row in df_c.iterrows():
+                peers_current_column.append(row.value_current)
+            peers.append(peers_current_column)
+        
+        #transponse
+        peers_t = list(map(list, zip(*peers)))
+
+        i = 0
+        for el in output:#attach peers to output
+            el['peers'] = peers_t[i]
+            i += 1
+    
+    return output
+
+
+def df_premiums_claims_to_list(df,N_companies):#вспомогат. ф-ция
+    output = list()
+    peers_premiums = list()
+    peers_claims = list()
+    peers_lr = list()
+    i = 0
+    for row_index,row in df.iterrows():
+        if row.claims>0 or row.premiums>0:
+            output.append({'row_index':i,'alias':row.alias,'claims':row.claims,
+                        'claims_share':row.claims_share,'premiums':row.premiums,'premiums_share':row.premiums_share,'lr':row.lr,
+                        'peers_premiums':peers_premiums,'peers_claims':peers_claims,'peers_lr':peers_lr})
+            i += 1
+
+    if N_companies is not None and N_companies>0:#peers given
+        for c in range(N_companies):
+            df_c = df
+            if c > 0:
+                df_c = df_c.drop(['premiums_current'], axis=1)#drop columns
+                df_c = df_c.drop(['claims_current'], axis=1)#drop columns
+                df_c = df_c.drop(['lr_current'], axis=1)#drop columns
+            df_c.rename(columns = {'premiums'+str(c):'premiums_current'}, inplace = True)#rename columns
+            df_c.rename(columns = {'claims'+str(c):'claims_current'}, inplace = True)#rename columns
+            df_c.rename(columns = {'lr'+str(c):'lr_current'}, inplace = True)#rename columns
+
+            peers_current_column_premiums = list()
+            peers_current_column_claims = list()
+            peers_current_column_lr = list()
+            for row_index,row in df_c.iterrows():
+                peers_current_column_premiums.append(row.premiums_current)
+                peers_current_column_claims.append(row.claims_current)
+                peers_current_column_lr.append(row.lr_current)
+            peers_premiums.append(peers_current_column_premiums)
+            peers_claims.append(peers_current_column_claims)
+            peers_lr.append(peers_current_column_lr)
+
+        #transponse
+        peers_premiums_t = list(map(list, zip(*peers_premiums)))
+        peers_claims_t = list(map(list, zip(*peers_claims)))
+        peers_lr_t = list(map(list, zip(*peers_lr)))
+
+        i = 0
+        for el in output:#attach peers to output
+            el['peers_premiums'] = peers_premiums_t[i]
+            el['peers_claims'] = peers_claims_t[i]
+            el['peers_lr'] = peers_lr_t[i]
+            i += 1
+    
+    return output
+
+
+def get_info_for_company_profile_per_period(company_id,peers,b,e,N_companies,show_last_year,show_competitors):#get info
     balance_indicators = list()
-    peers_balance_indicators = list()    
-    #now compute balance ind for the market
+    flow_indicators = list()
+    premiums = list()
+    other_financial_indicators = list()
+    totals = None
+
+    df_balance_indicators = get_df_indicators(True,b,e,company_id,peers,N_companies)
+    df_flow_indicators = get_df_indicators(False,b,e,company_id,peers,N_companies)
+    df_premiums_by_class, total_premiums = get_df_prem_or_claim_per_period_for_company(company_id,b,e,True,peers,N_companies)
+    df_claims_by_class, total_claims = get_df_prem_or_claim_per_period_for_company(company_id,b,e,False,peers,N_companies)
+    df_premiums_claims, lr_av = merge_claims_prems_compute_LR_for_company(df_claims_by_class,df_premiums_by_class,N_companies)
+    months = get_months(b,e)#период анализа
+    other_financial_indicators = compute_other_financial_indicators(df_balance_indicators,df_flow_indicators,len(months),N_companies)
+
+    if not show_last_year:
+        balance_indicators = df_to_list(df_balance_indicators,N_companies)
+        flow_indicators = df_to_list(df_flow_indicators,N_companies)
+        premiums = df_premiums_claims_to_list(df_premiums_claims,N_companies)
+
+    totals = {'total_premiums':total_premiums, 'total_claims':total_claims, 'lr_av':lr_av}
+
+    return df_balance_indicators, df_flow_indicators, df_premiums_claims, other_financial_indicators, \
+        balance_indicators, flow_indicators, premiums, totals
+
+
+def merge_df_and_df_l_y(df1,df2):
+    output = list()
+    df = pd.merge(df1,df2,on='id')#merge 2 df
+    df = df.drop(['system_name_y', 'fullname_y'], axis=1)#drop columns
+    df.rename(columns = {'system_name_x':'system_name','fullname_x':'fullname','value_x':'value','total_x':'total',
+                                                'mkt_av_x':'mkt_av','share_x':'share','value_y':'value_l_y','total_y':'total_l_y',
+                                                'mkt_av_y':'mkt_av_l_y','share_y':'share_l_y'}, inplace = True)#rename columns
+    df['value_delta'] = round((df['value'] / df['value_l_y'] - 1) * 100,2)
+    df['value_delta_abs'] = round(df['value'] - df['value_l_y'],2)
+    df['total_delta'] = round((df['total'] / df['total_l_y'] - 1) * 100,2)
+    df['total_delta_abs'] = round(df['total'] - df['total_l_y'],2)
+    i = 0
+    for row_index,row in df.iterrows():
+        output.append({'row_index':i,'system_name':row.system_name,'fullname':row.fullname,
+                        'value':row.value,'total':row.total,'mkt_av':row.mkt_av,'share':row.share,
+                        'value_l_y':row.value_l_y,'total_l_y':row.total_l_y,'mkt_av_l_y':row.mkt_av_l_y,'share_l_y':row.share_l_y,
+                        'value_delta':row.value_delta,'value_delta_abs':row.value_delta_abs,
+                        'total_delta':row.total_delta,'total_delta_abs':row.total_delta_abs})
+        i += 1
+    return output
+
+
+def merge_premiums_df_and_df_l_y(df1,df2,totals1,totals2):
+    output = list()
+    df = pd.merge(df1,df2,on='id',how='outer')#merge 2 df
+    df = df.drop(['alias_y'], axis=1)#drop columns
+    df.rename(columns = {'alias_x':'alias','claims_x':'claims','claims_share_x':'claims_share','premiums_x':'premiums',
+                                                'premiums_share_x':'premiums_share','lr_x':'lr','claims_y':'claims_l_y',
+                                                'claims_share_y':'claims_share_l_y','premiums_y':'premiums_l_y',
+                                                'premiums_share_y':'premiums_share_l_y','lr_y':'lr_l_y'}, inplace = True)#rename columns
+    df['premiums_delta'] = round((df['premiums'] / df['premiums_l_y'] - 1) * 100,2)
+    df['lr_delta'] = round(df['lr'] - df['lr_l_y'],2)
+    df['claims_delta'] = round((df['claims'] / df['claims_l_y'] - 1) * 100,2)
+    i = 0
+    for row_index,row in df.iterrows():
+        if row.claims>0 or row.premiums>0:
+            output.append({'row_index':i,'alias':row.alias,'claims':row.claims,
+                        'claims_share':row.claims_share,'premiums':row.premiums,'premiums_share':row.premiums_share,'lr':row.lr,
+                        'claims_l_y':row.claims_l_y,'claims_share_l_y':row.claims_share_l_y,'premiums_l_y':row.premiums_l_y,
+                        'premiums_share_l_y':row.premiums_share_l_y,'lr_l_y':row.lr_l_y,
+                        'claims_delta':row.claims_delta, 'premiums_delta':row.premiums_delta, 'lr_delta':row.lr_delta})
+            i += 1
+    total_premiums_delta = round((totals1['total_premiums'] / totals2['total_premiums'] - 1)*100,2)
+    total_claims_delta = round((totals1['total_claims'] / totals2['total_claims'] - 1)*100,2)
+    total_lr_delta = round(totals1['lr_av'] - totals2['lr_av'],2)
+    totals = {'total_premiums':totals1['total_premiums'], 'total_claims':totals1['total_claims'], 'lr_av':totals1['lr_av'],
+            'total_premiums_l_y':totals2['total_premiums'], 'total_claims_l_y':totals2['total_claims'], 'lr_av_l_y':totals2['lr_av'],
+            'total_premiums_delta':total_premiums_delta,'total_claims_delta':total_claims_delta,'total_lr_delta':total_lr_delta}
+    return output,totals
+
+
+def merge_other_fin_ind_and_l_y(input1,input2):#вспомогат.
+    output = list()
+    for item1 in input1:
+        for item2 in input2:
+            if item1['ind_id'] == item2['ind_id']:
+                try:
+                    delta_c = round(item1['value_c']-item2['value_c'],2)
+                except:
+                    delta_c = 'N.A.'
+                try:
+                    delta_m = round(item1['value_m']-item2['value_m'],2)
+                except:
+                    delta_m = 'N.A.'
+                output.append({'ind_id':item1['ind_id'],'name':item1['name'],
+                                'value_c':item1['value_c'],'value_m':item1['value_m'],
+                                'value_c_l_y':item2['value_c'],'value_m_l_y':item2['value_m'],
+                                'delta_c':delta_c,'delta_m':delta_m})
+    return output
+
+
+def get_general_motor_info(company_id,peers,b,e,b_l_y,e_l_y,N_companies,show_last_year,show_competitors):#инфа по авто и общая инфа в разрезе компаний
+    balance_indicators = list()
+    flow_indicators = list()
+    premiums = list()
+    other_financial_indicators = list()
+
+    _company_name = Company.query.with_entities(Company.alias).filter(Company.id == company_id).first()
+    company_name = _company_name[0]#company name
+
     peers_names_arr = list()
-    for company in peers:
-        indicators_for_c = Financial.query.join(Indicator) \
-                            .with_entities(Indicator.id,Financial.value) \
-                            .filter(Indicator.flow == False) \
-                            .filter(Financial.company_id == company[0]) \
-                            .filter(Financial.report_date == end_d).all()
-        mkt_balance_indicators.append(indicators_for_c)
-        if show_competitors:
+    if show_competitors and peers is not None:
+        for company in peers:        
             cur_company = Company.query.filter(Company.id == company[0]).first()
             cur_company_name = cur_company.alias
             peers_names_arr.append({'peer_name':cur_company_name})
-            for ind in indicators_for_c:
-                peers_balance_indicators.append({'peer_name':cur_company_name,'indicator_id':ind.id,'peer_value':ind.value})
-    for i in main_indicators_balance:
-        peers_balance_ind = list()
-        total_v = 0.0
-        for company in mkt_balance_indicators:
-            for el in company:
-                if el.id == i.id:
-                    total_v += el.value
-        mkt_av = round(total_v / c_N_b,2) #market average for indicator i
-        share = (i.value / total_v)*100#market share
-        for ind in peers_balance_indicators:
-            if ind['indicator_id'] == i.id:
-                peers_balance_ind.append({'peer_name':ind['peer_name'],'peer_value':ind['peer_value']})
-        balance_ind = {'id': i.id, 'name': i.name, 'fullname': i.fullname, \
-            'value': i.value, 'mkt_av': mkt_av, 'total': total_v, 'share':share, \
-            'peers_balance_ind': peers_balance_ind}
-        balance_indicators.append(balance_ind) #now contains marker average for each indicator
-    ############################################################################
-    #now compute flow indicators
-    flow_indicators = list()
-    flow_indicators_per_month = list()
-    months = get_months(begin_d,end_d)
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        main_indicators_flow = Financial_per_month.query.join(Indicator) \
-                            .with_entities(Indicator.id,Financial_per_month.value) \
-                            .filter(Indicator.flow == True) \
-                            .filter(Financial_per_month.company_id == company_id) \
-                            .filter(Financial_per_month.beg_date == begin) \
-                            .filter(Financial_per_month.end_date == end).all()
-        for i in main_indicators_flow:
-            ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
-            flow_indicators_per_month.append(ind)
-    flow_ind = Indicator.query.filter(Indicator.flow == True).all()
-    for ind in flow_ind:
-        total_v = 0
-        for m in flow_indicators_per_month:
-            if m['id'] == ind.id:
-                total_v += m['value']
-        flow_ind_el = {'id': ind.id, 'name': ind.name, 'fullname': ind.fullname, 'value': total_v}
-        flow_indicators.append(flow_ind_el)
-    #now compute mkt average for flow indicators
-    peers_flow_indicators = list()
-    flow_indicators_per_month_per_c = list()
-    for company in peers:
-        for month in months:
-            begin = month['begin']
-            end = month['end']
-            main_indicators_flow = Financial_per_month.query.join(Indicator) \
-                                .with_entities(Indicator.id,Financial_per_month.value) \
-                                .filter(Indicator.flow == True) \
-                                .filter(Financial_per_month.company_id == company[0]) \
-                                .filter(Financial_per_month.beg_date == begin) \
-                                .filter(Financial_per_month.end_date == end).all()
-            for i in main_indicators_flow:
-                ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
-                flow_indicators_per_month_per_c.append(ind)
-            if show_competitors:
-                for el in main_indicators_flow:
-                    peers_flow_indicators.append({'peer_id':company[0],'peer_name':cur_company_name,'indicator_id':el.id,'peer_value':el.value})
-    c_N = get_num_companies_per_period(begin_d,end_d,N_companies)#number of non-life companies
-    for ind in flow_indicators:
-        peers_flow_ind = list()
-        total_v = 0
-        for i in flow_indicators_per_month_per_c:
-            if i['id'] == ind['id']:
-                total_v += i['value']
-        ind['total'] = total_v
-        ind['mkt_av'] = round(total_v / c_N,2)
-        ind['share'] = (ind["value"] / total_v)*100#market share        
-        for p in peers:#по каждому конкуренту
-            total_v_p = 0.0
-            for el in peers_flow_indicators:
-                if el['indicator_id'] == ind['id'] and el['peer_id'] == p[0]:
-                    total_v_p += el['peer_value']
-            peers_flow_ind.append({'peer_value':total_v_p})
-        ind['peers_flow_ind'] = peers_flow_ind
 
-    ############################################################################
-    #now premium by class
-    premiums = list()
-    prem_per_m = list()
-    claim_per_m = list()
-    insclasses = Insclass.query.all()
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        prem_m = Premium_per_month.query \
-                    .with_entities(Premium_per_month.value,Premium_per_month.insclass_id) \
-                    .filter(Premium_per_month.company_id == company_id) \
-                    .filter(Premium_per_month.beg_date == begin) \
-                    .filter(Premium_per_month.end_date == end).all()
-        for i in prem_m:
-            prem_per_m.append({'insclass_id':i.insclass_id,'premium':i.value})
-        claim_m = Claim_per_month.query \
-                    .with_entities(Claim_per_month.value,Claim_per_month.insclass_id) \
-                    .filter(Claim_per_month.company_id == company_id) \
-                    .filter(Claim_per_month.beg_date == begin) \
-                    .filter(Claim_per_month.end_date == end).all()
-        for i in claim_m:
-            claim_per_m.append({'insclass_id':i.insclass_id,'claim':i.value})
+    df_balance_indicators, df_flow_indicators, df_premiums_claims, other_financial_indicators, \
+        balance_indicators, flow_indicators, premiums, \
+        totals = get_info_for_company_profile_per_period(company_id,peers,b,e,N_companies,show_last_year,show_competitors)
+
+    if show_last_year:
+        df_balance_indicators_l_y, df_flow_indicators_l_y, df_premiums_claims_l_y, other_financial_indicators_l_y, \
+            balance_indicators_l_y, flow_indicators_l_y, premiums_l_y, \
+            totals_l_y = get_info_for_company_profile_per_period(company_id,peers,b_l_y,e_l_y,N_companies,show_last_year,show_competitors)
+        balance_indicators = merge_df_and_df_l_y(df_balance_indicators,df_balance_indicators_l_y)
+        flow_indicators = merge_df_and_df_l_y(df_flow_indicators,df_flow_indicators_l_y)
+        premiums, totals = merge_premiums_df_and_df_l_y(df_premiums_claims,df_premiums_claims_l_y,totals,totals_l_y)
+        other_financial_indicators = merge_other_fin_ind_and_l_y(other_financial_indicators,other_financial_indicators_l_y)
+                
+    return company_name, balance_indicators, flow_indicators, premiums, peers_names_arr, other_financial_indicators, totals
+
+
+def df_to_list_for_plot(df,N_digits,N_round):#вспомогат. ф-ция
+    labels = list()
+    values = list()    
+    for row_index,row in df.iterrows():
+        labels.append(row.month_name)
+        if N_round == 0:
+            value = round(row.value/N_digits)
+        else:
+            value = round(row.value/N_digits,N_round)
+        values.append(value)
+    return labels,values
+
+
+def df_to_list_for_lr(df,show_last_year):#вспомогат. ф-ция
+    labels = list()
+    values = list()
+    values_l_y = list()
+    if show_last_year:
+        for row_index,row in df.iterrows():
+            labels.append(row.alias_x)
+            values.append(row.lr_x)
+            values_l_y.append(row.lr_y)
+    else:
+        for row_index,row in df.iterrows():
+            labels.append(row.alias)
+            values.append(row.lr)
+    return labels,values,values_l_y
+
+
+def df_to_list_for_plot_prems(df,N_digits,N_round,show_last_year):#вспомогат. ф-ция
+    labels = list()
+    values = list()
+    values_l_y = list()
+    if show_last_year:
+        for row_index,row in df.iterrows():
+            labels.append(row.alias_x)
+            if N_round == 0:
+                try:
+                    value = round(row.premiums_x/N_digits)
+                except:
+                    value = 0
+                try:
+                    value_l_y = round(row.premiums_y/N_digits)
+                except:
+                    value_l_y = 0
+            else:
+                try:
+                    value = round(row.premiums_x/N_digits,N_round)
+                except:
+                    value = 0
+                try:
+                    value_l_y = round(row.premiums_y/N_digits,N_round)
+                except:
+                    value_l_y = 0
+            values.append(value)
+            values_l_y.append(value_l_y)
+    else:
+        for row_index,row in df.iterrows():
+            labels.append(row.alias)
+            if N_round == 0:
+                value = round(row.premiums/N_digits)                
+            else:
+                value = round(row.premiums/N_digits,N_round)
+            values.append(value)
+    return labels,values,values_l_y
+
+
+@bp.route('/chart_for_company.png/<company_id>/<b>/<e>/<b_l_y>/<e_l_y>/<show_last_year_str>/<annotate_param>/<chart_type>/<indicator_type>')#plot chart for a given class
+def plot_png_for_company(company_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,chart_type,indicator_type):
+    show_last_year = str_to_bool(show_last_year_str)
+    annotate = str_to_bool(annotate_param)
+    b = str_to_date(b)
+    e = str_to_date(e)
+    b_l_y = str_to_date(b_l_y)
+    e_l_y = str_to_date(e_l_y)
     
-    for cl in insclasses:
-        total_prem = 0.0
-        total_claim = 0.0
-        for p in prem_per_m:
-            if cl.id == p['insclass_id']:
-                total_prem += p['premium']
-        for c in claim_per_m:
-            if cl.id == c['insclass_id']:
-                total_claim += c['claim']
-        if total_prem>0.0:
-            LR = round(total_claim / total_prem * 100,2)
-        else:
-            LR = 'N.A.'
-        if total_prem>0.0 or total_claim>0.0:
-            premiums.append({'id':cl.id, 'name':cl.alias, 'premium':total_prem, 'claim':total_claim, 'LR':LR})
-    premiums.sort(key=lambda x: x['premium'], reverse=True)#сортируем по убыванию премий
+    labels = list()
+    values = list()
+    values_l_y = list()
+    label1 = 'текущий период'
+    label2 = 'прошлый год'
+    title = None
 
-    #now compute mkt average for premiums
-    premiums_per_month_per_c = list()
-    claims_per_month_per_c = list()
-    for company in peers:
-        for month in months:
-            begin = month['begin']
-            end = month['end']
-            prem_m = Premium_per_month.query \
-                        .with_entities(Premium_per_month.value,Premium_per_month.insclass_id) \
-                        .filter(Premium_per_month.company_id == company[0]) \
-                        .filter(Premium_per_month.beg_date == begin) \
-                        .filter(Premium_per_month.end_date == end).all()
-            for i in prem_m:
-                premiums_per_month_per_c.append({'peer_id':company[0], 'insclass_id':i.insclass_id,'premium':i.value})
-            claim_m = Claim_per_month.query \
-                        .with_entities(Claim_per_month.value,Claim_per_month.insclass_id) \
-                        .filter(Claim_per_month.company_id == company[0]) \
-                        .filter(Claim_per_month.beg_date == begin) \
-                        .filter(Claim_per_month.end_date == end).all()
-            for i in claim_m:
-                claims_per_month_per_c.append({'peer_id':company[0], 'insclass_id':i.insclass_id,'claim':i.value})    
-    c_N = get_num_companies_per_period(begin_d,end_d,N_companies)
-    for cl in premiums:
-        total_prem = 0.0
-        total_claim = 0.0
-        for p in premiums_per_month_per_c:
-            if cl['id'] == p['insclass_id']:
-                total_prem += p['premium']
-        for c in claims_per_month_per_c:
-            if cl['id'] == c['insclass_id']:
-                total_claim += c['claim']
-        if total_prem>0.0:
-            LR = round(total_claim / total_prem * 100,2)
-        else:
-            LR = 'N.A.'
-        cl['av_premium_mkt'] = total_prem / c_N
-        cl['av_claim_mkt'] = total_claim / c_N
-        cl['av_LR_mkt'] = LR
+    if chart_type == 'linear_graph':
+        if indicator_type == 'equity':
+            df = get_df_financial_per_period_for_company(True,company_id,'equity',b,e)
+            labels,values = df_to_list_for_plot(df,1000,0)
+            title = 'Собственный капитал на конец месяца, млн.тг.'
+            if show_last_year:
+                df = get_df_financial_per_period_for_company(True,company_id,'equity',b_l_y,e_l_y)
+                labels,values_l_y = df_to_list_for_plot(df,1000,0)
+        elif indicator_type == 'reserves':
+            df = get_df_financial_per_period_for_company(True,company_id,'reserves',b,e)
+            labels,values = df_to_list_for_plot(df,1000,0)
+            title = 'Страховые резервы на конец месяца, млн.тг.'
+            if show_last_year:
+                df = get_df_financial_per_period_for_company(True,company_id,'reserves',b_l_y,e_l_y)
+                labels,values_l_y = df_to_list_for_plot(df,1000,0)
+        elif indicator_type == 'solvency_margin':
+            df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b,e)
+            labels,values = df_to_list_for_plot(df,1,2)
+            title = 'Норматив ФМП на конец месяца'
+            if show_last_year:
+                df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b_l_y,e_l_y)
+                labels,values_l_y = df_to_list_for_plot(df,1,2)
+        elif indicator_type == 'net_prem':
+            df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b,e)
+            labels,values = df_to_list_for_plot(df,1000,0)
+            title = 'Норматив ФМП на конец месяца'
+            if show_last_year:
+                df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b_l_y,e_l_y)
+                labels,values_l_y = df_to_list_for_plot(df,1000,0)
 
-        if show_competitors:
-            peers_prem_claim_LR = list()
-            for company in peers:
-                total_prem = 0.0
-                total_claim = 0.0
-                for p in premiums_per_month_per_c:
-                    if cl['id'] == p['insclass_id'] and p['peer_id'] == company[0]:
-                        total_prem += p['premium']
-                for c in claims_per_month_per_c:
-                    if cl['id'] == c['insclass_id'] and c['peer_id'] == company[0]:
-                        total_claim += c['claim']
-                if total_prem>0.0:
-                    LR = round(total_claim / total_prem * 100,2)
-                else:
-                    LR = 'N.A.'
-                peers_prem_claim_LR.append({'peer_id':company[0],'peer_premium':total_prem,'peer_claim':total_claim,'peer_LR':LR})
-            cl['peers_prem_claim_LR'] = peers_prem_claim_LR
-    return company_name, balance_indicators, flow_indicators, premiums, peers_names_arr
+        return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)
 
+    elif chart_type == 'bar_chart':
+        if indicator_type == 'lr_lob':
+            df_premiums_by_class, total_premiums = get_df_prem_or_claim_per_period_for_company(company_id,b,e,True,None,None)
+            df_claims_by_class, total_claims = get_df_prem_or_claim_per_period_for_company(company_id,b,e,False,None,None)
+            df_premiums_claims, lr_av = merge_claims_prems_compute_LR_for_company(df_claims_by_class,df_premiums_by_class,None)
+            labels,values,values_l_y = df_to_list_for_lr(df_premiums_claims.head(5),False)
+            title = 'Коэффициент выплат, топ-5 классов'
+            ylabel = 'Коэффициент выплат %'
+            if show_last_year:
+                df_premiums_by_class_l_y, total_premiums_l_y = get_df_prem_or_claim_per_period_for_company(company_id,b_l_y,e_l_y,True,None,None)
+                df_claims_by_class_l_y, total_claims_l_y = get_df_prem_or_claim_per_period_for_company(company_id,b_l_y,e_l_y,False,None,None)
+                df_premiums_claims_l_y, lr_av = merge_claims_prems_compute_LR_for_company(df_claims_by_class_l_y,df_premiums_by_class_l_y,None)
+                df_merged = pd.merge(df_premiums_claims,df_premiums_claims_l_y,on='id',how='outer')
+                labels,values,values_l_y = df_to_list_for_lr(df_merged.head(5),show_last_year)
+        elif indicator_type == 'premiums_lob':
+            df_premiums_by_class, total_premiums = get_df_prem_or_claim_per_period_for_company(company_id,b,e,True,None,None)
+            df_claims_by_class, total_claims = get_df_prem_or_claim_per_period_for_company(company_id,b,e,False,None,None)
+            df_premiums_claims, lr_av = merge_claims_prems_compute_LR_for_company(df_claims_by_class,df_premiums_by_class,None)
+            labels,values,values_l_y = df_to_list_for_plot_prems(df_premiums_claims.head(5),1000,0,False)
+            title = 'Страховой портфель, топ-5 классов'
+            ylabel = 'Премии, млн. тг.'
+            if show_last_year:
+                df_premiums_by_class_l_y, total_premiums_l_y = get_df_prem_or_claim_per_period_for_company(company_id,b_l_y,e_l_y,True,None,None)
+                df_claims_by_class_l_y, total_claims_l_y = get_df_prem_or_claim_per_period_for_company(company_id,b_l_y,e_l_y,False,None,None)
+                df_premiums_claims_l_y, lr_av_l_y = merge_claims_prems_compute_LR_for_company(df_claims_by_class_l_y,df_premiums_by_class_l_y,None)
+                df_merged = pd.merge(df_premiums_claims,df_premiums_claims_l_y,on='id',how='outer')                
+                labels,values,values_l_y = df_to_list_for_plot_prems(df_merged.head(5),1000,0,show_last_year)
+        
+        return plot_barchart(labels,values,values_l_y,title,ylabel,show_last_year,label1,label2)
 
-def get_other_financial_indicators(balance_indicators,flow_indicators,b,e):#расчет других фин. показателей
-    other_financial_indicators = list()
-    #получаем нужные значения по компании и по рынку
-    #ищем среди показателей ОПУ
-    peer_net_income = list()
-    peer_premiums = list()
-    peer_net_premiums = list()
-    peer_claims = list()
-    peer_net_claims = list()
-    for x in flow_indicators:
-        if x['name'] == 'net_income':#прибыль
-            net_income_c = x['value']
-            net_income_m = x['total']
-            for p in x['peers_flow_ind']:
-                peer_net_income.append(p['peer_value'])
-        elif x['name'] == 'premiums':#гросс премии
-            premiums_c = x['value']
-            premiums_m = x['total']
-            for p in x['peers_flow_ind']:
-                peer_premiums.append(p['peer_value'])
-        elif x['name'] == 'net_premiums':#чистые премии
-            net_premiums_c = x['value']
-            net_premiums_m = x['total']
-            for p in x['peers_flow_ind']:
-                peer_net_premiums.append(p['peer_value'])
-        elif x['name'] == 'claims':#гросс выплаты
-            claims_c = x['value']
-            claims_m = x['total']
-            for p in x['peers_flow_ind']:
-                peer_claims.append(p['peer_value'])
-        elif x['name'] == 'net_claims':#чистые выплаты
-            net_claims_c = x['value']
-            net_claims_m = x['total']
-            for p in x['peers_flow_ind']:
-                peer_net_claims.append(p['peer_value'])
-        else:
-            continue
-    #####################################################################
-    #ищем среди балансовых показателей
-    peer_equity = list()
-    for y in balance_indicators:
-        if y['name'] == 'equity':#собственный капитал
-            equity_c = y['value']
-            equity_m = y['total']
-            for p in y['peers_balance_ind']:
-                peer_equity.append(p['peer_value'])
-            break
-    months = get_months(b,e)#период анализа
-    N = len(months)#кол-во месяцев в анализируемом периоде
-    #расчитываем нужные показатели
-    Npeers = len(peer_equity)
-    peers_roe = list()
-    peers_eq_us = list()
-    peers_lr = list()
-    peers_re_p = list()
-    peers_re_c = list()
-    #########################################################################
-    name = 'ROE годовой, %'
-    ind_id = 'roe'
-    value_c = round(net_income_c / equity_c / N * 12 * 100, 1)    
-    value_m = round(net_income_m / equity_m / N * 12 * 100, 1)
-    if value_c < 0:
-        value_c = 'N.A.'
-    if value_m < 0:
-        value_m = 'N.A.'
-    for i in range (0,Npeers):
-        value_p = round(peer_net_income[i] / peer_equity[i] / N * 12 * 100, 1)
-        if value_p < 0:
-            value_p = 'N.A.'
-        peers_roe.append({'peer_value':value_p})
-    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_roe})
-    name = 'Использование капитала'
-    ind_id = 'equity_usage'
-    value_c = round(net_premiums_c / equity_c / N * 12, 2)
-    value_m = round(net_premiums_m / equity_m / N * 12, 2)
-    for i in range (0,Npeers):
-        value_p = round(peer_net_premiums[i] / peer_equity[i] / N * 12, 2)
-        peers_eq_us.append({'peer_value':value_p})
-    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_eq_us})
-    name = 'Коэффициент выплат, нетто %'
-    ind_id = 'LR_coef_net'
-    try:
-        value_c = round(net_claims_c / net_premiums_c * 100,1)
-    except:
-        value_c = 'N.A.'
-    try:
-        value_m = round(net_claims_m / net_premiums_m * 100,1)
-    except:
-        value_m = 'N.A.'
-    for i in range (0,Npeers):
-        try:
-            value_p = round(peer_net_claims[i] / peer_net_premiums[i] * 100,1)
-        except:
-            value_p = 'N.A.'
-        peers_lr.append({'peer_value':value_p})
-    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_lr})
-    name = 'Доля перестрахования в премиях, %'
-    ind_id = 'RE_prem'
-    try:
-        value_c = round((premiums_c-net_premiums_c)/premiums_c*100,1)
-    except:
-        value_c = 'N.A.'
-    try:
-        value_m = round((premiums_m-net_premiums_m)/premiums_m*100,1)
-    except:
-        value_m = 'N.A.'
-    for i in range (0,Npeers):
-        try:
-            value_p = round((peer_premiums[i]-peer_net_premiums[i])/peer_premiums[i]*100,1)
-        except:
-            value_p = 'N.A.'
-        peers_re_p.append({'peer_value':value_p})
-    other_financial_indicators.append({'ind_id':ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_p})
-    name = 'Доля перестрахования в выплатах, %'
-    ind_id = 'RE_claim'
-    try:
-        value_c = round((claims_c-net_claims_c)/claims_c*100,1)
-    except:
-        value_c = 'N.A.'
-    try:
-        value_m = round((claims_m-net_claims_m)/claims_m*100,1)
-    except:
-        value_m = 'N.A.'
-    for i in range (0,Npeers):
-        try:
-            value_p = round((peer_claims[i]-peer_net_claims[i])/peer_claims[i]*100,1)
-        except:
-            value_p = 'N.A.'
-        peers_re_c.append({'peer_value':value_p})
-    other_financial_indicators.append({'ind_id': ind_id,'name':name,'value_c':value_c,'value_m':value_m,'peers_other_fin_ind':peers_re_c})
-    return other_financial_indicators
+    elif chart_type == 'pie_chart':
+        pass
+        
+        return plot_piechart(labels,values,title)
+            
+
+def path_to_charts(base_img_path,company_id,b,e,b_l_y,e_l_y,show_last_year,annotate,chart_type,indicator_type):#путь к графику
+    path = "/" + base_img_path + "/" + company_id + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year) + "/" + str(annotate) + "/" + chart_type + "/" + indicator_type
+    return path
 
 
 @bp.route('/company_profile',methods=['GET','POST'])
@@ -375,19 +425,10 @@ def company_profile():#портрет компании
     balance_indicators = list()
     flow_indicators = list()
     other_financial_indicators = list()
-    balance_indicators_l_y = list()
-    flow_indicators_l_y = list()
-    other_financial_indicators_l_y = list()    
-    show_charts = False
-    show_balance = False
-    show_income_statement = False
-    show_other_financial_indicators = False
-    show_premiums = False
+    premiums = list()    
     img_path_premiums_by_LoB_pie =None
     img_path_lr_by_LoB = None
     company_name = None
-    premiums = None
-    premiums_l_y = None
     img_path_solvency_margin = None
     img_path_net_premium = None
     img_path_equity = None
@@ -398,6 +439,7 @@ def company_profile():#портрет компании
     b_l_y = None
     e_l_y = None
     show_info = False
+    totals = None
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
@@ -410,43 +452,22 @@ def company_profile():#портрет компании
         if not check_res:
             flash(err_txt)
             return redirect(url_for('company_peers_profile.company_profile'))
-        #зададим пути к диаграммам
-        base_img_path = "/chart.png/" + form.company.data + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')
-        img_path_premiums_by_LoB_pie = base_img_path + "/premiums_lob"
-        img_path_lr_by_LoB = base_img_path + "/lr_lob"
-        img_path_solvency_margin = base_img_path + "/solvency_margin"
-        img_path_net_premium = base_img_path + "/net_prem"
-        img_path_equity = base_img_path + "/equity"
-        img_path_reserves = base_img_path + "/reserves"
+        #зададим пути к диаграммам        
+        base_name = 'chart_for_company.png'
+        img_path_solvency_margin = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','solvency_margin')
+        img_path_net_premium = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','net_prem')
+        img_path_equity = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','equity')
+        img_path_reserves = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','reserves')
+        img_path_lr_by_LoB = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','lr_lob')
+        img_path_premiums_by_LoB_pie = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','premiums_lob')
         #подготовим данные для таблиц
-        try:
-            peers = Company.query.with_entities(Company.id).filter(Company.nonlife==True).all()#list of non-life companies
-        except:
-            flash('Не могу получить список компаний с сервера. Проверьте справочник Компаний или обратитесь к администратору')
-            return redirect(url_for('company_peers_profile.company_profile'))
-        try:
-            company_name, balance_indicators, flow_indicators, premiums, peers_names_arr = show_company_profile(int(form.company.data),peers,b,e,None,False)
-            other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
-            if show_last_year == True:
-                try:
-                    company_name_l_y, balance_indicators_l_y, flow_indicators_l_y, premiums_l_y, peers_names_arr_l_y = show_company_profile(int(form.company.data),peers,b_l_y,e_l_y,None,False)
-                    other_financial_indicators_l_y = get_other_financial_indicators(balance_indicators_l_y,flow_indicators_l_y,b_l_y,e_l_y)
-                except:
-                    flash('Не могу получить данные за прошлый год')
-                    return redirect(url_for('company_peers_profile.company_profile'))
-        except:
-            flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
-            return redirect(url_for('company_peers_profile.company_profile'))
-        show_charts = True
-        if len(other_financial_indicators) > 0:
-            show_other_financial_indicators = True        
-        if len(balance_indicators) > 0:
-            show_balance = True
-        if len(flow_indicators) > 0:
-            show_income_statement = True
-        if len(premiums) > 0:
-            show_premiums = True
-
+        #try:
+        company_name, balance_indicators, flow_indicators, premiums, \
+                peers_names_arr, other_financial_indicators, totals = get_general_motor_info(int(form.company.data),None,b,e,b_l_y,e_l_y,None,show_last_year,False)        
+        #except:
+            #flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
+            #return redirect(url_for('company_peers_profile.company_profile'))
+        
         if form.show_info_submit.data:#show data
             save_to_log('company_profile',current_user.id)
             show_info = True
@@ -462,17 +483,7 @@ def company_profile():#портрет компании
             sheets_names.append(period_str + ' баланс')
             sheets_names.append(period_str + ' ОПУ')
             sheets_names.append(period_str + ' другие фин.')
-            sheets_names.append(period_str + ' страх.портфель')          
-            if show_last_year == True:
-                period_l_y_str = b_l_y.strftime('%Y-%m') + '_' + e_l_y.strftime('%Y-%m')
-                sheets.append(balance_indicators_l_y)
-                sheets.append(flow_indicators_l_y)
-                sheets.append(other_financial_indicators_l_y)
-                sheets.append(premiums_l_y)                
-                sheets_names.append(period_l_y_str + ' баланс')
-                sheets_names.append(period_l_y_str + ' ОПУ')
-                sheets_names.append(period_l_y_str + ' другие фин.')
-                sheets_names.append(period_l_y_str + ' страх.портфель')
+            sheets_names.append(period_str + ' страх.портфель')
             wb_name = company_name + '_' + period_str
             path, wb_name_f = save_to_excel(company_name,period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
@@ -481,255 +492,13 @@ def company_profile():#портрет компании
                 flash('Не могу сформировать файл, либо сохранить на сервер')
     return render_template('company_peers_profile/company_profile.html',title='Портрет компании',form=form,descr=descr,company_name=company_name, \
                 balance_indicators=balance_indicators, flow_indicators=flow_indicators, \
-                show_charts=show_charts,img_path_premiums_by_LoB_pie=img_path_premiums_by_LoB_pie, \
+                img_path_premiums_by_LoB_pie=img_path_premiums_by_LoB_pie, \
                 img_path_lr_by_LoB=img_path_lr_by_LoB,img_path_solvency_margin=img_path_solvency_margin, \
-                img_path_net_premium=img_path_net_premium,b=b,e=e,show_other_financial_indicators=show_other_financial_indicators, \
-                show_balance=show_balance,show_income_statement=show_income_statement, \
+                img_path_net_premium=img_path_net_premium,b=b,e=e,b_l_y=b_l_y,e_l_y=e_l_y, \
                 img_path_equity=img_path_equity,other_financial_indicators=other_financial_indicators, \
-                img_path_reserves=img_path_reserves,premiums=premiums,show_premiums=show_premiums, \
-                show_last_year=show_last_year,other_financial_indicators_l_y=other_financial_indicators_l_y, \
-                balance_indicators_l_y=balance_indicators_l_y, flow_indicators_l_y=flow_indicators_l_y, \
-                premiums_l_y=premiums_l_y,round=round,is_id_in_arr=is_id_in_arr, \
-                b_l_y=b_l_y,e_l_y=e_l_y,get_hint=get_hint,show_info=show_info)
-
-
-
-@bp.route('/chart.png/<c_id>/<begin>/<end>/<chart_type>')#plot chart for a given company (id = c_id) and chart type, and given period
-def plot_png(c_id,begin,end,chart_type):
-    b = datetime.strptime(begin, '%m-%d-%Y')
-    e = datetime.strptime(end, '%m-%d-%Y')
-    if chart_type == 'premiums_lob':
-        fig = create_piechart(c_id,b,e)
-    elif chart_type == 'lr_lob':
-        fig = create_barchart(c_id,b,e)
-    elif chart_type == 'solvency_margin':
-        fig = create_plot(c_id,'solvency_margin',b,e)
-    elif chart_type == 'net_prem':
-        fig = create_plot(c_id,'net_prem',b,e)
-    elif chart_type == 'equity':
-        fig = create_plot(c_id,'equity',b,e)
-    elif chart_type == 'reserves':
-        fig = create_plot(c_id,'reserves',b,e)        
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
-
-
-def create_piechart(c_id,b,e):#plots pie chart for a given company (premium split)
-    values, labels = get_premiums_by_LoB(int(c_id),b,e)
-    fig, ax = plt.subplots()
-    ax.pie(values, labels=labels, autopct='%1.1f%%')
-    ax.set_title('Страховые премии, топ-5 классов')
-    return fig
-
-
-def get_premiums_by_LoB(company_id,b,e):
-    #premiums by line of business for given company for given period
-    top5_insclasses_labels = list()
-    top5_insclasses_values = list()
-    premiums_by_LoB_per_month = list()
-    premiums_by_LoB = list()
-    months = get_months(b,e)
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        p_by_LoB_m = Premium_per_month.query.join(Insclass) \
-                            .with_entities(Insclass.id,Premium_per_month.value) \
-                            .filter(Premium_per_month.company_id==company_id) \
-                            .filter(Premium_per_month.beg_date==begin) \
-                            .filter(Premium_per_month.end_date==end).all()
-        for i in p_by_LoB_m:
-            ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
-            premiums_by_LoB_per_month.append(ind)
-    ins_classes = Insclass.query.all()
-    for cl in ins_classes:
-        total_v = 0
-        for m in premiums_by_LoB_per_month:
-            if m['id'] == cl.id:
-                total_v += m['value']
-        premim_LoB = {'id': cl.id, 'alias': cl.alias, 'value': total_v}
-        premiums_by_LoB.append(premim_LoB)
-    premiums_by_LoB.sort(key=lambda x: x['value'], reverse=True)#сортируем премии по убыванию
-    total_premium = 0.0
-    premiums_by_LoB_list = list()
-    for el in premiums_by_LoB:
-        total_premium += el['value']
-        element = {'id': el['id'], 'fullname': el['alias'], 'value': el['value'], 'share': 0.0}
-        premiums_by_LoB_list.append(element)
-    max_share = 0.0
-    for el in premiums_by_LoB_list:
-        share = round(el['value'] / total_premium * 100 ,1)
-        el['share'] = share
-        max_share = max(share,max_share)
-    if max_share < 90:#если это не компания, продающая один продукт
-        #now take 5 top classes
-        top5_insclasses = list()
-        top5_insclasses = premiums_by_LoB_list[:5]
-        total_top5 = 0.0
-        total_top5_share = 0.0
-        for el in top5_insclasses:
-            total_top5 += el['value']
-            total_top5_share += el['share']
-        others = {'id': 100, 'fullname': 'прочие', 'value': total_premium-total_top5, 'share': round(100-total_top5_share,1)}
-        top5_insclasses.append(others)
-        for el in top5_insclasses:#prepare labels and values for pie chart        
-            top5_insclasses_labels.append(el['fullname'])
-            top5_insclasses_values.append(el['share'])
-    else:#если компания продает один продукт
-        top5_insclasses_labels.append(premiums_by_LoB_list[0]['fullname'])
-        top5_insclasses_values.append(premiums_by_LoB_list[0]['share'])
-    return top5_insclasses_values, top5_insclasses_labels
-
-
-def create_barchart(c_id,b,e):#plots bar chart for a given company
-    labels, values = get_lr_by_LoB(c_id,b,e)
-    ind = np.arange(len(values))  # the x locations for the groups
-    fig, ax = plt.subplots()
-    w = 0.75
-    ax.bar(ind, values, w)    
-    ax.set_ylabel('Коэф. выплат, брутто, %')
-    ax.set_title('Коэф. выплат по продуктам, топ-5 классов')
-    ax.set_xticks(ind)
-    ax.set_xticklabels(labels)    
-    return fig
-
-
-def get_lr_by_LoB(company_id,b,e):#рассчитаем коэф. выплат по продуктам для выбранной компании
-    lr_list = list()
-    premiums_by_LoB_per_month = list()
-    claims_by_LoB_per_month = list()
-    premiums_by_LoB = list()
-    claims_by_LoB = list()
-    months = get_months(b,e)
-    for month in months:
-        begin = month['begin']
-        end = month['end']
-        p_by_LoB_m = Premium_per_month.query.join(Insclass) \
-                            .with_entities(Insclass.id,Premium_per_month.value) \
-                            .filter(Premium_per_month.company_id==company_id) \
-                            .filter(Premium_per_month.beg_date==begin) \
-                            .filter(Premium_per_month.end_date==end).all()
-        for i in p_by_LoB_m:
-            ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
-            premiums_by_LoB_per_month.append(ind)
-        c_by_LoB_m = Claim_per_month.query.join(Insclass) \
-                            .with_entities(Insclass.id,Claim_per_month.value) \
-                            .filter(Claim_per_month.company_id==company_id) \
-                            .filter(Claim_per_month.beg_date==begin) \
-                            .filter(Claim_per_month.end_date==end).all()
-        for i in c_by_LoB_m:
-            ind = {'b':begin, 'e':end, 'id':i.id, 'value':i.value}
-            claims_by_LoB_per_month.append(ind)
-    ins_classes = Insclass.query.all()
-    for cl in ins_classes:
-        p_total_v = 0
-        for m in premiums_by_LoB_per_month:
-            if m['id'] == cl.id:
-                p_total_v += m['value']
-        premim_LoB = {'id': cl.id, 'alias': cl.alias, 'value': p_total_v}
-        premiums_by_LoB.append(premim_LoB)
-        c_total_v = 0
-        for m in claims_by_LoB_per_month:
-            if m['id'] == cl.id:
-                c_total_v += m['value']
-        claim_LoB = {'id': cl.id, 'alias': cl.alias, 'value': c_total_v}
-        claims_by_LoB.append(claim_LoB)        
-    premiums_by_LoB.sort(key=lambda x: x['value'], reverse=True)#сортируем премии по убыванию
-    premiums_by_LoB = premiums_by_LoB[:5]#select first top 5 classes by premiums
-    for p in premiums_by_LoB:
-        class_id = p['id']
-        class_name = p['alias']
-        premium = p['value']
-        for c in claims_by_LoB:
-            if c['id'] == class_id:
-                claim = c['value']
-        lr = round(claim / premium * 100, 1)
-        element = {'class_id':class_id,'class_name':class_name,'lr':lr}
-        lr_list.append(element)
-    labels = list()
-    values = list() 
-    for el in lr_list:
-        labels.append(el['class_name'])
-        values.append(el['lr'])
-    return labels, values
-
-
-def create_plot(c_id,plot_type,b,e):#plots pie chart for a given company
-    labels, values = get_data_for_plot(int(c_id),plot_type,b,e)
-    fig, ax = plt.subplots()
-    ax.plot(labels, values)
-    if plot_type == 'solvency_margin':
-        ax.set_title('Помесячная динамика норматива ФМП')
-        for i,j in zip(labels,values):
-            ax.annotate(str(j),xy=(i,j))
-    elif plot_type == 'net_prem':
-        ax.set_title('Помесячная динамика чистых премий, млн.тг.')
-        for i,j in zip(labels,values):
-            ax.annotate(str(round(j)),xy=(i,j))
-    elif plot_type == 'equity':
-        ax.set_title('Помесячная динамика собственного капитала, млн.тг.')
-        for i,j in zip(labels,values):
-            ax.annotate(str(round(j)),xy=(i,j))
-    elif plot_type == 'reserves':
-        ax.set_title('Помесячная динамика страховых резервов, млн.тг.')
-        for i,j in zip(labels,values):
-            ax.annotate(str(round(j)),xy=(i,j))
-    fig.autofmt_xdate()
-    return fig
-
-
-def get_data_for_plot(company_id,plot_type,b,e):
-    labels = list()
-    values = list()    
-    if plot_type == 'solvency_margin':
-        _sm_id = Indicator.query.filter(Indicator.name == 'solvency_margin').first()
-        sm_id = _sm_id.id
-        solvency_margin = Financial.query.filter(Financial.indicator_id == sm_id) \
-                            .filter(Financial.company_id == company_id) \
-                            .filter(Financial.report_date >= b) \
-                            .filter(Financial.report_date <= e) \
-                            .order_by(Financial.report_date).all()
-        for el in solvency_margin:
-            label = str(el.report_date.year) + '-' +str(el.report_date.month)
-            labels.append(label)
-            values.append(el.value)
-    elif plot_type =='net_prem':
-        _np_id = Indicator.query.filter(Indicator.name == 'net_premiums').first()
-        np_id = _np_id.id
-        net_prem = Financial_per_month.query.filter(Financial_per_month.indicator_id == np_id) \
-                        .filter(Financial_per_month.company_id == company_id) \
-                        .filter(Financial_per_month.beg_date >= b) \
-                        .filter(Financial_per_month.end_date <= e) \
-                        .order_by(Financial_per_month.beg_date).all()
-        for el in net_prem:
-            label = str(el.beg_date.year) + '-' +str(el.beg_date.month)
-            labels.append(label)
-            values.append(el.value/1000)
-    elif plot_type =='equity':
-        _eq_id = Indicator.query.filter(Indicator.name == 'equity').first()
-        eq_id = _eq_id.id
-        equity = Financial.query.filter(Financial.indicator_id == eq_id) \
-                            .filter(Financial.company_id == company_id) \
-                            .filter(Financial.report_date >= b) \
-                            .filter(Financial.report_date <= e) \
-                            .order_by(Financial.report_date).all()
-        for el in equity:
-            label = str(el.report_date.year) + '-' +str(el.report_date.month)
-            labels.append(label)
-            values.append(el.value/1000)
-    elif plot_type =='reserves':
-        _rs_id = Indicator.query.filter(Indicator.name == 'reserves').first()
-        rs_id = _rs_id.id
-        equity = Financial.query.filter(Financial.indicator_id == rs_id) \
-                            .filter(Financial.company_id == company_id) \
-                            .filter(Financial.report_date >= b) \
-                            .filter(Financial.report_date <= e) \
-                            .order_by(Financial.report_date).all()
-        for el in equity:
-            label = str(el.report_date.year) + '-' +str(el.report_date.month)
-            labels.append(label)
-            values.append(el.value/1000)            
-    return labels, values
+                img_path_reserves=img_path_reserves,premiums=premiums, \
+                show_last_year=show_last_year, \
+                get_hint=get_hint,show_info=show_info,totals=totals)
 
 
 def get_peers_names(peers):#получаем имена конкурентов исходя из их id
@@ -752,16 +521,12 @@ def peers_review():#сравнение с конкурентами
     form = PeersForm()
     balance_indicators = list()
     flow_indicators = list()
-    other_financial_indicators = list() 
-    show_balance = False
-    show_income_statement = False
-    show_other_financial_indicators = False
+    other_financial_indicators = list()
     company_name = None
     peers_names = None
     peers_names_arr = None
-    premiums = None
+    premiums = list()
     show_competitors = False
-    show_premiums = False
     b = g.min_report_date
     e = g.last_report_date
     show_info = False
@@ -769,8 +534,7 @@ def peers_review():#сравнение с конкурентами
         beg_this_year = datetime(g.last_report_date.year,1,1)
         form.begin_d.data = max(g.min_report_date,beg_this_year)
         form.end_d.data = g.last_report_date
-    if form.validate_on_submit():        
-        #show_last_year = form.show_last_year.data
+    if form.validate_on_submit():
         #преобразуем даты выборки (сбросим на 1-е число) и проверим корректность ввода
         b,e,b_l_y,e_l_y,period_str,check_res,err_txt = transform_check_dates(form.begin_d.data,form.end_d.data,False)
         if not check_res:
@@ -789,20 +553,12 @@ def peers_review():#сравнение с конкурентами
             return redirect(url_for('company_peers_profile.peers_review'))
         show_competitors = form.show_competitors.data#показывать детали по каждому конкуренту
         try:
-            company_name, balance_indicators, flow_indicators, premiums, peers_names_arr = show_company_profile(c_id,peers,b,e,len(peers),show_competitors)
-            other_financial_indicators = get_other_financial_indicators(balance_indicators,flow_indicators,b,e)
-            peers_names = get_peers_names(peers)            
+            company_name, balance_indicators, flow_indicators, premiums, \
+                peers_names_arr, other_financial_indicators, totals = get_general_motor_info(c_id,peers,b,e,b_l_y,e_l_y,len(peers),False,show_competitors)
+            peers_names = get_peers_names(peers)        
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные по выбранным компаниям за заданный период отсутствуют. Попробуйте задать другой период.')
             return redirect(url_for('company_peers_profile.peers_review'))
-        if len(other_financial_indicators) > 0:
-            show_other_financial_indicators = True
-        if len(balance_indicators) > 0:
-            show_balance = True
-        if len(flow_indicators) > 0:
-            show_income_statement = True
-        if len(premiums) > 0:            
-            show_premiums = True
 
         if form.show_info_submit.data:#show data
             save_to_log('peers_review',current_user.id)
@@ -818,7 +574,8 @@ def peers_review():#сравнение с конкурентами
             sheets_names.append(period_str + ' баланс')
             sheets_names.append(period_str + ' ОПУ')
             sheets_names.append(period_str + ' другие фин.')
-            sheets_names.append(period_str + ' страх.портфель')         
+            sheets_names.append(period_str + ' страх.портфель')
+            
             if show_competitors == True:#показывать конкурентов
                 peer_count = 0
                 peer_balance_flow_indicators_col_names = ['Название компании','Название показателя','Значение, тыс.тг.']
@@ -836,19 +593,18 @@ def peers_review():#сравнение с конкурентами
                     sheets_names.append(str(peer_count) + ' ОПУ')
                     sheets_names.append(str(peer_count) + ' другие фин.')
                     sheets_names.append(str(peer_count) + ' страх.портфель')
-                    peer_count += 1                    
+                    peer_count += 1
+            
             wb_name = company_name + '_' + period_str
             path, wb_name_f = save_to_excel(company_name,period_str,wb_name,sheets,sheets_names)#save file and get path
             if path is not None:                
                 return send_from_directory(path, filename=wb_name_f, as_attachment=True)
             else:
                 flash('Не могу сформировать файл, либо сохранить на сервер')
-    return render_template('company_peers_profile/peers_review.html',title='Сравнение с конкурентами',form=form,descr=descr, \
-                        show_balance=show_balance,show_income_statement=show_income_statement, \
-                        show_other_financial_indicators=show_other_financial_indicators,b=b,e=e, \
+    return render_template('company_peers_profile/peers_review.html',title='Сравнение с конкурентами',form=form,descr=descr, b=b,e=e,\
                         company_name=company_name,balance_indicators=balance_indicators, \
                         flow_indicators=flow_indicators,other_financial_indicators=other_financial_indicators, \
-                        peers_names=peers_names,show_competitors=show_competitors,show_premiums=show_premiums, \
+                        peers_names=peers_names,show_competitors=show_competitors, len=len, \
                         peers_names_arr=peers_names_arr,get_hint=get_hint,premiums=premiums,show_info=show_info)
 
 
@@ -859,21 +615,19 @@ def prepare_peer_info_for_excel(peer_count,peer_name,balance_indicators,flow_ind
     other_financial_indicators_peer = list()
     premiums_peer = list()
     for ind in balance_indicators:
-        peers_ind = ind['peers_balance_ind']
+        peers_ind = ind['peers']
         peer_ind = peers_ind[peer_count]
-        balance_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind['peer_value']})
+        balance_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind})
     for ind in flow_indicators:
-        peers_ind = ind['peers_flow_ind']
+        peers_ind = ind['peers']
         peer_ind = peers_ind[peer_count]
-        flow_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind['peer_value']})
+        flow_indicators_peer.append({'peer_name':peer_name,'fullname':ind['fullname'],'value':peer_ind})
     for ind in other_financial_indicators:
-        peers_ind = ind['peers_other_fin_ind']
+        peers_ind = ind['peers']
         peer_ind = peers_ind[peer_count]
-        other_financial_indicators_peer.append({'peer_name':peer_name,'fullname':ind['name'],'value':peer_ind['peer_value']})
+        other_financial_indicators_peer.append({'peer_name':peer_name,'fullname':ind['name'],'value':peer_ind})
     for ind in premiums:
-        class_name = ind['name']
-        peers_ind = ind['peers_prem_claim_LR']
-        peer_ind = peers_ind[peer_count]
-        premiums_peer.append({'peer_name':peer_name,'class_name':class_name,'peer_premium':peer_ind['peer_premium'],'peer_claim':peer_ind['peer_claim'],'peer_LR':peer_ind['peer_LR']})
+        class_name = ind['alias']
+        premiums_peer.append({'peer_name':peer_name,'class_name':class_name,'peer_premium':ind['peers_premiums'][peer_count],'peer_claim':ind['peers_claims'][peer_count],'peer_LR':ind['peers_lr'][peer_count]})
     return balance_indicators_peer,flow_indicators_peer,other_financial_indicators_peer,premiums_peer
 

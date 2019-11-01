@@ -213,7 +213,37 @@ def save_to_excel(item_name,period_str,wb_name,sheets,sheets_names):#save to exc
     column_names_ver['prem_change'] = 'Изменение премий по сравнению с прошлым периодом %'
     column_names_ver['claim_change'] = 'Изменение выплат по сравнению с прошлым периодом %'
     column_names_ver['lr_change'] = 'Изменение коэффициента выплат по сравнению с прошлым периодом %'
-    
+    column_names_ver['peer_name'] = 'Конкурент'
+    column_names_ver['class_name'] = 'Класс страхования'
+    column_names_ver['peer_premium'] = 'Премии, собранные конкурентом'
+    column_names_ver['peer_claim'] = 'Выплаты, произведенные конкурентом'
+    column_names_ver['peer_LR'] = 'Коэффициент выплат %'
+    column_names_ver['gross_LR'] = 'Валовый коэффициент выплат %'
+    column_names_ver['motor_TPL_LR'] = 'Коэффициент выплат по ОС ГПО ВТС %'
+    column_names_ver['casco_LR'] = 'Коэффициент выплат по каско %'
+    column_names_ver['motor_LR'] = 'Коэффициент выплат по автострахованию %'
+    column_names_ver['system_name'] = 'Наименование'
+    column_names_ver['total_l_y'] = 'Всего по рынку за прошлый период'
+    column_names_ver['mkt_av_l_y'] = 'Среднее по рынку за прошлый период'
+    column_names_ver['value_delta'] = 'Изменение по компании %'
+    column_names_ver['value_delta_abs'] = 'Изменение по компании в абсолюте'
+    column_names_ver['total_delta'] = 'Изменение по рынку %'
+    column_names_ver['total_delta_abs'] = 'Изменение по рынку в абсолюте'
+    column_names_ver['value_c_l_y'] = 'Значение по компании за прошлый период'
+    column_names_ver['value_m_l_y'] = 'Значение по рынку за прошлый период'
+    column_names_ver['delta_c'] = 'Изменение по компании'
+    column_names_ver['delta_m'] = 'Изменение по рынку'
+    column_names_ver['claims_share'] = 'Доля по выплатам'
+    column_names_ver['premiums_share'] = 'Доля по премиям'
+    column_names_ver['claims_l_y'] = 'Выплаты за прошлый период'
+    column_names_ver['claims_share_l_y'] = 'Доля по выплатам за прошлый период'
+    column_names_ver['premiums_l_y'] = 'Премии за прошлый период'
+    column_names_ver['premiums_share_l_y'] = 'Доля по премиям за прошлый период'
+    column_names_ver['claims_delta'] = 'Изменение по выплатам %'
+    column_names_ver['premiums_delta'] = 'Изменение по премиям %'
+    column_names_ver['lr_delta'] = 'Изменение коэффициента выплат %'
+
+
     #############################################################################
     workbook = xlwt.Workbook()
     i = 0
