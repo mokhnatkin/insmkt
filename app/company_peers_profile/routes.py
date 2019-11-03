@@ -5,12 +5,6 @@ from flask_login import current_user, login_required
 from app.models import Company, Insclass, Indicator, Financial, \
             Financial_per_month, Premium_per_month, Claim_per_month            
 from datetime import datetime
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import io
-import numpy as np
 from app.company_peers_profile import bp
 from app.universal_routes import before_request_u, required_roles_u, \
                     save_to_log, get_num_companies_at_date, is_id_in_arr, \
@@ -21,6 +15,7 @@ from app.transform_data import get_months, get_df_indicators, get_df_prem_or_cla
                                 get_df_financial_per_period_for_company
 import pandas as pd
 from app.plot_graphs import plot_linear_graph, plot_barchart, plot_piechart
+import matplotlib.pyplot as plt
 
 
 @bp.before_request
@@ -452,6 +447,15 @@ def company_profile():#портрет компании
         if not check_res:
             flash(err_txt)
             return redirect(url_for('company_peers_profile.company_profile'))
+
+        #подготовим данные для таблиц
+        try:
+            company_name, balance_indicators, flow_indicators, premiums, \
+                peers_names_arr, other_financial_indicators, totals = get_general_motor_info(int(form.company.data),None,b,e,b_l_y,e_l_y,None,show_last_year,False)        
+        except:
+            flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
+            return redirect(url_for('company_peers_profile.company_profile'))
+
         #зададим пути к диаграммам        
         base_name = 'chart_for_company.png'
         img_path_solvency_margin = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','solvency_margin')
@@ -460,13 +464,8 @@ def company_profile():#портрет компании
         img_path_reserves = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','reserves')
         img_path_lr_by_LoB = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','lr_lob')
         img_path_premiums_by_LoB_pie = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','premiums_lob')
-        #подготовим данные для таблиц
-        #try:
-        company_name, balance_indicators, flow_indicators, premiums, \
-                peers_names_arr, other_financial_indicators, totals = get_general_motor_info(int(form.company.data),None,b,e,b_l_y,e_l_y,None,show_last_year,False)        
-        #except:
-            #flash('Не удается получить данные. Возможно, выбранная компания не существовала в заданный период. Попробуйте выбрать другой период.')
-            #return redirect(url_for('company_peers_profile.company_profile'))
+        
+        plt.close("all")
         
         if form.show_info_submit.data:#show data
             save_to_log('company_profile',current_user.id)
