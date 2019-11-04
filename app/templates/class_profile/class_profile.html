@@ -2,7 +2,7 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h1>Информация по классу страхования</h1>
+    <h1>Информация по классу / форме страхования</h1>
     <p><i>{{ descr }}</i></p>
     <p>
         Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b>
@@ -14,9 +14,9 @@
     {% if show_info %}
         {% if class_companies %}
             <div align="center">
-                <h2>Информация по классу {{ class_name }} в разрезе компаний</h2>
+                <h2>{{ class_name }}: информация в разрезе компаний</h2>
                 <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
-                <p><i>* в списке отображаются только те компании, у которых были премии или выплаты по классу {{ class_name }} за выбранный период</i></p>
+                <p><i>* в списке отображаются только те компании, у которых были премии или выплаты по классу / форме {{ class_name }} за выбранный период</i></p>
                 <p><i>** премии и выплаты приведены в <b>тыс.тг.</b></i></p>
                 <div class="table-responsive tableFixHead">
                     <table class="table table-hover">
@@ -104,7 +104,7 @@
 
         {% if class_info %}
             <div align="center">
-                <h2>Динамика развития класса {{ class_name }}</h2>
+                <h2>{{ class_name }}: динамика развития</h2>
                 <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
                 <p><i> * информация приведена по всем компаниям</i></p>
                 <div class="container">
@@ -129,7 +129,7 @@
             </div>
 
             <div align="center">
-                <h2>Премии, выплаты, коэффициент выплат по месяцам</h2>
+                <h2>{{ class_name }} : премии, выплаты, коэффициент выплат по месяцам</h2>
                 <div class="table-responsive tableFixHead">
                     <table class="table table-hover">
                         <thead>

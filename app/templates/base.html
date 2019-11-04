@@ -60,11 +60,12 @@
                                 </div>
                             </li>
                         {% endif %}
-                        <li><a href="{{ url_for('company_peers_profile.company_profile') }}">Портрет компании</a></li>
-                        <li><a href="{{ url_for('class_profile.class_profile') }}">Инфо по классу</a></li>
-                        <li><a href="{{ url_for('company_peers_profile.peers_review') }}">Обзор конкурентов</a></li>
+                        <li><a href="{{ url_for('company_peers_profile.company_profile') }}">Компании</a></li>
+                        <li><a href="{{ url_for('class_profile.class_profile') }}">Классы</a></li>
+                        <li><a href="{{ url_for('class_profile.insform_profile') }}">Формы</a></li>
+                        <li><a href="{{ url_for('company_peers_profile.peers_review') }}">Конкуренты</a></li>
                         <li><a href="{{ url_for('ranking.ranking') }}">Рэнкинг</a></li>
-                        <li><a href="{{ url_for('motor.motor') }}">Автострахование</a></li>
+                        <li><a href="{{ url_for('motor.motor') }}">Авто</a></li>
                         <li><a href="{{ url_for('auth.logout') }}">Выход</a></li>
                     {% endif %}
                 </ul>

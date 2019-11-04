@@ -34,7 +34,17 @@ class Config(object):
                         {'id':7,'name':'class_profile_file'},
                         {'id':8,'name':'peers_review_file'},
                         {'id':9,'name':'ranking_file'},
-                        {'id':10,'name':'motor_file'}]
-    DICT_TYPES = [('CompaniesList','Список компаний'), ('ClassesList','Список классов'),('IndicatorsList','Список показателей')]#типы справочников
-    DATA_TYPES = [('Premiums','Страховые премии'), ('Claims','Страховые выплаты'),('Financials','Основные финансовые показатели'),('Prudentials','Пруденциальные нормативы')]#типы данных
+                        {'id':10,'name':'motor_file'},
+                        {'id':11,'name':'form_profile'},
+                        {'id':12,'name':'form_profile_file'}]
+    DICT_TYPES = [('CompaniesList','Список компаний'),
+                    ('ClassesList','Список классов'),
+                    ('IndicatorsList','Список показателей')]#типы справочников
+    DATA_TYPES = [('Premiums','Страховые премии'),
+                    ('Claims','Страховые выплаты'),
+                    ('Financials','Основные финансовые показатели'),
+                    ('Prudentials','Пруденциальные нормативы')]#типы данных
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+    INS_FORMS = [('obligatory','Обязательное страхование'),
+                    ('voluntary_personal','Добровольное личное страхование'),
+                    ('voluntary_property','Добровольное имущественное страхование')]#формы страхования

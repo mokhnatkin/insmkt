@@ -79,16 +79,16 @@ def get_info_per_period(b,e,show_last_year):#вспомогат. ф-ция - п�
     total_re_share = round((premiums_total-net_premiums_total)/premiums_total*100,2)
 
     class_id = get_class_id('motor_hull')#casco id    
-    df_premiums_casco,premiums_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False)
-    df_claims_casco,claims_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False)
+    df_premiums_casco,premiums_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False,False)
+    df_claims_casco,claims_casco_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False,False)
     df_lr_casco,lr_casco_av=merge_claims_prems_compute_LR(df_claims_casco,df_premiums_casco,False,False)
     df_lr_casco = df_lr_casco.drop(['alias_x','alias_y','share_x','share_y'], axis=1)#drop columns
     df_lr_casco.rename(columns = {'value_x':column_names['casco_claims'], 'value_y': column_names['casco_premiums'], 'lr':column_names['casco_LR']}, inplace = True)#rename columns
     df_merged = pd.merge(df_merged,df_lr_casco,on='id')#merge 2 df
 
     class_id = get_class_id('obligatory_motor_TPL')#motor TPL id    
-    df_premiums_motor_TPL,premiums_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False)
-    df_claims_motor_TPL,claims_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False)
+    df_premiums_motor_TPL,premiums_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,True,False,False)
+    df_claims_motor_TPL,claims_motor_TPL_total=get_df_prem_or_claim_per_period(class_id,b,e,False,False,False)
     df_lr_motor_TPL,lr_motor_TPL_av=merge_claims_prems_compute_LR(df_claims_motor_TPL,df_premiums_motor_TPL,False,False)
     df_lr_motor_TPL = df_lr_motor_TPL.drop(['alias_x','alias_y','share_x','share_y'], axis=1)#drop columns
     df_lr_motor_TPL.rename(columns = {'value_x':column_names['motor_TPL_claims'], 'value_y': column_names['motor_TPL_premiums'], 'lr':column_names['motor_TPL_LR']}, inplace = True)#rename columns

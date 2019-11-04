@@ -5,6 +5,7 @@ from app.models import Company, Indicator, Financial, \
             Premium, Financial_per_month, \
             Premium_per_month, Claim_per_month, Insclass
 from datetime import datetime
+from flask import current_app
 
 
 def get_months(b,e):#определим, какие именно месяцы относятся к запрашиваемому периоду
@@ -32,45 +33,165 @@ def get_str_month_yyyy_mm(input_date):#получаем в формате ггг
     return month_name, month_name_p_1y
 
 
-def get_df_prem_or_claim_per_period(class_id,b,e,prem,by_month=False):#get pandas data frame for claims for given class (_id) and period
+def get_df_prem_or_claim_per_period(class_id,b,e,prem,by_month=False,insform=False):#get pandas data frame for claims for given class (_id) and period
     months = get_months(b,e)
     df_items = pd.DataFrame()
     total_value = None
+    obligatory = False
+    voluntary_personal = False
+    voluntary_property = False
+
+    if insform:#prems / claims for ins form
+        insforms = current_app.config['INS_FORMS']
+        if class_id == insforms[0][0]:#obligatory
+            obligatory = True
+        elif class_id == insforms[1][0]:#voluntary_personal
+            voluntary_personal = True
+        elif class_id == insforms[2][0]:#voluntary_property
+            voluntary_property = True
+
     for month in months:
         begin = month['begin']
         end = month['end']
-        if prem:
-            if by_month:
-                df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)                        
-                        .with_entities(Premium_per_month.value)
-                        .filter(Premium_per_month.insclass_id == class_id)
-                        .filter(Premium_per_month.beg_date == begin)
-                        .filter(Premium_per_month.end_date == end)
-                    .statement,db.session.bind)                
+        if prem:#premiums
+            if by_month:#group by months
+                if obligatory and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Insclass)
+                            .with_entities(Premium_per_month.value)
+                            .filter(Insclass.obligatory == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_personal and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Insclass)
+                            .with_entities(Premium_per_month.value)
+                            .filter(Insclass.voluntary_personal == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_property and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Insclass)
+                            .with_entities(Premium_per_month.value)
+                            .filter(Insclass.voluntary_property == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                else:#ins class, not form
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .with_entities(Premium_per_month.value)
+                            .filter(Premium_per_month.insclass_id == class_id)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
             else:
-                df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
-                        .join(Company)
-                        .with_entities(Company.id,Company.alias,Premium_per_month.value)
-                        .filter(Premium_per_month.insclass_id == class_id)
-                        .filter(Premium_per_month.beg_date == begin)
-                        .filter(Premium_per_month.end_date == end)
-                    .statement,db.session.bind)
+                if obligatory and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Premium_per_month.value)
+                            .filter(Insclass.obligatory == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_personal and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Premium_per_month.value)
+                            .filter(Insclass.voluntary_personal == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_property and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Premium_per_month.value)
+                            .filter(Insclass.voluntary_property == True)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+                else:#ins class, not form
+                    df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Company)
+                            .with_entities(Company.id,Company.alias,Premium_per_month.value)
+                            .filter(Premium_per_month.insclass_id == class_id)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+
         else:#claims
             if by_month:
-                df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
-                        .with_entities(Claim_per_month.value)
-                        .filter(Claim_per_month.insclass_id == class_id)
-                        .filter(Claim_per_month.beg_date == begin)
-                        .filter(Claim_per_month.end_date == end)
-                    .statement,db.session.bind)
+                if obligatory and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Insclass)                    
+                            .with_entities(Claim_per_month.value)
+                            .filter(Insclass.obligatory == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_personal and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Insclass)                    
+                            .with_entities(Claim_per_month.value)
+                            .filter(Insclass.voluntary_personal == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_property and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Insclass)                    
+                            .with_entities(Claim_per_month.value)
+                            .filter(Insclass.voluntary_property == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                else:#ins class, not form                
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .with_entities(Claim_per_month.value)
+                            .filter(Claim_per_month.insclass_id == class_id)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
             else:
-                df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
-                        .join(Company)
-                        .with_entities(Company.id,Company.alias,Claim_per_month.value)
-                        .filter(Claim_per_month.insclass_id == class_id)
-                        .filter(Claim_per_month.beg_date == begin)
-                        .filter(Claim_per_month.end_date == end)
-                    .statement,db.session.bind)
+                if obligatory and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Claim_per_month.value)
+                            .filter(Insclass.obligatory == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_personal and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Claim_per_month.value)
+                            .filter(Insclass.voluntary_personal == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                elif voluntary_property and insform:
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Company)
+                            .join(Insclass)
+                            .with_entities(Company.id,Company.alias,Claim_per_month.value)
+                            .filter(Insclass.voluntary_property == True)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+                else:#ins class, not form                
+                    df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Company)
+                            .with_entities(Company.id,Company.alias,Claim_per_month.value)
+                            .filter(Claim_per_month.insclass_id == class_id)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
         if by_month:
             month_name,month_name_p_1y = get_str_month_yyyy_mm(begin)
             df_item_per_month['month_name'] = month_name            

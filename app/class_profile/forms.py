@@ -3,7 +3,7 @@ from wtforms import BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired
 from app.models import Insclass
 from wtforms.fields.html5 import DateField
-from flask import flash, g
+from flask import flash, g, current_app
 from datetime import datetime
 
 
@@ -26,4 +26,14 @@ class ClassProfileForm(FlaskForm):#информация по продукту
                 .order_by(Insclass.id).all()
         sources_db = [(str(a.id), a.alias) for a in insclasses]
         self.insclass.choices = sources_db
+
+
+class InsformForm(FlaskForm):#информация по продукту
+    insforms = current_app.config['INS_FORMS']#insurance forms
+    insform = SelectField('Выберите форму страхования страхования',choices = insforms,validators=[DataRequired()])
+    begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_last_year = BooleanField('Показать данные по сравнению с аналогичным периодом прошлого года')
+    show_info_submit = SubmitField('Показать информацию')
+    save_to_file_submit = SubmitField('Сохранить в файл')
 
