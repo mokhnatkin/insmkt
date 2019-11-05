@@ -8,10 +8,12 @@ from flask import send_from_directory
 from app.ranking import bp
 from app.universal_routes import before_request_u, required_roles_u, save_to_log, \
                                 is_id_in_arr, get_hint, save_to_excel, \
-                                transform_check_dates
+                                transform_check_dates, str_to_bool, str_to_date
 from app.transform_data import get_df_financial_per_period, get_df_financial_at_date, \
                                 convert_df_to_list, merge_two_df_convert_to_list, \
                                 merge_claims_prems_compute_LR
+from app.plot_graphs import plot_scatter
+import pandas as pd
 
 
 @bp.before_request
@@ -110,7 +112,73 @@ def get_info_for_ranking(b,e,show_last_year,b_l_y,e_l_y):#вспомогател
         net_premiums_total, equity_total, net_income_total, solvency_margin_av, net_claims_total, lr_av, \
         net_premiums_total_l_y, equity_total_l_y, net_income_total_l_y, solvency_margin_av_l_y, net_claims_total_l_y, lr_av_l_y
 
-       
+
+def get_data_for_plot(ind_name,top_equity,annotate,b,e):#helpier function
+    if annotate:
+        labels = list()
+    else:
+        labels = None
+    _x = list()
+    _y = list()
+
+    df_equity,equity_total = get_df_financial_at_date('equity',e)
+    df_indicator,indicator_total=get_df_financial_per_period(ind_name,b,e)
+        
+    df_merged = pd.merge(df_equity,df_indicator,on='id')
+    df_merged.rename(columns = {'alias_x':'alias','value_x':'equity','value_y':'value'}, inplace = True)#rename columns
+
+    if top_equity:#top equity companaies
+        is_eq_share = df_merged['share_x'] >= 10#filter those companies w/ share of equaty 10% +
+    else:#not top equity companies
+        is_eq_share = df_merged['share_x'] < 10#filter those companies w/ share of equaty less than 10%
+
+    df_merged_final = df_merged[is_eq_share]#filter rows
+    df_merged_final = df_merged_final.drop(['alias_y','share_x','share_y','id'], axis=1)#drop columns
+
+    if not df_merged_final.empty:
+        for row_index,row in df_merged_final.iterrows():
+            _x.append(row.equity/1000000)
+            _y.append(row.value/1000000)
+            if annotate:            
+                labels.append(row.alias)
+
+    return _x,_y,labels
+
+
+@bp.route('/chart.png/<b>/<e>/<b_l_y>/<e_l_y>/<show_last_year_str>/<annotate_param>/<chart_type>/<indicator_type>/<top_equity_str>')#plot chart for a given class
+def plot_png(b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,chart_type,indicator_type,top_equity_str):
+    show_last_year = str_to_bool(show_last_year_str)
+    top_equity = str_to_bool(top_equity_str)
+    annotate = str_to_bool(annotate_param)
+    b = str_to_date(b)
+    e = str_to_date(e)
+    b_l_y = str_to_date(b_l_y)
+    e_l_y = str_to_date(e_l_y)
+    xlabel = 'Собственный капитал, млрд.тг.'
+    ylabel = None
+    title = None
+    label1 = 'текущий период'
+    label2 = 'прошлый год'
+
+    if chart_type == 'scatter':
+        if indicator_type == 'net_prems_equity':
+            title = 'Чистые премии vs. Собственный капитал'
+            ylabel = 'Чистые премии, млрд.тг.'
+            _x,_y,labels = get_data_for_plot('net_premiums',top_equity,annotate,b,e)
+        elif indicator_type == 'net_income_equity':
+            title = 'Прибыль vs. Собственный капитал'
+            ylabel = 'Прибыль, млрд.тг.'
+            _x,_y,labels = get_data_for_plot('net_income',top_equity,annotate,b,e)
+
+        return plot_scatter(_x,_y,title,labels,xlabel,ylabel)
+    
+
+def path_to_charts(base_img_path,b,e,b_l_y,e_l_y,show_last_year,annotate,chart_type,indicator_type,top_equity):#путь к графику
+    path = "/" + base_img_path + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y')\
+             + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year)\
+                 + "/" + str(annotate) + "/" + chart_type + "/" + indicator_type + "/" + str(top_equity)
+    return path
+
 
 @bp.route('/ranking',methods=['GET','POST'])#ранкинг, обзор рынка
 @login_required
@@ -141,6 +209,11 @@ def ranking():
     e_l_y = None
     show_info = False
     solvency_margin_av_change = None
+    img_path_net_prems_eq_1 = None
+    img_path_net_prems_eq_2 = None
+    img_path_net_income_eq_1 = None
+    img_path_net_income_eq_2 = None
+
 
     if request.method == 'GET':#подставим в форму доступные мин. и макс. отчетные даты
         beg_this_year = datetime(g.last_report_date.year,1,1)
@@ -167,7 +240,13 @@ def ranking():
             solvency_margin_av_change = round(solvency_margin_av-solvency_margin_av_l_y,1)
         except:
             solvency_margin_av_change = None
-
+        #scatters
+        base_name = 'chart.png'
+        img_path_net_prems_eq_1 = path_to_charts(base_name,b,e,b_l_y,e_l_y,show_last_year,True,'scatter','net_prems_equity',True)
+        img_path_net_prems_eq_2 = path_to_charts(base_name,b,e,b_l_y,e_l_y,show_last_year,True,'scatter','net_prems_equity',False)
+        img_path_net_income_eq_1 = path_to_charts(base_name,b,e,b_l_y,e_l_y,show_last_year,True,'scatter','net_income_equity',True)
+        img_path_net_income_eq_2 = path_to_charts(base_name,b,e,b_l_y,e_l_y,show_last_year,True,'scatter','net_income_equity',False)
+        
         if form.show_info_submit.data:#show data
             save_to_log('ranking',current_user.id)
             show_info = True
@@ -205,4 +284,6 @@ def ranking():
                     net_income_total_l_y=net_income_total_l_y, \
                     solvency_margin_av_l_y=solvency_margin_av_l_y, \
                     lr_av_l_y=lr_av_l_y, \
-                    solvency_margin_av_change=solvency_margin_av_change)
+                    solvency_margin_av_change=solvency_margin_av_change, \
+                    img_path_net_prems_eq_1=img_path_net_prems_eq_1, img_path_net_prems_eq_2=img_path_net_prems_eq_2, \
+                    img_path_net_income_eq_1=img_path_net_income_eq_1, img_path_net_income_eq_2=img_path_net_income_eq_2)

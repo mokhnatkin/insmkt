@@ -12,7 +12,6 @@ from app.universal_routes import before_request_u, required_roles_u, \
 from app.transform_data import merge_two_df_convert_to_list, convert_df_to_list, \
                     get_df_prem_or_claim_per_period, merge_claims_prems_compute_LR
 from app.plot_graphs import plot_linear_graph
-import matplotlib.pyplot as plt
 
 
 
@@ -185,8 +184,6 @@ def class_profile():#инфо по классу
         img_path_claim = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,True,'claim',False)
         img_path_lr = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,False,'lr',False)
 
-        plt.close("all")
-
         if form.show_info_submit.data:#show data
             save_to_log('class_profile',current_user.id)
             show_info = True
@@ -280,8 +277,6 @@ def insform_profile():#инфо по классу
         img_path_prem = path_to_charts(base_name,form_id,b,e,b_l_y,e_l_y,show_last_year,True,'prem',True)
         img_path_claim = path_to_charts(base_name,form_id,b,e,b_l_y,e_l_y,show_last_year,True,'claim',True)
         img_path_lr = path_to_charts(base_name,form_id,b,e,b_l_y,e_l_y,show_last_year,False,'lr',True)
-
-        plt.close("all")
 
         if form.show_info_submit.data:#show data
             save_to_log('form_profile',current_user.id)

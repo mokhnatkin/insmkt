@@ -14,8 +14,7 @@ from app.transform_data import get_months, get_df_indicators, get_df_prem_or_cla
                                 merge_claims_prems_compute_LR_for_company, compute_other_financial_indicators, \
                                 get_df_financial_per_period_for_company
 import pandas as pd
-from app.plot_graphs import plot_linear_graph, plot_barchart, plot_piechart
-import matplotlib.pyplot as plt
+from app.plot_graphs import plot_linear_graph, plot_barchart
 
 
 @bp.before_request
@@ -401,11 +400,7 @@ def plot_png_for_company(company_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_
         
         return plot_barchart(labels,values,values_l_y,title,ylabel,show_last_year,label1,label2)
 
-    elif chart_type == 'pie_chart':
-        pass
-        
-        return plot_piechart(labels,values,title)
-            
+           
 
 def path_to_charts(base_img_path,company_id,b,e,b_l_y,e_l_y,show_last_year,annotate,chart_type,indicator_type):#путь к графику
     path = "/" + base_img_path + "/" + company_id + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + b_l_y.strftime('%m-%d-%Y') + "/" + e_l_y.strftime('%m-%d-%Y') + "/" + str(show_last_year) + "/" + str(annotate) + "/" + chart_type + "/" + indicator_type
@@ -465,7 +460,6 @@ def company_profile():#портрет компании
         img_path_lr_by_LoB = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','lr_lob')
         img_path_premiums_by_LoB_pie = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','premiums_lob')
         
-        plt.close("all")
         
         if form.show_info_submit.data:#show data
             save_to_log('company_profile',current_user.id)

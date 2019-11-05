@@ -595,7 +595,10 @@ def get_df_indicators(balance,b,e,company_id,peers,N_companies):#get balance / f
 
     if not df_indicators_company.empty and not df_indicators_mkt.empty:
         df_indicators = pd.merge(df_indicators_company,df_indicators_mkt,on='id')
-        df_indicators = df_indicators.drop(['system_name_y', 'fullname_y','company_id'], axis=1)#drop columns
+        if peers is None:#for whole mkt
+            df_indicators = df_indicators.drop(['system_name_y', 'fullname_y','company_id'], axis=1)#drop columns
+        else:
+            df_indicators = df_indicators.drop(['system_name_y', 'fullname_y'], axis=1)#drop columns
         df_indicators.rename(columns = {'system_name_x':'system_name', 'fullname_x':'fullname','value_x':'value'}, inplace = True)#rename columns
         df_indicators['mkt_av'] = df_indicators['total'] / c_N_b        
         df_indicators['share'] = round(df_indicators['value'] / df_indicators['total'] * 100,2)

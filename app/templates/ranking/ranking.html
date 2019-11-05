@@ -2,7 +2,7 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h1>Рэнкинг non-life компаний по различным показателям</h1>
+    <h1>Обзор non-life рынка</h1>
         <p><i>
             Выберите период.
             Данные доступны за период с <b>{{ moment(g.min_report_date).format('LL') }}</b> 
@@ -338,6 +338,38 @@
                             </div>
                         </div>
                     {% endif %}
+                    </div>
+                </div>
+            </div>
+         
+        <div align="center">
+            <h2>Эффективность использования капитала</h2>
+            <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+            <p><i> * информация приведена по всем компаниям</i></p>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6 col-sm-12 col-xs-12">                        
+                        <div align="center"><h2>Использование капитала (топ по капиталу)</h2>
+                            <img src="{{ img_path_net_prems_eq_1 }}" style="max-width:100%" alt="net premiums equity plot">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12 col-xs-12">                        
+                        <div align="center"><h2>Использование капитала (остальные)</h2>
+                            <img src="{{ img_path_net_prems_eq_2 }}" style="max-width:100%" alt="net premiums equity plot">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                        <div align="center"><h2>Прибыль (топ по капиталу)</h2>
+                            <img src="{{ img_path_net_income_eq_1 }}" style="max-width:100%" alt="net income equity plot">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12 col-xs-12">
+                        <div align="center"><h2>Прибыль (остальные)</h2>
+                            <img src="{{ img_path_net_income_eq_2 }}" style="max-width:100%" alt="net income equity plot">
+                        </div>
+                    </div>                    
                 </div>
             </div>
         </div>
