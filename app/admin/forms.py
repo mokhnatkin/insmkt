@@ -89,6 +89,7 @@ class AddEditClassForm(FlaskForm):#добавить новый класс стр
 class UsageLogForm(FlaskForm):#лог использования    
     begin_d = DateField('Начало, дата', format='%Y-%m-%d',validators=[DataRequired()])
     end_d = DateField('Конец, дата', format='%Y-%m-%d',validators=[DataRequired()])
+    show_details = BooleanField('Показать детали')
     submit = SubmitField('Показать')
     
     def validate(self):#дата окончания должна быть больше даты начала

@@ -20,7 +20,9 @@ import random
 from sqlalchemy import func
 from app.admin import bp
 from app.universal_routes import before_request_u, required_roles_u, \
-                        get_view_name, send_email, allowed_file, add_str_timestamp
+                        get_view_name, send_email, allowed_file, add_str_timestamp, \
+                        str_to_bool, str_to_date
+from app.plot_graphs import plot_piechart, plot_barchart, plot_linear_graph
 
 
 @bp.before_request
@@ -986,6 +988,54 @@ def get_data_for_usage_log(beg_d,end_d):#получаем данные для л
     return log_events, events_by_user, events_by_page, events_by_day
 
 
+@bp.route('/chart.png/<b>/<e>/<chart_type>/<indicator_type>')#plot chart
+def plot_png(b,e,chart_type,indicator_type):    
+    b = str_to_date(b)
+    e = str_to_date(e)
+    
+    labels = list()
+    values = list()
+    title = None
+
+    log_events, events_by_user, events_by_page, events_by_day = get_data_for_usage_log(b,e)
+
+    if chart_type == 'pie_chart':
+        if indicator_type == 'events_by_page':
+            
+            for item in events_by_page:
+                labels.append(get_view_name(item[0]))
+                values.append(item[1])
+            title = 'Функционал'
+            
+        return plot_piechart(labels,values,title)
+
+    elif chart_type == 'bar_chart':
+        if indicator_type == 'events_by_user':
+            for item in events_by_user:
+                labels.append(item[0])
+                values.append(item[1])
+            title = 'Пользователи'
+            ylabel = 'Кол-во запросов'
+        
+        return plot_barchart(labels,values,None,title,ylabel,False,None,None)
+
+    elif chart_type == 'linear_plot':
+        if indicator_type == 'events_by_days':
+            for item in events_by_day:
+                labels.append(item['date'].strftime('%d-%m-%Y'))
+                values.append(item['amount'])
+            title = 'По дням'
+            label1 = 'Кол-во запросов'
+        
+        return plot_linear_graph(labels,values,None,label1,None,False,True,title)        
+
+
+
+def path_to_charts(base_img_path,b,e,chart_type,indicator_type):#путь к графику
+    path = "/" + base_img_path + "/" + b.strftime('%m-%d-%Y') + "/" + e.strftime('%m-%d-%Y') + "/" + chart_type + "/" + indicator_type
+    return path
+
+
 @bp.route('/usage_log',methods=['GET','POST'])#отправить мейл пользователям
 @login_required
 @required_roles('admin')
@@ -995,19 +1045,38 @@ def usage_log():
     events_by_user = None
     events_by_page = None
     events_by_day = None
-    show_info = False    
+    show_info = False
+    show_details = False
     stat_min_date = View_log.query \
             .with_entities(func.min(View_log.timestamp).label("min_time")).first()
     min_date = stat_min_date[0]
+    img_path_users = None
+    img_path_pages = None
+    img_path_days = None
+    b = None
+    e = None
+
     if form.validate_on_submit():
+        show_details = form.show_details.data
         b = form.begin_d.data
-        e = form.end_d.data + timedelta(days=1)        
-        log_events, events_by_user, events_by_page, events_by_day = get_data_for_usage_log(b,e)
-        show_info = True
+        e = form.end_d.data + timedelta(days=1)
+        try:
+            log_events, events_by_user, events_by_page, events_by_day = get_data_for_usage_log(b,e)
+            show_info = True
+        except:
+            flash('Не могу получить данные с сервера')
+        #зададим пути к диаграммам        
+        base_name = 'chart.png'
+        img_path_pages = path_to_charts(base_name,b,e,'pie_chart','events_by_page')
+        img_path_users = path_to_charts(base_name,b,e,'bar_chart','events_by_user')
+        img_path_days = path_to_charts(base_name,b,e,'linear_plot','events_by_days')
+
+
     return render_template('admin/usage_log.html',title='Лог использования портала', \
         get_view_name=get_view_name,log_events=log_events, min_date=min_date, \
         events_by_user=events_by_user,events_by_page=events_by_page,form=form, \
-        events_by_day=events_by_day,show_info=show_info)
+        events_by_day=events_by_day,show_info=show_info,show_details=show_details,img_path_users=img_path_users, \
+        b=b, e=e, img_path_pages=img_path_pages,img_path_days=img_path_days)
 
 
 @bp.route('/add_new_hint',methods=['GET', 'POST'])#добавить новое имя компании (переименование)
