@@ -363,10 +363,17 @@ def plot_png_for_company(company_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_
         elif indicator_type == 'net_prem':
             df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b,e)
             labels,values = df_to_list_for_plot(df,1000,0)
-            title = 'Норматив ФМП на конец месяца'
+            title = 'Чистые премии помесячно, млн.тг.'
             if show_last_year:
                 df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b_l_y,e_l_y)
-                labels,values_l_y = df_to_list_for_plot(df,1000,0)
+                labels,values_l_y = df_to_list_for_plot(df,1000,0)#net_claim
+        elif indicator_type == 'net_claim':
+            df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b,e)
+            labels,values = df_to_list_for_plot(df,1000,0)
+            title = 'Чистые выплаты помесячно, млн.тг.'
+            if show_last_year:
+                df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b_l_y,e_l_y)
+                labels,values_l_y = df_to_list_for_plot(df,1000,0)                
 
         return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)
 
@@ -423,6 +430,7 @@ def company_profile():#портрет компании
     img_path_net_premium = None
     img_path_equity = None
     img_path_reserves = None
+    img_path_net_claim = None
     show_last_year = False
     b = g.min_report_date
     e = g.last_report_date
@@ -455,6 +463,7 @@ def company_profile():#портрет компании
         base_name = 'chart_for_company.png'
         img_path_solvency_margin = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','solvency_margin')
         img_path_net_premium = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','net_prem')
+        img_path_net_claim = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','net_claim')
         img_path_equity = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','equity')
         img_path_reserves = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'linear_graph','reserves')
         img_path_lr_by_LoB = path_to_charts(base_name,form.company.data,b,e,b_l_y,e_l_y,show_last_year,True,'bar_chart','lr_lob')
@@ -490,7 +499,7 @@ def company_profile():#портрет компании
                 img_path_net_premium=img_path_net_premium,b=b,e=e,b_l_y=b_l_y,e_l_y=e_l_y, \
                 img_path_equity=img_path_equity,other_financial_indicators=other_financial_indicators, \
                 img_path_reserves=img_path_reserves,premiums=premiums, \
-                show_last_year=show_last_year, \
+                show_last_year=show_last_year, img_path_net_claim=img_path_net_claim,\
                 get_hint=get_hint,show_info=show_info,totals=totals)
 
 

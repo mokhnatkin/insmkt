@@ -270,6 +270,24 @@
                 </div>
             </div>
         </div>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-sm-12 col-xs-12">
+                    <div align="center">
+                        <h2>
+                            {% if get_hint('solvency_margin') %}
+                                <a href="#" data-toggle="popover" title="{{ get_hint('net_claim').title }}" data-trigger="hover" data-content="{{ get_hint('net_claim').text }}">Чистые выплаты по месяцам</a>
+                            {% else %}
+                                Чистые выплаты по месяцам
+                            {% endif %}
+                        </h2>
+                        <p><b>за период с {{ moment(b).format('LL') }} по {{ moment(e).format('LL') }}</b></p>
+                        <img src="{{ img_path_net_claim }}" style="max-width:100%" alt="net claim plot">
+                    </div>
+                </div>               
+            </div>
+        </div>        
         
     {% endif %}
     
