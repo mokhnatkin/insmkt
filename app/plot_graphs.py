@@ -59,7 +59,7 @@ def plot_barchart(labels,_values,_values_l_y,title,ylabel,show_last_year,label1,
         rects1 = ax.bar(ind, values, w, label=label1)
         rects2 = ax.bar(ind + w, values_l_y, w, label=label2)
         ax.set_xticks(ind + 0.5*w)
-        ax.set_xticklabels(labels)
+        ax.set_xticklabels(labels,rotation=90)
         ax.legend(loc='best')
     else:
         w = 0.7
@@ -70,6 +70,7 @@ def plot_barchart(labels,_values,_values_l_y,title,ylabel,show_last_year,label1,
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     autolabel(rects1)
+    fig.autofmt_xdate()
     if show_last_year:
         autolabel(rects2)
     
