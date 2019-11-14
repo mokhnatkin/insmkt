@@ -33,6 +33,38 @@ def get_str_month_yyyy_mm(input_date):#получаем в формате ггг
     return month_name, month_name_p_1y
 
 
+def get_df_prem_or_claim_monthly(class_id,b,e,prem):#get pandas data frame for claims for given class (_id) and period
+    months = get_months(b,e)
+    df_items = pd.DataFrame()
+
+    for month in months:
+        begin = month['begin']
+        end = month['end']
+        if prem:#premiums
+            df_item_per_month = pd.read_sql(db.session.query(Premium_per_month)
+                            .join(Company)
+                            .with_entities(Company.id,Company.alias,Premium_per_month.value)
+                            .filter(Premium_per_month.insclass_id == class_id)
+                            .filter(Premium_per_month.beg_date == begin)
+                            .filter(Premium_per_month.end_date == end)
+                        .statement,db.session.bind)
+        else:#claims
+            df_item_per_month = pd.read_sql(db.session.query(Claim_per_month)
+                            .join(Company)
+                            .with_entities(Company.id,Company.alias,Claim_per_month.value)
+                            .filter(Claim_per_month.insclass_id == class_id)
+                            .filter(Claim_per_month.beg_date == begin)
+                            .filter(Claim_per_month.end_date == end)
+                        .statement,db.session.bind)
+
+        month_name,month_name_p_1y = get_str_month_yyyy_mm(begin)
+        df_item_per_month['month_name'] = month_name
+        df_items = pd.concat([df_items, df_item_per_month])#append all months
+
+    return df_items
+
+
+
 def get_df_prem_or_claim_per_period(class_id,b,e,prem,by_month=False,insform=False):#get pandas data frame for claims for given class (_id) and period
     months = get_months(b,e)
     df_items = pd.DataFrame()

@@ -14,7 +14,6 @@ from app.transform_data import merge_two_df_convert_to_list, convert_df_to_list,
 from app.plot_graphs import plot_linear_graph
 
 
-
 @bp.before_request
 def before_request():
     return before_request_u()
@@ -74,7 +73,8 @@ def get_class_info(class_id,b,e,show_last_year,b_l_y,e_l_y,insform=False):#ин�
     else:
         class_info = convert_df_to_list(df_premiums_claims_lr,False,True,True)
     return class_info, class_totals, class_totals_l_y
-    
+
+
 
 @bp.route('/chart_for_class.png/<c_id>/<b>/<e>/<b_l_y>/<e_l_y>/<show_last_year_str>/<annotate_param>/<chart_type>/<insform_str>')#plot chart for a given class
 def plot_png_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,chart_type,insform_str='False'):
@@ -108,13 +108,20 @@ def plot_png_for_class(c_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_param,ch
                 values_l_y.append(el['lr_l_y'])
     label1 = 'текущий период'
     label2 = 'прошлый год'
+
     if chart_type == 'prem':
         title = 'Помесячная динамика премий, млн.тг.'
     elif chart_type == 'claim':
         title = 'Помесячная динамика выплат, млн.тг.'
     elif chart_type == 'lr':
         title = 'Помесячная динамика коэффициента выплат, %'
-    return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)                
+    elif chart_type == 'prem_claim_scatter':
+        title = 'Ежемесячные премии и выплаты по компаниям'
+
+    if chart_type in ('prem','claim','lr'):
+        return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)
+    else:
+        return None
 
 
 def path_to_charts(base_img_path,class_id,b,e,b_l_y,e_l_y,show_last_year,annotate,chart_type,insform):#путь к графику
@@ -183,7 +190,7 @@ def class_profile():#инфо по классу
         img_path_prem = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,True,'prem',False)
         img_path_claim = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,True,'claim',False)
         img_path_lr = path_to_charts(base_name,form.insclass.data,b,e,b_l_y,e_l_y,show_last_year,False,'lr',False)
-
+ 
         if form.show_info_submit.data:#show data
             save_to_log('class_profile',current_user.id)
             show_info = True
