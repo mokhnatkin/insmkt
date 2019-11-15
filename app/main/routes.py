@@ -132,7 +132,7 @@ def disable_send_emails(user_id):
         db.session.commit()    
         flash('Вы отписались от e-mail рассылок. Если захотите снова подписаться, зайдите в Настройки')
         return redirect(url_for('main.index'))
-    return render_template('admin/add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
 
 
 
@@ -145,7 +145,7 @@ def enable_send_emails(user_id):
     h1_txt = 'Подписаться на e-mail рассылки, пользователь ' + user.username
     title = 'Подписаться'
     if user.send_emails == True:
-        flash('Вы уже подписаны e-mail рассылки.')
+        flash('Вы уже подписаны на e-mail рассылки.')
         return redirect(url_for('main.index'))
     form = ConfirmSwitchSendEmailsForm()
     if form.validate_on_submit():
@@ -153,5 +153,5 @@ def enable_send_emails(user_id):
         db.session.commit()    
         flash('Вы подписались на e-mail рассылки. Если захотите отписаться, зайдите в Настройки')
         return redirect(url_for('main.index'))
-    return render_template('admin/add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
 
