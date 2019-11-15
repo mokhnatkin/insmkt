@@ -112,7 +112,7 @@ class SendEmailToUsersForm(FlaskForm):#отправить всем пользо�
 
     def __init__(self, *args, **kwargs):
         super(SendEmailToUsersForm, self).__init__(*args, **kwargs)
-        all_users = User.query.order_by(User.last_seen.desc()).all()
+        all_users = User.query.filter(User.send_emails == True).order_by(User.last_seen.desc()).all()
         all_users_str = [(str(a.id), a.username) for a in all_users]
         self.users.choices = all_users_str
 

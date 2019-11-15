@@ -934,7 +934,7 @@ def send_email_to_users():
         users_selected = list()
         if send_to_all == True:#отправляем всем пользователям
             try:
-                users = User.query.all()
+                users = User.query.filter(User.send_emails == True).all()
                 for u in users:
                     recipients.append(u.email)
             except:
