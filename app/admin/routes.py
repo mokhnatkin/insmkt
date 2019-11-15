@@ -23,6 +23,7 @@ from app.universal_routes import before_request_u, required_roles_u, \
                         get_view_name, send_email, allowed_file, add_str_timestamp, \
                         str_to_bool, str_to_date
 from app.plot_graphs import plot_piechart, plot_barchart, plot_linear_graph
+from flask_login import current_user
 
 
 @bp.before_request
@@ -104,8 +105,6 @@ def download_from_static(fname):
 def downloadFile(fname = None):
     p = os.path.join(os.path.dirname(os.path.abspath(current_app.config['UPLOAD_FOLDER'])),current_app.config['UPLOAD_FOLDER'],fname)
     return send_file(p, as_attachment=True)
-
-
 
 
 def process_file(file_type,file_subtype,wb,report_date,frst_row,others_col_1,others_col_2,others_col_3):#обработаем загруженный excel файл
@@ -921,14 +920,17 @@ def edit_class(class_id=None):
 
 @bp.route('/send_email_to_users',methods=['GET', 'POST'])#отправить мейл пользователям
 @login_required
-@required_roles('admin')
+@required_roles('admin')#
 def send_email_to_users():
     form = SendEmailToUsersForm()
     h1_txt = 'Отправка email сообщения пользователям'
     descr = 'Заполните тему и текст сообщения. Выберите получателей, или пометьте Отправить всем'
+    disable_emails_url = url_for('main.disable_send_emails',user_id=current_user.id, _external=True)
+    disable_emails_body = '\n\nЕсли вы не хотите получать e-mail рассылки, вы можете отписаться от них по ссылке: ' + disable_emails_url
+    
     if form.validate_on_submit():
         subject = form.subject.data
-        body = form.body.data
+        body = form.body.data + disable_emails_body
         send_to_all = form.send_to_all.data
         recipients = list()
         users_selected = list()

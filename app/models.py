@@ -39,6 +39,12 @@ class User(UserMixin,db.Model):#пользователь (хранится в Б
         except:
             return
         return User.query.get(id)
+    
+    def disable_send_emails(self):
+        self.send_emails = False
+    
+    def enable_send_emails(self):
+        self.send_emails = True
 
 
 class Post(db.Model):#пост пользователя

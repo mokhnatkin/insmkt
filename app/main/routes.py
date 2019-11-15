@@ -1,13 +1,13 @@
 from flask import render_template, flash, redirect, url_for, request, \
                     current_app, g
 from app import db
-from app.main.forms import PostForm
+from app.main.forms import PostForm, ConfirmSwitchSendEmailsForm
 from flask_login import current_user, login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
             Compute, Company_all_names, Insclass_all_names, View_log
 from app.main import bp
-from app.universal_routes import before_request_u, required_roles_u, save_to_log
+from app.universal_routes import before_request_u, required_roles_u, save_to_log, send_email
 import pandas as pd
                     
 
@@ -113,3 +113,45 @@ def explore():
     next_url = url_for('main.explore',page=posts.next_num) if posts.has_next else None
     prev_url = url_for('main.explore',page=posts.prev_num) if posts.has_prev else None
     return render_template('main/explore.html',title='Все посты',posts=posts.items,next_url=next_url,prev_url=prev_url)
+
+
+@bp.route('/disable_send_emails/<user_id>',methods=['GET', 'POST'])#отменить рассылку email
+@login_required
+def disable_send_emails(user_id):
+    user = User.query.filter(User.id == user_id).first()
+    if not user:
+        return redirect(url_for('main.index'))
+    h1_txt = 'Отписаться от e-mail рассылок, пользователь ' + user.username
+    title = 'Отписаться'
+    if user.send_emails == False:
+        flash('Вы уже отписаны от e-mail рассылок.')
+        return redirect(url_for('main.index'))
+    form = ConfirmSwitchSendEmailsForm()
+    if form.validate_on_submit():
+        user.disable_send_emails()
+        db.session.commit()    
+        flash('Вы отписались от e-mail рассылок. Если захотите снова подписаться, зайдите в Настройки')
+        return redirect(url_for('main.index'))
+    return render_template('admin/add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
+
+
+
+@bp.route('/enable_send_emails/<user_id>',methods=['GET', 'POST'])#вернуть рассылку email
+@login_required
+def enable_send_emails(user_id):
+    user = User.query.filter(User.id == user_id).first()
+    if not user:
+        return redirect(url_for('main.index'))
+    h1_txt = 'Подписаться на e-mail рассылки, пользователь ' + user.username
+    title = 'Подписаться'
+    if user.send_emails == True:
+        flash('Вы уже подписаны e-mail рассылки.')
+        return redirect(url_for('main.index'))
+    form = ConfirmSwitchSendEmailsForm()
+    if form.validate_on_submit():
+        user.enable_send_emails()
+        db.session.commit()    
+        flash('Вы подписались на e-mail рассылки. Если захотите отписаться, зайдите в Настройки')
+        return redirect(url_for('main.index'))
+    return render_template('admin/add_edit_DB_item.html',title=title,form=form,h1_txt=h1_txt)
+

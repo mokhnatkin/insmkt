@@ -16,7 +16,7 @@ import os
 
 
 def before_request_u():
-    if current_user.is_authenticated:    
+    if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
         g.locale = str(get_locale())
