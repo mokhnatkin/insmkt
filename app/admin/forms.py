@@ -12,6 +12,7 @@ from datetime import datetime
 class EditUserForm(FlaskForm):#изменить пользователя
     username = StringField('Логин',validators=[DataRequired()])
     email = StringField('E-mail',validators=[DataRequired(), Email()])
+    send_emails = BooleanField('Отправлять e-mail рассылки?')
     submit = SubmitField('Изменить')
 
 

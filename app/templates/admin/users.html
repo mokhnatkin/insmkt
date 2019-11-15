@@ -11,9 +11,10 @@
                 <th>Роль</th>
                 <th>e-mail</th>
                 <th>Последний вход</th>
+                <th>Отправлять email</th>
                 <th>Изменить</th>
             </tr>
-            {% if users_len>0 %}
+            {% if users %}
                 {% for rownum in range(users_len) %}
                     <tr>
                         <td>{{ rownum + 1 }}</td>
@@ -21,6 +22,15 @@
                         <td>{{ users[rownum].role }}</td>
                         <td>{{ users[rownum].email }}</td>
                         <td>{{ moment(users[rownum].last_seen).format('LLL') }}</td>
+                        <td>
+                            {% if users[rownum].send_emails %}
+                                Да
+                            {% elif users[rownum].send_emails == False %}
+                                Нет
+                            {% else %}
+                                Не указано
+                            {% endif %}
+                        </td>
                         <td><a href="{{ url_for('admin.edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
                     </tr>
                 {% endfor %}

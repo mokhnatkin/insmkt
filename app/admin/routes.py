@@ -56,6 +56,7 @@ def edit_user(user_id=None):
     if form.validate_on_submit():
         obj.username = form.username.data
         obj.email = form.email.data
+        obj.send_emails = form.send_emails.data
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_user', user_id=user_id))
