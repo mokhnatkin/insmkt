@@ -41,6 +41,7 @@ def logout():
 
 @bp.route('/register',methods=['GET','POST'])#регистрация
 def register():
+    h1_txt = 'Регистрация'
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
@@ -51,7 +52,7 @@ def register():
         db.session.commit()
         flash('Поздравляем, вы зарегистрированы!')
         return redirect(url_for('auth.login'))
-    return render_template('auth/register.html',title='Регистрация',form=form)
+    return render_template('add_edit_DB_item.html',title='Регистрация',form=form, h1_txt=h1_txt)
 
 
 def send_password_reset_email(user):
@@ -64,6 +65,7 @@ def send_password_reset_email(user):
 
 @bp.route('/reset_password_request',methods=['GET', 'POST'])#запросить восстановление пароля
 def reset_password_request():
+    h1_txt = 'Восстановление пароля'
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = ResetPasswordRequestForm()
@@ -76,11 +78,12 @@ def reset_password_request():
         else:
             flash('Пользователь с таким e-mail не зарегистрирован')
             return redirect(url_for('auth.login'))
-    return render_template('auth/reset_password_request.html',title='Восстановление пароля',form=form)
+    return render_template('add_edit_DB_item.html',title='Восстановление пароля',h1_txt=h1_txt,form=form)
 
 
 @bp.route('/reset_password/<token>',methods=['GET', 'POST'])#восстановление пароля - изменить пароль
 def reset_password(token):
+    h1_txt = 'Изменение пароля'
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     user = User.verify_reset_password_token(token)
@@ -92,4 +95,4 @@ def reset_password(token):
         db.session.commit()    
         flash('Пароль успешно изменён')
         return redirect(url_for('auth.login'))
-    return render_template('auth/reset_password.html',title='Изменение пароля',form=form)
+    return render_template('add_edit_DB_item.html',title='Изменение пароля',form=form, h1_txt=h1_txt)

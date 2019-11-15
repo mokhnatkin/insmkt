@@ -61,7 +61,7 @@ def edit_user(user_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.users'))
-    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',form=form,h1_txt=h1_txt)
 
 
 @bp.route('/users')#список пользователей
@@ -549,7 +549,7 @@ def upload_file(upload_type):
                             db.session.delete(upload)
                             db.session.commit()
                             return redirect(request.url)
-    return render_template('admin/add_edit_DB_item.html',title=title, \
+    return render_template('add_edit_DB_item.html',title=title, \
                         form=form,descr=descr,h1_txt=h1_txt)
 
 
@@ -810,7 +810,7 @@ def compute():#перерасчёт
         else:
             flash('Данный перерасчёт уже был выполнен. Повторного перерасчёта не требуется.')
             return redirect(url_for('admin.compute'))
-    return render_template('admin/add_edit_DB_item.html',title=title,
+    return render_template('add_edit_DB_item.html',title=title,
                 h1_txt=h1_txt,form=form,descr=descr)
 
 
@@ -839,7 +839,7 @@ def add_new_company():
             return redirect(url_for('admin.add_new_company'))        
         flash('Новая компания добавлена')
         return redirect(url_for('admin.add_new_company'))
-    return render_template('admin/add_edit_DB_item.html', form=form, h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html', form=form, h1_txt=h1_txt)
 
 
 @bp.route('/edit_company/<company_id>',methods=['GET', 'POST'])#изменить имя компании (переименование)
@@ -859,7 +859,7 @@ def edit_company(company_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_company', company_id=company_id))
-    return render_template('admin/add_edit_DB_item.html',form=form, h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',form=form, h1_txt=h1_txt)
 
 
 @bp.route('/add_new_class',methods=['GET', 'POST'])#добавить новое имя класса (переименование)
@@ -892,7 +892,7 @@ def add_new_class():
             return redirect(url_for('admin.add_new_class'))        
         flash('Новый класс добавлен')
         return redirect(url_for('admin.add_new_class'))
-    return render_template('admin/add_edit_DB_item.html', form=form, h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html', form=form, h1_txt=h1_txt)
 
 
 @bp.route('/edit_class/<class_id>',methods=['GET', 'POST'])#изменить имя класса (переименование)
@@ -915,7 +915,7 @@ def edit_class(class_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.edit_class', class_id=class_id))
-    return render_template('admin/add_edit_DB_item.html',form=form, h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',form=form, h1_txt=h1_txt)
 
 
 @bp.route('/send_email_to_users',methods=['GET', 'POST'])#отправить мейл пользователям
@@ -956,8 +956,7 @@ def send_email_to_users():
             return redirect(url_for('admin.send_email_to_users'))
         flash('Сообщение отправлено.')
         return redirect(url_for('admin.send_email_to_users'))
-    return render_template('admin/add_edit_DB_item.html', form=form, descr=descr, \
-                h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html', form=form, descr=descr, h1_txt=h1_txt)
 
 
 def get_data_for_usage_log(beg_d,end_d):#получаем данные для лога
@@ -1095,7 +1094,7 @@ def add_new_hint():
         db.session.commit()
         flash('Подсказка добавлена')
         return redirect(url_for('admin.hints'))
-    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt,title=title)
+    return render_template('add_edit_DB_item.html',form=form,h1_txt=h1_txt,title=title)
 
 
 @bp.route('/edit_hint/<hint_id>',methods=['GET', 'POST'])#редактировать подсказку
@@ -1114,7 +1113,7 @@ def edit_hint(hint_id=None):
         db.session.commit()
         flash('Успешно изменено!')
         return redirect(url_for('admin.hints'))
-    return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt)
+    return render_template('add_edit_DB_item.html',form=form,h1_txt=h1_txt)
 
 
 @bp.route('/hints')#список подсказок
