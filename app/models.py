@@ -16,7 +16,7 @@ class User(UserMixin,db.Model):#пользователь (хранится в Б
     views = db.relationship('View_log',backref='user',lazy='dynamic')
     last_seen = db.Column(db.DateTime,default=datetime.utcnow)
     role = db.Column(db.String(20),default='user', nullable=False)
-    send_emails = db.Column(db.Boolean)
+    send_emails = db.Column(db.Boolean, nullable=False, default=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

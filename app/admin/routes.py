@@ -59,7 +59,7 @@ def edit_user(user_id=None):
         obj.send_emails = form.send_emails.data
         db.session.commit()
         flash('Успешно изменено!')
-        return redirect(url_for('admin.edit_user', user_id=user_id))
+        return redirect(url_for('admin.users'))
     return render_template('admin/add_edit_DB_item.html',form=form,h1_txt=h1_txt)
 
 
