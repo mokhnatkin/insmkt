@@ -37,7 +37,8 @@ class PeersForm(FlaskForm):#обзор конкурентов
     def __init__(self, *args, **kwargs):
         super(PeersForm, self).__init__(*args, **kwargs)
         companies = Company.query.with_entities(Company.id,Company.alias) \
-                .filter(Company.nonlife==True).order_by(Company.alias).all()
+                .filter(Company.nonlife==True) \
+                .order_by(Company.alive.desc()).order_by(Company.alias).all()
         sources_db = [(str(a.id), a.alias) for a in companies]
         self.company.choices = sources_db
         self.peers.choices = sources_db
