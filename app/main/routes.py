@@ -118,8 +118,6 @@ def explore():
 @bp.route('/disable_send_emails/<user_id>',methods=['GET', 'POST'])#отменить рассылку email
 @login_required
 def disable_send_emails(user_id):
-    print('current_user.id',current_user.id)
-    print('user_id',user_id)
     if int(current_user.id) != int(user_id):
         flash('Вы не можете менять настройки для других пользователей')
         return redirect(url_for('main.index'))
