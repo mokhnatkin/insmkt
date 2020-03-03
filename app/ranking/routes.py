@@ -122,7 +122,7 @@ def get_data_for_plot(ind_name,top_equity,annotate,b,e):#helpier function
     _y = list()
 
     df_equity,equity_total = get_df_financial_at_date('equity',e)
-    df_indicator,indicator_total=get_df_financial_per_period(ind_name,b,e)
+    df_indicator,indicator_total = get_df_financial_per_period(ind_name,b,e)
         
     df_merged = pd.merge(df_equity,df_indicator,on='id')
     df_merged.rename(columns = {'alias_x':'alias','value_x':'equity','value_y':'value'}, inplace = True)#rename columns

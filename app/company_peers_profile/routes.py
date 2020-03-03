@@ -340,39 +340,39 @@ def plot_png_for_company(company_id,b,e,b_l_y,e_l_y,show_last_year_str,annotate_
 
     if chart_type == 'linear_graph':
         if indicator_type == 'equity':
-            df = get_df_financial_per_period_for_company(True,company_id,'equity',b,e)
+            df = get_df_financial_per_period_for_company(True,company_id,'equity',b,e,True)
             labels,values = df_to_list_for_plot(df,1000,0)
             title = 'Собственный капитал на конец месяца, млн.тг.'
             if show_last_year:
-                df = get_df_financial_per_period_for_company(True,company_id,'equity',b_l_y,e_l_y)
+                df = get_df_financial_per_period_for_company(True,company_id,'equity',b_l_y,e_l_y,False)
                 labels,values_l_y = df_to_list_for_plot(df,1000,0)
         elif indicator_type == 'reserves':
-            df = get_df_financial_per_period_for_company(True,company_id,'reserves',b,e)
+            df = get_df_financial_per_period_for_company(True,company_id,'reserves',b,e,True)
             labels,values = df_to_list_for_plot(df,1000,0)
             title = 'Страховые резервы на конец месяца, млн.тг.'
             if show_last_year:
-                df = get_df_financial_per_period_for_company(True,company_id,'reserves',b_l_y,e_l_y)
+                df = get_df_financial_per_period_for_company(True,company_id,'reserves',b_l_y,e_l_y,False)
                 labels,values_l_y = df_to_list_for_plot(df,1000,0)
         elif indicator_type == 'solvency_margin':
-            df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b,e)
+            df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b,e,True)
             labels,values = df_to_list_for_plot(df,1,2)
             title = 'Норматив ФМП на конец месяца'
             if show_last_year:
-                df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b_l_y,e_l_y)
+                df = get_df_financial_per_period_for_company(True,company_id,'solvency_margin',b_l_y,e_l_y,False)
                 labels,values_l_y = df_to_list_for_plot(df,1,2)
         elif indicator_type == 'net_prem':
-            df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b,e)
+            df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b,e,True)
             labels,values = df_to_list_for_plot(df,1000,0)
             title = 'Чистые премии помесячно, млн.тг.'
             if show_last_year:
-                df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b_l_y,e_l_y)
+                df = get_df_financial_per_period_for_company(False,company_id,'net_premiums',b_l_y,e_l_y,False)
                 labels,values_l_y = df_to_list_for_plot(df,1000,0)#net_claim
         elif indicator_type == 'net_claim':
-            df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b,e)
+            df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b,e,True)
             labels,values = df_to_list_for_plot(df,1000,0)
             title = 'Чистые выплаты помесячно, млн.тг.'
             if show_last_year:
-                df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b_l_y,e_l_y)
+                df = get_df_financial_per_period_for_company(False,company_id,'net_claims',b_l_y,e_l_y,False)
                 labels,values_l_y = df_to_list_for_plot(df,1000,0)                
 
         return plot_linear_graph(labels,values,values_l_y,label1,label2,show_last_year,annotate,title)

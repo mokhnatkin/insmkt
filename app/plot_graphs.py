@@ -79,7 +79,7 @@ def plot_barchart(labels,_values,_values_l_y,title,ylabel,show_last_year,label1,
     
     return Response(output.getvalue(), mimetype='image/png')
 
-
+#plot_scatter(_x,_y,title,labels,xlabel,ylabel)
 def plot_scatter(_x,_y,title,labels=None,xlabel=None,ylabel=None):#scatter plot
     fig = Figure()
     canvas = FigureCanvas(fig)
@@ -91,7 +91,7 @@ def plot_scatter(_x,_y,title,labels=None,xlabel=None,ylabel=None):#scatter plot
     if xlabel is not None:
         ax.set_xlabel(xlabel)
     if ylabel is not None:
-        ax.set_xlabel(ylabel)
+        ax.set_ylabel(ylabel)
     if labels is not None:
         for i, txt in enumerate(labels):
             ax.annotate(txt, (x[i], y[i]))

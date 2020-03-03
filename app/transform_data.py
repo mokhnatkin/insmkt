@@ -24,12 +24,16 @@ def get_months(b,e):#определим, какие именно месяцы о
     return months
 
 
-def get_str_month_yyyy_mm(input_date):#получаем в формате гггг-мм исходя из даты
+def get_str_month_yyyy_mm(input_date,include_year=True):#получаем в формате гггг-мм исходя из даты
     month_str = str(input_date.month)
     if len(month_str) == 1:
         month_str = '0' + month_str
-    month_name = str(input_date.year) + '-' + month_str#month name like 2019-01
-    month_name_p_1y = str(input_date.year+1) + '-' + month_str#month name like 2019-01 (plus 1 year)
+    if include_year:
+        month_name = str(input_date.year) + '-' + month_str#month name like 2019-01
+        month_name_p_1y = str(input_date.year+1) + '-' + month_str#month name like 2019-01 (plus 1 year)
+    else:
+        month_name = month_str#month name like 2019-01
+        month_name_p_1y = month_str#month name like 2019-01 (plus 1 year)        
     return month_name, month_name_p_1y
 
 
@@ -400,7 +404,7 @@ def get_df_financial_at_date(ind_name,e):#get pandas data frame for given indica
     return df_items,total_value
 
 
-def get_df_financial_per_period_for_company(balance,company_id,ind_name,b,e):#get pandas data frame for given indicator (ind_name) and date
+def get_df_financial_per_period_for_company(balance,company_id,ind_name,b,e,include_year=True):#get pandas data frame for given indicator (ind_name) and date
     ind_id = Indicator.query.filter(Indicator.name == ind_name).first()
     _id = ind_id.id
     months = get_months(b,e)
@@ -426,7 +430,7 @@ def get_df_financial_per_period_for_company(balance,company_id,ind_name,b,e):#ge
                                     .filter(Financial_per_month.beg_date == begin)
                                     .filter(Financial_per_month.end_date == end)                                    
                 .statement,db.session.bind)
-        month_name,month_name_p_1y = get_str_month_yyyy_mm(begin)
+        month_name,month_name_p_1y = get_str_month_yyyy_mm(begin,include_year)
         df_item_per_month['month_name'] = month_name
         df_items = pd.concat([df_items, df_item_per_month])#append all months
     
