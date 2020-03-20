@@ -13,6 +13,7 @@
                 <th>Последний вход</th>
                 <th>Отправлять email</th>
                 <th>Изменить</th>
+                <th>Сделать админом</th>
             </tr>
             {% if users %}
                 {% for rownum in range(users_len) %}
@@ -32,6 +33,7 @@
                             {% endif %}
                         </td>
                         <td><a href="{{ url_for('admin.edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
+                        <td><a href="{{ url_for('admin.grant_admin',user_id=users[rownum].id) }}">Сделать админом</a></td>
                     </tr>
                 {% endfor %}
             {% endif %}

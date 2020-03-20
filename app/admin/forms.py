@@ -16,6 +16,10 @@ class EditUserForm(FlaskForm):#изменить пользователя
     submit = SubmitField('Изменить')
 
 
+class GrantAdminForm(FlaskForm):#дать админский доступ
+    submit = SubmitField('Подтвердить')
+
+
 class DictUploadForm(FlaskForm):#загрузить справочник компаний
     dict_types = current_app.config['DICT_TYPES']    
     name = StringField('Описание',validators=[DataRequired()])
