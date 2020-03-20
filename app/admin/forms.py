@@ -16,7 +16,7 @@ class EditUserForm(FlaskForm):#изменить пользователя
     submit = SubmitField('Изменить')
 
 
-class GrantAdminForm(FlaskForm):#дать админский доступ
+class ChangeRoleForm(FlaskForm):#дать админский / пользовательский доступ
     submit = SubmitField('Подтвердить')
 
 

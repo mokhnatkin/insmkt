@@ -12,8 +12,8 @@
                 <th>e-mail</th>
                 <th>Последний вход</th>
                 <th>Отправлять email</th>
-                <th>Изменить</th>
-                <th>Сделать админом</th>
+                <th>Изменить данные пользователя</th>
+                <th>Изменить роль</th>
             </tr>
             {% if users %}
                 {% for rownum in range(users_len) %}
@@ -33,7 +33,13 @@
                             {% endif %}
                         </td>
                         <td><a href="{{ url_for('admin.edit_user',user_id=users[rownum].id) }}">Изменить</a></td>
-                        <td><a href="{{ url_for('admin.grant_admin',user_id=users[rownum].id) }}">Сделать админом</a></td>
+                        <td>
+                            {% if users[rownum].role == 'user' %}
+                                <a href="{{ url_for('admin.grant_admin',user_id=users[rownum].id) }}">Сделать админом</a>
+                            {% else %}
+                                <a href="{{ url_for('admin.grant_user',user_id=users[rownum].id) }}">Разжаловать</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             {% endif %}

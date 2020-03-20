@@ -5,7 +5,7 @@ from app.admin.forms import EditUserForm, DictUploadForm, DataUploadForm, \
                     ComputePerMonthIndicators, DictSelectForm, \
                     AddNewCompanyName, AddNewClassName, \
                     AddEditCompanyForm, AddEditClassForm, \
-                    UsageLogForm, SendEmailToUsersForm, HintForm, GrantAdminForm
+                    UsageLogForm, SendEmailToUsersForm, HintForm, ChangeRoleForm
 from flask_login import login_required
 from app.models import User, Post, Upload, Company, Insclass, Indicator, Financial, \
             Premium, Claim, Financial_per_month, Premium_per_month, Claim_per_month, \
@@ -68,16 +68,37 @@ def edit_user(user_id=None):
 @login_required
 @required_roles('admin')
 def grant_admin(user_id=None):
-    form = GrantAdminForm()    
+    form = ChangeRoleForm()    
     obj = User.query.filter(User.id == user_id).first()
     h1_txt = 'Предоставить доступ администратора пользователю ' + obj.username + '?'
     if request.method == 'GET':        
-        form = GrantAdminForm(obj=obj)
+        form = ChangeRoleForm(obj=obj)
     if form.validate_on_submit():
         #изменить роль на admin
         obj.role = 'admin'
         db.session.commit()
         flash('Роль админа предоставлена!')
+        return redirect(url_for('admin.users'))
+    return render_template('add_edit_DB_item.html',form=form,h1_txt=h1_txt)
+
+
+@bp.route('/grant_user/<user_id>',methods=['GET', 'POST'])#дать роль Пользователь
+@login_required
+@required_roles('admin')
+def grant_user(user_id=None):
+    if int(user_id) == 1:
+        flash('Нельзя разжаловать основателя!')
+        return redirect(url_for('admin.users'))
+    form = ChangeRoleForm()
+    obj = User.query.filter(User.id == user_id).first()
+    h1_txt = 'Убрать доступ администратора у пользователя ' + obj.username + '?'
+    if request.method == 'GET':
+        form = ChangeRoleForm(obj=obj)
+    if form.validate_on_submit():
+        #изменить роль на admin
+        obj.role = 'user'
+        db.session.commit()
+        flash('Роль изменена!')
         return redirect(url_for('admin.users'))
     return render_template('add_edit_DB_item.html',form=form,h1_txt=h1_txt)
 
