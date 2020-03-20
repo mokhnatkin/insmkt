@@ -42,7 +42,7 @@ def instruction():
     company_list = '_companies.xlsx'#образец для загрузки справочника - список компаний
     insclass_list = '_classes.xlsx'#образец для загрузки справочника - список классов
     indicator_list = '_indicators.xlsx'#образец для загрузки справочника - список показателей
-    return render_template('admin/admin/instruction.html',title='Инструкция',company_list=company_list,insclass_list=insclass_list,indicator_list=indicator_list)
+    return render_template('admin/instruction.html',title='Инструкция',company_list=company_list,insclass_list=insclass_list,indicator_list=indicator_list)
 
 
 @bp.route('/edit_user/<user_id>',methods=['GET', 'POST'])#редактировать email пользователя
