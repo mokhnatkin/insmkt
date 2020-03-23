@@ -84,6 +84,7 @@ class AddEditClassForm(FlaskForm):#добавить новый класс стр
     name = StringField('Системное название на английском',validators=[DataRequired()])
     fullname = StringField('Полное название (из файлов НБ)',validators=[DataRequired()])
     alias = StringField('Краткое (отображаемое) название',validators=[DataRequired()])
+    sum_to_totals = BooleanField('Участвует в расчете общей суммы по форме страхования')
     nonlife = BooleanField('Относится к общему страхованию')
     obligatory = BooleanField('Относится к обязательному страхованию')
     voluntary_personal = BooleanField('Относится к добровольному личному страхованию')

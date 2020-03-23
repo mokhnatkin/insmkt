@@ -93,6 +93,7 @@ class Insclass(db.Model):#класс страхования
     obligatory = db.Column(db.Boolean)
     voluntary_personal = db.Column(db.Boolean)
     voluntary_property = db.Column(db.Boolean)
+    sum_to_totals = db.Column(db.Boolean, default=True, nullable=False)
     premiums = db.relationship('Premium',backref='insclass',lazy='dynamic')
     claims = db.relationship('Claim',backref='insclass',lazy='dynamic')
     premiums_per_month = db.relationship('Premium_per_month',backref='insclass',lazy='dynamic')

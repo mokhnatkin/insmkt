@@ -23,7 +23,7 @@ def required_roles(*roles):
     return required_roles_u(*roles)
 
 
-def get_class_companies(class_id,b,e,show_last_year,b_l_y,e_l_y,insform=False):#инфо по выбранному классу по компаниям за период
+def get_class_companies(class_id,b,e,show_last_year,b_l_y,e_l_y,insform=False):#инфо по выбранному классу / форме по компаниям за период
     def get_form_name(form_id):#получаем имя  формы страхования по id
         insforms = current_app.config['INS_FORMS']#insurance forms
         res = None
@@ -269,7 +269,7 @@ def insform_profile():#инфо по классу
             return redirect(url_for('class_profile.insform_profile'))
         form_id = form.insform.data        
         try:
-            class_name, class_companies, premiums_total, premiums_total_l_y, claims_total, claims_total_l_y, lr_av, lr_av_l_y = get_class_companies(form_id,b,e,show_last_year,b_l_y,e_l_y,True)#информация по компаниям по выбранному классу
+            class_name, class_companies, premiums_total, premiums_total_l_y, claims_total, claims_total_l_y, lr_av, lr_av_l_y = get_class_companies(form_id,b,e,show_last_year,b_l_y,e_l_y,True)#информация по компаниям по выбранному классу / форме
             class_info, class_totals, class_totals_l_y = get_class_info(form_id,b,e,show_last_year,b_l_y,e_l_y,True)
         except:
             flash('Не могу получить информацию с сервера. Возможно, данные по выбранной форме страхования за заданный период отсутствуют. Попробуйте задать другой период.')

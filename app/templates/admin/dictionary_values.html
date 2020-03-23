@@ -50,13 +50,14 @@
                     <th>Название</th>
                     <th>Полное название</th>
                     <th>alias</th>
+                    <th>Добавить название</th>
+                    <th>Изменить данные</th>                    
                     <th>nonlife</th>
                     <th>obligatory</th>
                     <th>voluntary_personal</th>
                     <th>voluntary_property</th>
+                    <th>sum_to_totals</th>
                     <th>Несколько названий</th>
-                    <th>Добавить название</th>
-                    <th>Изменить данные</th>
                 </tr>
                 {% for i in insclasses %}
                     <tr>
@@ -64,10 +65,13 @@
                         <td>{{ i.name }}</td>
                         <td>{{ i.fullname }}</td>
                         <td>{{ i.alias }}</td>
+                        <td><a href="{{ url_for('admin.add_new_class_name',class_id=i.id) }}">Добавить название</a></td>
+                        <td><a href="{{ url_for('admin.edit_class',class_id=i.id) }}">Изменить данные</a></td>                        
                         <td>{{ i.nonlife }}</td>
                         <td>{{ i.obligatory }}</td>
                         <td>{{ i.voluntary_personal }}</td>
                         <td>{{ i.voluntary_property }}</td>
+                        <td>{{ i.sum_to_totals }}</td>
                         <td>
                             {% if class_has_other_names(i.id) %}
                                 Да
@@ -75,8 +79,6 @@
                                 Нет
                             {% endif %}
                         </td>
-                        <td><a href="{{ url_for('admin.add_new_class_name',class_id=i.id) }}">Добавить название</a></td>
-                        <td><a href="{{ url_for('admin.edit_class',class_id=i.id) }}">Изменить данные</a></td>
                     </tr>
                 {% endfor %}
             </table>

@@ -947,6 +947,7 @@ def edit_class(class_id=None):
         obj.name = form.name.data
         obj.fullname = form.fullname.data
         obj.alias = form.alias.data
+        obj.sum_to_totals = form.sum_to_totals.data
         obj.nonlife = form.nonlife.data
         obj.obligatory = form.obligatory.data
         obj.voluntary_personal = form.voluntary_personal.data
