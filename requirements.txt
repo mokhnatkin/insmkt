@@ -52,7 +52,7 @@ pyexcel-handsontable==0.0.2
 pyexcel-io==0.5.17
 pyexcel-webio==0.1.4
 pyexcel-xls==0.5.8
-Pygments==2.4.2
+Pygments==2.7.4
 PyJWT==1.7.1
 PyMySQL==0.9.3
 pyparsing==2.4.0
